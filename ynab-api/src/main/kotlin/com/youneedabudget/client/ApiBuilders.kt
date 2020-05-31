@@ -2,6 +2,7 @@ package com.youneedabudget.client
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.youneedabudget.client.apis.AccountsApi
 import com.youneedabudget.client.apis.BudgetsApi
 import com.youneedabudget.client.tools.GeneratedCodeConverters
 import com.youneedabudget.client.tools.TypesAdapterFactory
@@ -33,4 +34,7 @@ val retrofit: Retrofit = Retrofit.Builder()
   .addConverterFactory(GeneratedCodeConverters.converterFactory(moshi))
   .build()
 
-fun createBudgetsApi(): BudgetsApi = retrofit.create(BudgetsApi::class.java)
+class YnabClient {
+  val budgets: BudgetsApi by lazy { retrofit.create(BudgetsApi::class.java) }
+  val accounts: AccountsApi by lazy { retrofit.create(AccountsApi::class.java) }
+}
