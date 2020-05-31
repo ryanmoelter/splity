@@ -1,0 +1,2 @@
+rootProject.name = 'splity'
+include(':ynab-api')
