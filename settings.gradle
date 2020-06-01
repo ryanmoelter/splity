@@ -1,2 +1,3 @@
 rootProject.name = 'splity'
 include(':ynab-api')
+include(':splitwise-api')
