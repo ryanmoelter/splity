@@ -8,6 +8,7 @@ version "0.1-SNAPSHOT"
 
 repositories {
     mavenCentral()
+    jcenter()
 }
 
 dependencies {
@@ -17,6 +18,12 @@ dependencies {
     implementation(project(":ynab-api"))
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7"
+    testImplementation "org.junit.jupiter:junit-jupiter:5.4.2"
+    testImplementation "io.strikt:strikt-core:0.26.1"
+}
+
+test {
+    useJUnitPlatform()
 }
 
 compileKotlin {

@@ -27,67 +27,58 @@ fun main() {
     val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
     val ryansBudget = budgetResponse.budgets.findByName(RYANS_BUDGET_NAME)
     val ryansSplitwiseAccountId = ryansBudget.accounts!!.findByName(RYANS_SPLITWISE_ACCOUNT_NAME).id
+    val ryansTransactions = ynab.transactions.getTransactionsByAccount(
+      budgetId = ryansBudget.id.toString(),
+      accountId = ryansSplitwiseAccountId.toString(),
+      sinceDate = null,
+      type = null,
+      lastKnowledgeOfServer = null
+    ).data.transactions
+    val ryansAccountAndBudget = AccountAndBudget(ryansSplitwiseAccountId, ryansBudget.id)
 
     val sarahsBudget = budgetResponse.budgets.findByName(SARAHS_BUDGET_NAME)
     val sarahsSplitwiseAccountId = sarahsBudget.accounts!!.findByName(SARAHS_SPLITWISE_ACCOUNT_NAME).id
+    val sarahsTransactions = ynab.transactions.getTransactionsByAccount(
+      budgetId = sarahsBudget.id.toString(),
+      accountId = sarahsSplitwiseAccountId.toString(),
+      sinceDate = null,
+      type = null,
+      lastKnowledgeOfServer = null
+    ).data.transactions
+    val sarahsAccountAndBudget = AccountAndBudget(sarahsSplitwiseAccountId, sarahsBudget.id)
 
-    copyFromRyanToSarah(
-      ynab = ynab,
-      ryansAccountAndBudget = AccountAndBudget(ryansSplitwiseAccountId, ryansBudget.id),
-      sarahsAccountAndBudget = AccountAndBudget(sarahsSplitwiseAccountId, sarahsBudget.id)
-    )
-//    copyFromSarahToRyan(ynab)
+
+    var actions = createActionsFromOneAccount(
+      fromTransactions = ryansTransactions,
+      toTransactions = sarahsTransactions
+    ).map { transactionAction -> CompleteTransactionAction(transactionAction, sarahsAccountAndBudget) }
+    actions = actions + createActionsFromOneAccount(
+      fromTransactions = sarahsTransactions,
+      toTransactions = ryansTransactions
+    ).map { transactionAction -> CompleteTransactionAction(transactionAction, ryansAccountAndBudget) }
+
+    actions.forEach { action -> action.apply(ynab) }
   }
 }
 
-suspend fun copyFromRyanToSarah(
-  ynab: YnabClient,
-  ryansAccountAndBudget: AccountAndBudget,
-  sarahsAccountAndBudget: AccountAndBudget
-) {
-  copyFromOneBudgetToAnother(
-    ynab = ynab,
-    fromAccountAndBudget = ryansAccountAndBudget,
-    toAccountAndBudget = sarahsAccountAndBudget
-  )
-}
-
-suspend fun copyFromSarahToRyan(
-  ynabClient: YnabClient,
-  ryansAccountAndBudget: AccountAndBudget,
-  sarahsAccountAndBudget: AccountAndBudget
-) {
-}
-
-suspend fun copyFromOneBudgetToAnother(
-  ynab: YnabClient,
-  fromAccountAndBudget: AccountAndBudget,
-  toAccountAndBudget: AccountAndBudget
-) {
-  val fromTransactions = ynab.transactions.getTransactionsByAccount(
-    budgetId = fromAccountAndBudget.budgetId.toString(),
-    accountId = fromAccountAndBudget.accountId.toString(),
-    sinceDate = null,
-    type = null,
-    lastKnowledgeOfServer = null
-  ).data.transactions
+fun createActionsFromOneAccount(
+  fromTransactions: List<TransactionDetail>,
+  toTransactions: List<TransactionDetail>
+): List<TransactionAction> {
+  val fromTransactionsMap = fromTransactions
     .map { it.id to it }
     .toMap()
-  val toTransactions = ynab.transactions.getTransactionsByAccount(
-    budgetId = toAccountAndBudget.budgetId.toString(),
-    accountId = toAccountAndBudget.accountId.toString(),
-    sinceDate = null,
-    type = null,
-    lastKnowledgeOfServer = null
-  ).data.transactions
+  val toTransactionsMap = toTransactions
     .map { it.id to it }
     .toMap()
 
-  fromTransactions.values
+  return fromTransactions
     .filter { transactionDetail -> !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false) }
-    .forEach { fromTransaction ->
-      if (!toTransactions.containsKey(fromTransaction.importId) && fromTransaction.approved) {
-        CompleteTransactionAction(Create(fromTransaction), toAccountAndBudget).apply(ynab)
+    .mapNotNull { fromTransaction ->
+      if (!toTransactionsMap.containsKey(fromTransaction.importId) && fromTransaction.approved) {
+        Create(fromTransaction)
+      } else {
+        null
       }
     }
 }
@@ -135,7 +126,6 @@ suspend fun TransactionAction.apply(ynab: YnabClient, toAccountAndBudget: Accoun
   is Delete -> TODO()
 }
 
-data class TransactionsAndActions(val transactions: List<TransactionDetail>, val actions: List<TransactionAction>)
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
 
 fun List<BudgetSummary>.findByName(name: String) =
