@@ -1,5 +1,10 @@
 package co.moelten.splity
 
+import co.moelten.splity.TransactionAction.Approve
+import co.moelten.splity.TransactionAction.Create
+import co.moelten.splity.TransactionAction.CreateFromTransfer
+import co.moelten.splity.TransactionAction.Delete
+import co.moelten.splity.TransactionAction.Update
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
@@ -79,40 +84,55 @@ suspend fun copyFromOneBudgetToAnother(
     .toMap()
 
   fromTransactions.values
-    .filter { transactionDetail ->
-      !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false)
-    }
-    .forEach { transactionDetail ->
-      if (!toTransactions.containsKey(transactionDetail.importId) && transactionDetail.approved) {
-        ynab.transactions.createTransaction(
-          toAccountAndBudget.budgetId.toString(),
-          SaveTransactionsWrapper(
-            SaveTransaction(
-              accountId = toAccountAndBudget.accountId,
-              date = transactionDetail.date,
-              amount = -transactionDetail.amount,
-              payeeId = null,
-              payeeName = transactionDetail.payeeName,
-              categoryId = null,
-              memo = transactionDetail.memo,
-              cleared = SaveTransaction.ClearedEnum.CLEARED,
-              approved = false,
-              flagColor = null,
-              importId = transactionDetail.id,
-              subtransactions = null
-            )
-          )
-        )
+    .filter { transactionDetail -> !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false) }
+    .forEach { fromTransaction ->
+      if (!toTransactions.containsKey(fromTransaction.importId) && fromTransaction.approved) {
+        CompleteTransactionAction(Create(fromTransaction), toAccountAndBudget).apply(ynab)
       }
     }
 }
 
-sealed class TransactionAction(open val transactionDetail: TransactionDetail) {
-  data class Create(override val transactionDetail: TransactionDetail) : TransactionAction(transactionDetail)
-  data class Approve(override val transactionDetail: TransactionDetail) : TransactionAction(transactionDetail)
-  data class Update(override val transactionDetail: TransactionDetail) : TransactionAction(transactionDetail)
-  data class Delete(override val transactionDetail: TransactionDetail) : TransactionAction(transactionDetail)
-  data class Replace(override val transactionDetail: TransactionDetail) : TransactionAction(transactionDetail)
+class CompleteTransactionAction(val transactionAction: TransactionAction, val toAccountAndBudget: AccountAndBudget) {
+  suspend fun apply(ynab: YnabClient) = transactionAction.apply(ynab, toAccountAndBudget)
+}
+
+sealed class TransactionAction {
+  data class Create(val fromTransaction: TransactionDetail) : TransactionAction()
+  data class CreateFromTransfer(
+    val fromTransaction: TransactionDetail,
+    val fromTransferTransaction: TransactionDetail
+  ) : TransactionAction()
+  data class Approve(val transactionId: UUID) : TransactionAction()
+  data class Update(val fromTransaction: TransactionDetail) : TransactionAction()
+  data class Delete(val transactionId: UUID) : TransactionAction()
+}
+
+suspend fun TransactionAction.apply(ynab: YnabClient, toAccountAndBudget: AccountAndBudget) = when (this) {
+  is Create -> {
+    ynab.transactions.createTransaction(
+      toAccountAndBudget.budgetId.toString(),
+      SaveTransactionsWrapper(
+        SaveTransaction(
+          accountId = toAccountAndBudget.accountId,
+          date = fromTransaction.date,
+          amount = -fromTransaction.amount,
+          payeeId = null,
+          payeeName = fromTransaction.payeeName,
+          categoryId = null,
+          memo = fromTransaction.memo,
+          cleared = SaveTransaction.ClearedEnum.CLEARED,
+          approved = false,
+          flagColor = null,
+          importId = fromTransaction.id,
+          subtransactions = null
+        )
+      )
+    )
+  }
+  is CreateFromTransfer -> TODO()
+  is Approve -> TODO()
+  is Update -> TODO()
+  is Delete -> TODO()
 }
 
 data class TransactionsAndActions(val transactions: List<TransactionDetail>, val actions: List<TransactionAction>)
