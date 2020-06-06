@@ -82,9 +82,7 @@ internal class SplityTest {
       toTransactions = listOf(manuallyAddedTransactionComplement)
     )
 
-    expectThat(actions) {
-      isEmpty()
-    }
+    expectThat(actions).isEmpty()
   }
 
   @Test

@@ -47,7 +47,6 @@ fun main() {
     ).data.transactions
     val sarahsAccountAndBudget = AccountAndBudget(sarahsSplitwiseAccountId, sarahsBudget.id)
 
-
     var actions = createActionsFromOneAccount(
       fromTransactions = ryansTransactions,
       toTransactions = sarahsTransactions
@@ -65,23 +64,35 @@ fun createActionsFromOneAccount(
   fromTransactions: List<TransactionDetail>,
   toTransactions: List<TransactionDetail>
 ): List<TransactionAction> {
-  val fromTransactionsMap = fromTransactions
-    .map { it.id to it }
-    .toMap()
   val toTransactionsMap = toTransactions
     .map { it.id to it }
+    .toMap()
+  val toTransactionsImportMap = toTransactions
+    .filter { it.importId != null }
+    .map { it.importId!! to it }
     .toMap()
 
   return fromTransactions
     .filter { transactionDetail -> !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false) }
     .mapNotNull { fromTransaction ->
-      if (!toTransactionsMap.containsKey(fromTransaction.importId) && fromTransaction.approved) {
-        Create(fromTransaction)
-      } else {
-        null
+      when {
+        fromTransaction.doesNotExistIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap) && fromTransaction.approved -> {
+          Create(fromTransaction)
+        }
+        else -> null
       }
     }
 }
+
+private fun TransactionDetail.doesNotExistIn(
+  idMap: Map<String, TransactionDetail>,
+  importIdMap: Map<String, TransactionDetail>
+) = !existsIn(idMap, importIdMap)
+
+private fun TransactionDetail.existsIn(
+  idMap: Map<String, TransactionDetail>,
+  importIdMap: Map<String, TransactionDetail>
+) = idMap.containsKey(importId) || importIdMap.containsKey(id)
 
 class CompleteTransactionAction(val transactionAction: TransactionAction, val toAccountAndBudget: AccountAndBudget) {
   suspend fun apply(ynab: YnabClient) = transactionAction.apply(ynab, toAccountAndBudget)
@@ -94,7 +105,7 @@ sealed class TransactionAction {
     val fromTransferTransaction: TransactionDetail
   ) : TransactionAction()
   data class Approve(val transactionId: UUID) : TransactionAction()
-  data class Update(val fromTransaction: TransactionDetail) : TransactionAction()
+  data class Update(val fromTransaction: TransactionDetail, val toTransaction: TransactionDetail) : TransactionAction()
   data class Delete(val transactionId: UUID) : TransactionAction()
 }
 
