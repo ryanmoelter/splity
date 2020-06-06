@@ -16,6 +16,9 @@ const val FROM_ACCOUNT_NAME = "Split - From"
 val TO_ACCOUNT_ID = UUID.randomUUID()
 const val TO_ACCOUNT_NAME = "Split - To"
 
+val FROM_TRANSFER_ACCOUNT_ID = UUID.randomUUID()
+const val FROM_TRANSFER_ACCOUNT_NAME = "Transfer : Checking"
+
 val manuallyAddedTransaction = TransactionDetail(
   id = "manuallyAddedTransaction",
   date = LocalDate.of(2020, Month.FEBRUARY, 6),
@@ -58,6 +61,28 @@ val manuallyAddedTransactionComplement = TransactionDetail(
   importId = "manuallyAddedTransaction",
   payeeName = "Target",
   categoryName = "Household goods"
+)
+
+val transactionAddedFromSplit = TransactionDetail(
+  id = "transactionAddedFromSplit",
+  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  amount = 10000,
+  cleared = TransactionDetail.ClearedEnum.UNCLEARED,
+  approved = true,
+  accountId = FROM_ACCOUNT_ID,
+  deleted = false,
+  accountName = FROM_ACCOUNT_NAME,
+  subtransactions = emptyList(),
+  memo = "Transaction added by split",
+  flagColor = null,
+  payeeId = UUID.randomUUID(),
+  categoryId = null,
+  transferAccountId = FROM_TRANSFER_ACCOUNT_ID,
+  transferTransactionId = null,
+  matchedTransactionId = null,
+  importId = null,
+  payeeName = FROM_TRANSFER_ACCOUNT_NAME,
+  categoryName = null
 )
 
 internal class SplityTest {

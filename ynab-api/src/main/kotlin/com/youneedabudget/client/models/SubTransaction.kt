@@ -33,5 +33,6 @@ data class SubTransaction(
     @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
     @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
     @Json(name = "category_name") @field:Json(name = "category_name") var categoryName: String? = null,
-    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null
+    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null,
+    @Json(name = "transfer_transaction_id") @field:Json(name = "transfer_transaction_id") var transferTransactionId: String? = null
 )

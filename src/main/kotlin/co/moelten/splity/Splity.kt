@@ -1,8 +1,6 @@
 package co.moelten.splity
 
-import co.moelten.splity.TransactionAction.Approve
 import co.moelten.splity.TransactionAction.Create
-import co.moelten.splity.TransactionAction.CreateFromTransfer
 import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
 import com.youneedabudget.client.YnabClient
@@ -50,13 +48,41 @@ fun main() {
     var actions = createActionsFromOneAccount(
       fromTransactions = ryansTransactions,
       toTransactions = sarahsTransactions
-    ).map { transactionAction -> CompleteTransactionAction(transactionAction, sarahsAccountAndBudget) }
+    ).map { transactionAction ->
+      CompleteTransactionAction(
+        transactionAction = transactionAction,
+        fromAccountAndBudget = ryansAccountAndBudget,
+        toAccountAndBudget = sarahsAccountAndBudget
+      )
+    }
     actions = actions + createActionsFromOneAccount(
       fromTransactions = sarahsTransactions,
       toTransactions = ryansTransactions
-    ).map { transactionAction -> CompleteTransactionAction(transactionAction, ryansAccountAndBudget) }
+    ).map { transactionAction ->
+      CompleteTransactionAction(
+        transactionAction = transactionAction,
+        fromAccountAndBudget = sarahsAccountAndBudget,
+        toAccountAndBudget = ryansAccountAndBudget
+      )
+    }
 
-    actions.forEach { action -> action.apply(ynab) }
+    val otherTransactions = mutableMapOf<UUID, List<TransactionDetail>>()
+
+    actions.forEach { action ->
+      println("Apply: $action")
+      action.apply(ynab, getOtherAccountTransactions = { accountAndBudget ->
+        otherTransactions[accountAndBudget.accountId] ?: ynab.transactions.getTransactionsByAccount(
+          accountAndBudget.budgetId.toString(),
+          accountAndBudget.accountId.toString(),
+          null,
+          null,
+          null
+        )
+          .data
+          .transactions
+          .also { transactions -> otherTransactions[accountAndBudget.accountId] = transactions }
+      })
+    }
   }
 }
 
@@ -94,23 +120,48 @@ private fun TransactionDetail.existsIn(
   importIdMap: Map<String, TransactionDetail>
 ) = idMap.containsKey(importId) || importIdMap.containsKey(id)
 
-class CompleteTransactionAction(val transactionAction: TransactionAction, val toAccountAndBudget: AccountAndBudget) {
-  suspend fun apply(ynab: YnabClient) = transactionAction.apply(ynab, toAccountAndBudget)
+class CompleteTransactionAction(
+  val transactionAction: TransactionAction,
+  val fromAccountAndBudget: AccountAndBudget,
+  val toAccountAndBudget: AccountAndBudget
+) {
+  suspend fun apply(
+    ynab: YnabClient,
+    getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>
+  ) = transactionAction.apply(
+    ynab = ynab,
+    fromAccountAndBudget = fromAccountAndBudget,
+    toAccountAndBudget = toAccountAndBudget,
+    getOtherAccountTransactions = getOtherAccountTransactions
+  )
 }
 
 sealed class TransactionAction {
   data class Create(val fromTransaction: TransactionDetail) : TransactionAction()
-  data class CreateFromTransfer(
-    val fromTransaction: TransactionDetail,
-    val fromTransferTransaction: TransactionDetail
-  ) : TransactionAction()
-  data class Approve(val transactionId: UUID) : TransactionAction()
   data class Update(val fromTransaction: TransactionDetail, val toTransaction: TransactionDetail) : TransactionAction()
   data class Delete(val transactionId: UUID) : TransactionAction()
 }
 
-suspend fun TransactionAction.apply(ynab: YnabClient, toAccountAndBudget: AccountAndBudget) = when (this) {
+suspend fun TransactionAction.apply(
+  ynab: YnabClient,
+  fromAccountAndBudget: AccountAndBudget,
+  toAccountAndBudget: AccountAndBudget,
+  getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>
+) = when (this) {
   is Create -> {
+    val transactionDescription = if (fromTransaction.transferAccountId != null) {
+      val otherAccountTransactions = getOtherAccountTransactions(AccountAndBudget(fromTransaction.transferAccountId!!, fromAccountAndBudget.budgetId))
+      otherAccountTransactions
+        .find { transactionDetail ->
+          transactionDetail.subtransactions.any { it.transferTransactionId == fromTransaction.id }
+        }
+        ?.transactionDescription
+        ?: otherAccountTransactions
+          .find { transactionDetail -> transactionDetail.transferTransactionId == fromTransaction.id }!!
+          .let { transactionDetail -> TransactionDescription("Chicken Butt", transactionDetail.memo) }
+    } else {
+      fromTransaction.transactionDescription
+    }
     ynab.transactions.createTransaction(
       toAccountAndBudget.budgetId.toString(),
       SaveTransactionsWrapper(
@@ -119,9 +170,9 @@ suspend fun TransactionAction.apply(ynab: YnabClient, toAccountAndBudget: Accoun
           date = fromTransaction.date,
           amount = -fromTransaction.amount,
           payeeId = null,
-          payeeName = fromTransaction.payeeName,
+          payeeName = transactionDescription.payeeName,
           categoryId = null,
-          memo = fromTransaction.memo,
+          memo = transactionDescription.memo,
           cleared = SaveTransaction.ClearedEnum.CLEARED,
           approved = false,
           flagColor = null,
@@ -131,13 +182,14 @@ suspend fun TransactionAction.apply(ynab: YnabClient, toAccountAndBudget: Accoun
       )
     )
   }
-  is CreateFromTransfer -> TODO()
-  is Approve -> TODO()
   is Update -> TODO()
   is Delete -> TODO()
 }
 
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
+data class TransactionDescription(val payeeName: String?, val memo: String?)
+
+val TransactionDetail.transactionDescription get() = TransactionDescription(payeeName = payeeName, memo = memo)
 
 fun List<BudgetSummary>.findByName(name: String) =
   find { it.name == name } ?: throw IllegalStateException("Can't find budget: \"$name\"")
