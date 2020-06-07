@@ -3,14 +3,24 @@ package co.moelten.splity
 import co.moelten.splity.TransactionAction.Create
 import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
-import co.moelten.splity.UpdateField.CLEARED
+import co.moelten.splity.UpdateField.AMOUNT
+import co.moelten.splity.UpdateField.CLEAR
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.SaveTransaction
+import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.RECONCILED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.BLUE
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.GREEN
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.ORANGE
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.YELLOW
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
@@ -125,10 +135,10 @@ fun createActionsFromOneAccount(
     }
 }
 
-private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: TransactionDetail): List<UpdateField> {
-  val result = mutableListOf<UpdateField>()
+private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: TransactionDetail): Set<UpdateField> {
+  val result = mutableSetOf<UpdateField>()
   if (fromTransaction.approved && toTransaction.cleared == UNCLEARED) {
-    result.add(CLEARED)
+    result.add(CLEAR)
   }
   // TODO: Memo, amount
   return result
@@ -170,13 +180,13 @@ sealed class TransactionAction {
   data class Update(
     val fromTransaction: TransactionDetail,
     val toTransaction: TransactionDetail,
-    val updateFields: List<UpdateField>
+    val updateFields: Set<UpdateField>
   ) : TransactionAction()
   data class Delete(val transactionId: UUID) : TransactionAction()
 }
 
 enum class UpdateField {
-  CLEARED, MEMO, AMOUNT
+  CLEAR, AMOUNT
 }
 
 suspend fun TransactionAction.apply(
@@ -184,43 +194,114 @@ suspend fun TransactionAction.apply(
   fromAccountAndBudget: AccountAndBudget,
   toAccountAndBudget: AccountAndBudget,
   getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>
-) = when (this) {
-  is Create -> {
-    val transactionDescription = if (fromTransaction.transferAccountId != null) {
-      val otherAccountTransactions = getOtherAccountTransactions(AccountAndBudget(fromTransaction.transferAccountId!!, fromAccountAndBudget.budgetId))
-      otherAccountTransactions
-        .find { transactionDetail ->
-          transactionDetail.subtransactions.any { it.transferTransactionId == fromTransaction.id }
-        }
-        ?.transactionDescription
-        ?: otherAccountTransactions
-          .find { transactionDetail -> transactionDetail.transferTransactionId == fromTransaction.id }!!
-          .let { transactionDetail -> TransactionDescription("Chicken Butt", transactionDetail.memo) }
-    } else {
-      fromTransaction.transactionDescription
+): Unit = when (this) {
+  is Create -> applyCreate(
+    action = this,
+    getOtherAccountTransactions = getOtherAccountTransactions,
+    fromAccountAndBudget = fromAccountAndBudget,
+    ynab = ynab,
+    toAccountAndBudget = toAccountAndBudget
+  )
+  is Update -> applyUpdate(
+    ynab = ynab,
+    toAccountAndBudget = toAccountAndBudget
+  )
+  is Delete -> TODO()
+}
+
+private suspend fun Update.applyUpdate(
+  ynab: YnabClient,
+  toAccountAndBudget: AccountAndBudget
+) {
+  var cleared = toTransaction.cleared
+  updateFields.forEach { updateField ->
+    when (updateField) {
+      CLEAR -> cleared = if (fromTransaction.approved) CLEARED else UNCLEARED
+      AMOUNT -> TODO()
     }
-    ynab.transactions.createTransaction(
-      toAccountAndBudget.budgetId.toString(),
-      SaveTransactionsWrapper(
-        SaveTransaction(
-          accountId = toAccountAndBudget.accountId,
-          date = fromTransaction.date,
-          amount = -fromTransaction.amount,
-          payeeId = null,
-          payeeName = transactionDescription.payeeName,
-          categoryId = null,
-          memo = transactionDescription.memo,
-          cleared = SaveTransaction.ClearedEnum.CLEARED,
-          approved = false,
-          flagColor = null,
-          importId = fromTransaction.id,
-          subtransactions = null
-        )
+  }
+  ynab.transactions.updateTransaction(
+    toAccountAndBudget.budgetId.toString(),
+    toTransaction.id,
+    SaveTransactionWrapper(
+      SaveTransaction(
+        toTransaction.accountId,
+        toTransaction.date,
+        toTransaction.amount,
+        toTransaction.payeeId,
+        toTransaction.payeeName,
+        toTransaction.categoryId,
+        toTransaction.memo,
+        cleared.toSaveTransactionClearedEnum(),
+        toTransaction.approved,
+        toTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
+        toTransaction.importId,
+        null
       )
     )
+  )
+  Unit
+}
+
+private suspend fun applyCreate(
+  action: Create,
+  getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>,
+  fromAccountAndBudget: AccountAndBudget,
+  ynab: YnabClient,
+  toAccountAndBudget: AccountAndBudget
+) {
+  val transactionDescription = if (action.fromTransaction.transferAccountId != null) {
+    val otherAccountTransactions = getOtherAccountTransactions(
+      AccountAndBudget(
+        action.fromTransaction.transferAccountId!!,
+        fromAccountAndBudget.budgetId
+      )
+    )
+    otherAccountTransactions
+      .find { transactionDetail ->
+        transactionDetail.subtransactions.any { it.transferTransactionId == action.fromTransaction.id }
+      }
+      ?.transactionDescription
+      ?: otherAccountTransactions
+        .find { transactionDetail -> transactionDetail.transferTransactionId == action.fromTransaction.id }!!
+        .let { transactionDetail -> TransactionDescription("Chicken Butt", transactionDetail.memo) }
+  } else {
+    action.fromTransaction.transactionDescription
   }
-  is Update -> TODO()
-  is Delete -> TODO()
+  ynab.transactions.createTransaction(
+    toAccountAndBudget.budgetId.toString(),
+    SaveTransactionsWrapper(
+      SaveTransaction(
+        accountId = toAccountAndBudget.accountId,
+        date = action.fromTransaction.date,
+        amount = -action.fromTransaction.amount,
+        payeeId = null,
+        payeeName = transactionDescription.payeeName,
+        categoryId = null,
+        memo = transactionDescription.memo,
+        cleared = SaveTransaction.ClearedEnum.CLEARED,
+        approved = false,
+        flagColor = null,
+        importId = action.fromTransaction.id,
+        subtransactions = null
+      )
+    )
+  )
+}
+
+fun TransactionDetail.ClearedEnum.toSaveTransactionClearedEnum() = when (this) {
+  CLEARED -> SaveTransaction.ClearedEnum.CLEARED
+  UNCLEARED -> SaveTransaction.ClearedEnum.UNCLEARED
+  RECONCILED -> SaveTransaction.ClearedEnum.RECONCILED
+}
+
+fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (this) {
+  RED -> SaveTransaction.FlagColorEnum.RED
+  ORANGE -> SaveTransaction.FlagColorEnum.ORANGE
+  YELLOW -> SaveTransaction.FlagColorEnum.YELLOW
+  GREEN -> SaveTransaction.FlagColorEnum.GREEN
+  BLUE -> SaveTransaction.FlagColorEnum.BLUE
+  PURPLE -> SaveTransaction.FlagColorEnum.PURPLE
 }
 
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)

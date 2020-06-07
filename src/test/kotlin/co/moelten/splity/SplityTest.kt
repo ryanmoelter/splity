@@ -2,9 +2,12 @@ package co.moelten.splity
 
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.SaveTransaction
+import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsResponse
 import com.youneedabudget.client.models.SaveTransactionsResponseData
 import com.youneedabudget.client.models.SaveTransactionsWrapper
+import com.youneedabudget.client.models.TransactionResponse
+import com.youneedabudget.client.models.TransactionResponseData
 import com.youneedabudget.client.models.TransactionsResponse
 import com.youneedabudget.client.models.TransactionsResponseData
 import io.mockk.coEvery
@@ -69,7 +72,7 @@ internal class SplityTest {
 
     expectThat(actions) {
       hasSize(1)
-      contains(TransactionAction.Update(manuallyAddedTransactionComplementApproved, manuallyAddedTransaction, listOf(UpdateField.CLEARED)))
+      contains(TransactionAction.Update(manuallyAddedTransactionComplementApproved, manuallyAddedTransaction, setOf(UpdateField.CLEAR)))
     }
   }
 
@@ -226,6 +229,46 @@ internal class SplityTest {
       approved = false,
       flagColor = null,
       importId = transactionAddedFromTransfer.id,
+      subtransactions = null
+    ))
+  }
+
+  @Test
+  fun applyActions_update_approved() {
+    val ynab = mockk<YnabClient>()
+    coEvery { ynab.transactions.updateTransaction(any(), any(), any()) } returns
+      TransactionResponse(TransactionResponseData(mockk()))
+    runBlocking {
+      applyActions(
+        ynab,
+        listOf(
+          CompleteTransactionAction(
+            transactionAction = TransactionAction.Update(
+              fromTransaction = manuallyAddedTransactionComplement.copy(approved = true),
+              toTransaction = manuallyAddedTransaction,
+              updateFields = setOf(UpdateField.CLEAR)
+            ),
+            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
+            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+          )
+        )
+      )
+    }
+
+    val saveTransactionSlot = slot<SaveTransactionWrapper>()
+    coVerify { ynab.transactions.updateTransaction(TO_BUDGET_ID.toString(), manuallyAddedTransaction.id, capture(saveTransactionSlot)) }
+    expectThat(saveTransactionSlot.captured.transaction).isEqualTo(SaveTransaction(
+      accountId = manuallyAddedTransaction.accountId,
+      date = manuallyAddedTransaction.date,
+      amount = manuallyAddedTransaction.amount,
+      payeeId = manuallyAddedTransaction.payeeId,
+      payeeName = manuallyAddedTransaction.payeeName,
+      categoryId = manuallyAddedTransaction.categoryId,
+      memo = manuallyAddedTransaction.memo,
+      cleared = SaveTransaction.ClearedEnum.CLEARED,
+      approved = manuallyAddedTransaction.approved,
+      flagColor = manuallyAddedTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
+      importId = manuallyAddedTransaction.importId,
       subtransactions = null
     ))
   }
