@@ -23,7 +23,11 @@ val moshi: Moshi = Moshi.Builder()
 
 
 val client: OkHttpClient = OkHttpClient.Builder()
-  .addInterceptor(HttpLoggingInterceptor().apply {
+  .addInterceptor(HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
+    override fun log(message: String) {
+      println(message)
+    }
+  }).apply {
     level = BODY
   })
   .addInterceptor { chain ->
