@@ -159,7 +159,7 @@ private fun TransactionDetail.findIn(
   importIdMap: Map<String, TransactionDetail>
 ) = idMap[importId] ?: importIdMap[id]
 
-class CompleteTransactionAction(
+data class CompleteTransactionAction(
   val transactionAction: TransactionAction,
   val fromAccountAndBudget: AccountAndBudget,
   val toAccountAndBudget: AccountAndBudget
