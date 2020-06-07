@@ -151,6 +151,45 @@ internal class SplityTest {
   }
 
   @Test
+  fun applyActions_create_fromTransfer_withoutDuplicatingNetworkCalls() {
+    val ynab = mockk<YnabClient>()
+    coEvery { ynab.transactions.createTransaction(any(), any()) } returns
+      SaveTransactionsResponse(SaveTransactionsResponseData(emptyList(), 1L))
+    runBlocking {
+      applyActions(
+        ynab,
+        listOf(
+          CompleteTransactionAction(
+            transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
+            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
+            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+          )
+        ),
+        mutableMapOf(
+          FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferNonSplitSource)
+        )
+      )
+    }
+
+    val saveTransactionSlot = slot<SaveTransactionsWrapper>()
+    coVerify { ynab.transactions.createTransaction(TO_BUDGET_ID.toString(), capture(saveTransactionSlot)) }
+    expectThat(saveTransactionSlot.captured.transaction).isEqualTo(SaveTransaction(
+      accountId = TO_ACCOUNT_ID,
+      date = transactionAddedFromTransfer.date,
+      amount = -transactionAddedFromTransfer.amount,
+      payeeId = null,
+      payeeName = "Chicken Butt",
+      categoryId = null,
+      memo = transactionTransferNonSplitSource.memo,
+      cleared = SaveTransaction.ClearedEnum.CLEARED,
+      approved = false,
+      flagColor = null,
+      importId = transactionAddedFromTransfer.id,
+      subtransactions = null
+    ))
+  }
+
+  @Test
   fun applyActions_create_fromSplitTransfer() {
     val ynab = mockk<YnabClient>()
     coEvery { ynab.transactions.createTransaction(any(), any()) } returns

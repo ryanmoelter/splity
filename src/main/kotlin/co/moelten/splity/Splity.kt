@@ -72,10 +72,9 @@ fun main() {
 
 internal suspend fun applyActions(
   ynab: YnabClient,
-  actions: List<CompleteTransactionAction>
+  actions: List<CompleteTransactionAction>,
+  otherTransactions: MutableMap<UUID, List<TransactionDetail>> = mutableMapOf()
 ) {
-  val otherTransactions = mutableMapOf<UUID, List<TransactionDetail>>()
-
   actions.forEach { action ->
     println("Apply: $action")
     action.apply(ynab, getOtherAccountTransactions = { accountAndBudget ->
