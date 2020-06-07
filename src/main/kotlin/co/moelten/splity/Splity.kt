@@ -140,7 +140,7 @@ private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: T
   if (fromTransaction.approved && toTransaction.cleared == UNCLEARED) {
     result.add(CLEAR)
   }
-  // TODO: Memo, amount
+  // TODO: amount
   return result
 }
 
@@ -225,22 +225,21 @@ private suspend fun Update.applyUpdate(
     toTransaction.id,
     SaveTransactionWrapper(
       SaveTransaction(
-        toTransaction.accountId,
-        toTransaction.date,
-        toTransaction.amount,
-        toTransaction.payeeId,
-        toTransaction.payeeName,
-        toTransaction.categoryId,
-        toTransaction.memo,
-        cleared.toSaveTransactionClearedEnum(),
-        toTransaction.approved,
-        toTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
-        toTransaction.importId,
-        null
+        accountId = toTransaction.accountId,
+        date = toTransaction.date,
+        amount = toTransaction.amount,
+        payeeId = toTransaction.payeeId,
+        payeeName = null,
+        categoryId = toTransaction.categoryId,
+        memo = toTransaction.memo,
+        cleared = cleared.toSaveTransactionClearedEnum(),
+        approved = toTransaction.approved,
+        flagColor = toTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
+        importId = toTransaction.importId,
+        subtransactions = null
       )
     )
   )
-  Unit
 }
 
 private suspend fun applyCreate(

@@ -262,7 +262,7 @@ internal class SplityTest {
       date = manuallyAddedTransaction.date,
       amount = manuallyAddedTransaction.amount,
       payeeId = manuallyAddedTransaction.payeeId,
-      payeeName = manuallyAddedTransaction.payeeName,
+      payeeName = null,
       categoryId = manuallyAddedTransaction.categoryId,
       memo = manuallyAddedTransaction.memo,
       cleared = SaveTransaction.ClearedEnum.CLEARED,
