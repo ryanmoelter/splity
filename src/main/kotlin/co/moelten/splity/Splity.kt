@@ -3,16 +3,17 @@ package co.moelten.splity
 import co.moelten.splity.TransactionAction.Create
 import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
+import co.moelten.splity.UpdateField.CLEARED
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import kotlinx.coroutines.runBlocking
 import java.util.UUID
 
-// Copy these directly from YNAB, since some characters look similar but aren't (like apostrophes and dashes)
 const val RYANS_BUDGET_NAME = "2019.1"
 const val RYANS_SPLITWISE_ACCOUNT_NAME = "Split - Sarah"
 const val SARAHS_BUDGET_NAME = "Sarah’s Budget 2020"
@@ -45,7 +46,7 @@ fun main() {
     ).data.transactions
     val sarahsAccountAndBudget = AccountAndBudget(sarahsSplitwiseAccountId, sarahsBudget.id)
 
-    var actions = createActionsFromOneAccount(
+    val actions = createActionsFromOneAccount(
       fromTransactions = ryansTransactions,
       toTransactions = sarahsTransactions
     ).map { transactionAction ->
@@ -54,8 +55,7 @@ fun main() {
         fromAccountAndBudget = ryansAccountAndBudget,
         toAccountAndBudget = sarahsAccountAndBudget
       )
-    }
-    actions = actions + createActionsFromOneAccount(
+    } + createActionsFromOneAccount(
       fromTransactions = sarahsTransactions,
       toTransactions = ryansTransactions
     ).map { transactionAction ->
@@ -66,23 +66,30 @@ fun main() {
       )
     }
 
-    val otherTransactions = mutableMapOf<UUID, List<TransactionDetail>>()
+    applyActions(ynab, actions)
+  }
+}
 
-    actions.forEach { action ->
-      println("Apply: $action")
-      action.apply(ynab, getOtherAccountTransactions = { accountAndBudget ->
-        otherTransactions[accountAndBudget.accountId] ?: ynab.transactions.getTransactionsByAccount(
-          accountAndBudget.budgetId.toString(),
-          accountAndBudget.accountId.toString(),
-          null,
-          null,
-          null
-        )
-          .data
-          .transactions
-          .also { transactions -> otherTransactions[accountAndBudget.accountId] = transactions }
-      })
-    }
+internal suspend fun applyActions(
+  ynab: YnabClient,
+  actions: List<CompleteTransactionAction>
+) {
+  val otherTransactions = mutableMapOf<UUID, List<TransactionDetail>>()
+
+  actions.forEach { action ->
+    println("Apply: $action")
+    action.apply(ynab, getOtherAccountTransactions = { accountAndBudget ->
+      otherTransactions[accountAndBudget.accountId] ?: ynab.transactions.getTransactionsByAccount(
+        accountAndBudget.budgetId.toString(),
+        accountAndBudget.accountId.toString(),
+        null,
+        null,
+        null
+      )
+        .data
+        .transactions
+        .also { transactions -> otherTransactions[accountAndBudget.accountId] = transactions }
+    })
   }
 }
 
@@ -105,9 +112,27 @@ fun createActionsFromOneAccount(
         fromTransaction.doesNotExistIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap) && fromTransaction.approved -> {
           Create(fromTransaction)
         }
+        fromTransaction.existsIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap) -> {
+          val toTransaction = fromTransaction.findIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap)!!
+          val updates = findDifferences(fromTransaction = fromTransaction, toTransaction = toTransaction)
+          if (updates.isNotEmpty()) {
+            Update(fromTransaction = fromTransaction, toTransaction = toTransaction, updateFields = updates)
+          } else {
+            null
+          }
+        }
         else -> null
       }
     }
+}
+
+private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: TransactionDetail): List<UpdateField> {
+  val result = mutableListOf<UpdateField>()
+  if (fromTransaction.approved && toTransaction.cleared == UNCLEARED) {
+    result.add(CLEARED)
+  }
+  // TODO: Memo, amount
+  return result
 }
 
 private fun TransactionDetail.doesNotExistIn(
@@ -119,6 +144,11 @@ private fun TransactionDetail.existsIn(
   idMap: Map<String, TransactionDetail>,
   importIdMap: Map<String, TransactionDetail>
 ) = idMap.containsKey(importId) || importIdMap.containsKey(id)
+
+private fun TransactionDetail.findIn(
+  idMap: Map<String, TransactionDetail>,
+  importIdMap: Map<String, TransactionDetail>
+) = idMap[importId] ?: importIdMap[id]
 
 class CompleteTransactionAction(
   val transactionAction: TransactionAction,
@@ -138,8 +168,16 @@ class CompleteTransactionAction(
 
 sealed class TransactionAction {
   data class Create(val fromTransaction: TransactionDetail) : TransactionAction()
-  data class Update(val fromTransaction: TransactionDetail, val toTransaction: TransactionDetail) : TransactionAction()
+  data class Update(
+    val fromTransaction: TransactionDetail,
+    val toTransaction: TransactionDetail,
+    val updateFields: List<UpdateField>
+  ) : TransactionAction()
   data class Delete(val transactionId: UUID) : TransactionAction()
+}
+
+enum class UpdateField {
+  CLEARED, MEMO, AMOUNT
 }
 
 suspend fun TransactionAction.apply(
