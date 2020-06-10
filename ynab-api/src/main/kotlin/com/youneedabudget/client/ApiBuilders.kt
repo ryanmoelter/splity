@@ -22,7 +22,7 @@ val moshi: Moshi = Moshi.Builder()
   .build()
 
 
-val client: OkHttpClient = OkHttpClient.Builder()
+fun createOkHttpClient(apiKey: String): OkHttpClient = OkHttpClient.Builder()
   .addInterceptor(HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
     override fun log(message: String) {
       println(message)
@@ -32,19 +32,20 @@ val client: OkHttpClient = OkHttpClient.Builder()
   })
   .addInterceptor { chain ->
     val newRequest: Request = chain.request().newBuilder()
-      .addHeader("Authorization", "Bearer $YNAB_API_KEY")
+      .addHeader("Authorization", "Bearer $apiKey")
       .build()
     chain.proceed(newRequest)
   }
   .build()
 
-val retrofit: Retrofit = Retrofit.Builder()
+fun createRetrofit(apiKey: String): Retrofit = Retrofit.Builder()
   .baseUrl("https://api.youneedabudget.com/v1/")
-  .client(client)
+  .client(createOkHttpClient(apiKey))
   .addConverterFactory(GeneratedCodeConverters.converterFactory(moshi))
   .build()
 
-class YnabClient {
+class YnabClient(apiKey: String) {
+  private val retrofit by lazy { createRetrofit(apiKey) }
   val budgets: BudgetsApi by lazy { retrofit.create(BudgetsApi::class.java) }
   val accounts: AccountsApi by lazy { retrofit.create(AccountsApi::class.java) }
   val transactions: TransactionsApi by lazy { retrofit.create(TransactionsApi::class.java) }

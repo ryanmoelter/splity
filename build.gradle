@@ -19,6 +19,9 @@ dependencies {
     implementation(project(":ynab-api"))
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7"
+    implementation 'com.sksamuel.hoplite:hoplite-core:1.2.3'
+    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.2.3'
+
     testImplementation "org.junit.jupiter:junit-jupiter:5.4.2"
     testImplementation "io.strikt:strikt-core:0.26.1"
     testImplementation "io.mockk:mockk:1.10.0"

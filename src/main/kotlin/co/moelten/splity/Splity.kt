@@ -5,9 +5,11 @@ import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
+import com.sksamuel.hoplite.ConfigLoader
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
+import com.youneedabudget.client.models.BudgetSummaryResponseData
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
@@ -22,62 +24,64 @@ import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.YELLOW
 import kotlinx.coroutines.runBlocking
+import java.io.File
 import java.util.UUID
-
-const val RYANS_BUDGET_NAME = "2019.1"
-const val RYANS_SPLITWISE_ACCOUNT_NAME = "Split - Sarah"
-const val SARAHS_BUDGET_NAME = "Sarah’s Budget 2020"
-const val SARAHS_SPLITWISE_ACCOUNT_NAME = "Split - Ryan"
 
 fun main() {
   runBlocking {
-    val ynab = YnabClient()
-
-    val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
-    val ryansBudget = budgetResponse.budgets.findByName(RYANS_BUDGET_NAME)
-    val ryansSplitwiseAccountId = ryansBudget.accounts!!.findByName(RYANS_SPLITWISE_ACCOUNT_NAME).id
-    val ryansTransactions = ynab.transactions.getTransactionsByAccount(
-      budgetId = ryansBudget.id.toString(),
-      accountId = ryansSplitwiseAccountId.toString(),
-      sinceDate = null,
-      type = null,
-      lastKnowledgeOfServer = null
-    ).data.transactions
-    val ryansAccountAndBudget = AccountAndBudget(ryansSplitwiseAccountId, ryansBudget.id)
-
-    val sarahsBudget = budgetResponse.budgets.findByName(SARAHS_BUDGET_NAME)
-    val sarahsSplitwiseAccountId = sarahsBudget.accounts!!.findByName(SARAHS_SPLITWISE_ACCOUNT_NAME).id
-    val sarahsTransactions = ynab.transactions.getTransactionsByAccount(
-      budgetId = sarahsBudget.id.toString(),
-      accountId = sarahsSplitwiseAccountId.toString(),
-      sinceDate = null,
-      type = null,
-      lastKnowledgeOfServer = null
-    ).data.transactions
-    val sarahsAccountAndBudget = AccountAndBudget(sarahsSplitwiseAccountId, sarahsBudget.id)
-
-    val actions = createActionsFromOneAccount(
-      fromTransactions = ryansTransactions,
-      toTransactions = sarahsTransactions
-    ).map { transactionAction ->
-      CompleteTransactionAction(
-        transactionAction = transactionAction,
-        fromAccountAndBudget = ryansAccountAndBudget,
-        toAccountAndBudget = sarahsAccountAndBudget
-      )
-    } + createActionsFromOneAccount(
-      fromTransactions = sarahsTransactions,
-      toTransactions = ryansTransactions
-    ).map { transactionAction ->
-      CompleteTransactionAction(
-        transactionAction = transactionAction,
-        fromAccountAndBudget = sarahsAccountAndBudget,
-        toAccountAndBudget = ryansAccountAndBudget
-      )
-    }
-
-    applyActions(ynab, actions)
+    val config = ConfigLoader().loadConfigOrThrow<Config>(File("./config.yaml"))
+    mirrorTransactions(config)
   }
+}
+
+private suspend fun mirrorTransactions(config: Config) {
+  val ynab = YnabClient(config.ynabToken)
+
+  val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
+  val (firstTransactions, firstAccountAndBudget) =
+    getTransactionsAndIds(ynab, budgetResponse, config.firstAccount)
+  val (secondTransactions, secondAccountAndBudget) =
+    getTransactionsAndIds(ynab, budgetResponse, config.secondAccount)
+
+  val actions = createActionsFromOneAccount(
+    fromTransactions = firstTransactions,
+    toTransactions = secondTransactions
+  ).map { transactionAction ->
+    CompleteTransactionAction(
+      transactionAction = transactionAction,
+      fromAccountAndBudget = firstAccountAndBudget,
+      toAccountAndBudget = secondAccountAndBudget
+    )
+  } + createActionsFromOneAccount(
+    fromTransactions = secondTransactions,
+    toTransactions = firstTransactions
+  ).map { transactionAction ->
+    CompleteTransactionAction(
+      transactionAction = transactionAction,
+      fromAccountAndBudget = secondAccountAndBudget,
+      toAccountAndBudget = firstAccountAndBudget
+    )
+  }
+
+  applyActions(ynab, actions)
+}
+
+private suspend fun getTransactionsAndIds(
+  ynab: YnabClient,
+  budgetResponse: BudgetSummaryResponseData,
+  accoungConfig: AccountConfig
+): Pair<List<TransactionDetail>, AccountAndBudget> {
+  val budget = budgetResponse.budgets.findByName(accoungConfig.budgetName)
+  val splitAccountId = budget.accounts!!.findByName(accoungConfig.accountName).id
+  val transactions = ynab.transactions.getTransactionsByAccount(
+    budgetId = budget.id.toString(),
+    accountId = splitAccountId.toString(),
+    sinceDate = null,
+    type = null,
+    lastKnowledgeOfServer = null
+  ).data.transactions
+  val ryansAccountAndBudget = AccountAndBudget(splitAccountId, budget.id)
+  return Pair(transactions, ryansAccountAndBudget)
 }
 
 internal suspend fun applyActions(
