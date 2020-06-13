@@ -142,7 +142,7 @@ fun createActionsFromOneAccount(
 private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: TransactionDetail): Set<UpdateField> {
   val result = mutableSetOf<UpdateField>()
   if (fromTransaction.approved && toTransaction.cleared == UNCLEARED) {
-    result.add(CLEAR)
+    // TODO: result.add(CLEAR)
   }
   // TODO: amount
   return result
