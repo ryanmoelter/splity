@@ -4,6 +4,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.youneedabudget.client.apis.AccountsApi
 import com.youneedabudget.client.apis.BudgetsApi
+import com.youneedabudget.client.apis.CategoriesApi
 import com.youneedabudget.client.apis.TransactionsApi
 import com.youneedabudget.client.tools.GeneratedCodeConverters
 import com.youneedabudget.client.tools.TypesAdapterFactory
@@ -44,9 +45,17 @@ fun createRetrofit(apiKey: String): Retrofit = Retrofit.Builder()
   .addConverterFactory(GeneratedCodeConverters.converterFactory(moshi))
   .build()
 
-class YnabClient(apiKey: String) {
+interface YnabClient {
+  val budgets: BudgetsApi
+  val accounts: AccountsApi
+  val transactions: TransactionsApi
+  val categories: CategoriesApi
+}
+
+class YnabClientImpl(apiKey: String) : YnabClient {
   private val retrofit by lazy { createRetrofit(apiKey) }
-  val budgets: BudgetsApi by lazy { retrofit.create(BudgetsApi::class.java) }
-  val accounts: AccountsApi by lazy { retrofit.create(AccountsApi::class.java) }
-  val transactions: TransactionsApi by lazy { retrofit.create(TransactionsApi::class.java) }
+  override val budgets: BudgetsApi by lazy { retrofit.create(BudgetsApi::class.java) }
+  override val accounts: AccountsApi by lazy { retrofit.create(AccountsApi::class.java) }
+  override val transactions: TransactionsApi by lazy { retrofit.create(TransactionsApi::class.java) }
+  override val categories: CategoriesApi by lazy { retrofit.create(CategoriesApi::class.java) }
 }

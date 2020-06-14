@@ -22,7 +22,7 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 
-internal class SplityTest {
+internal class MirrorTransactionsTest {
 
   @Test
   fun addTransaction_add() {
