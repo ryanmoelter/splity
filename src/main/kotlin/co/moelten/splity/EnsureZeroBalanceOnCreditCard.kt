@@ -6,12 +6,20 @@ import com.youneedabudget.client.models.SaveMonthCategory
 import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import org.threeten.bp.LocalDate
 
-suspend fun ensureZeroBalanceOnCreditCards(ynab: YnabClient, config: Config, budgetResponse: BudgetSummaryResponseData) {
+suspend fun ensureZeroBalanceOnCreditCards(
+  ynab: YnabClient,
+  config: Config,
+  budgetResponse: BudgetSummaryResponseData
+) {
   ensureZeroBalanceOnCreditCardsForOneAccount(ynab, config.firstAccount, budgetResponse)
   ensureZeroBalanceOnCreditCardsForOneAccount(ynab, config.secondAccount, budgetResponse)
 }
 
-suspend fun ensureZeroBalanceOnCreditCardsForOneAccount(ynab: YnabClient, accountConfig: AccountConfig, budgetResponse: BudgetSummaryResponseData) {
+suspend fun ensureZeroBalanceOnCreditCardsForOneAccount(
+  ynab: YnabClient,
+  accountConfig: AccountConfig,
+  budgetResponse: BudgetSummaryResponseData
+) {
   val budget = budgetResponse.budgets.find { it.name == accountConfig.budgetName }!!
 
   val categories = ynab.categories.getCategories(budget.id.toString(), 0).data
@@ -30,14 +38,13 @@ suspend fun ensureZeroBalanceOnCreditCardsForOneAccount(ynab: YnabClient, accoun
       println("Action: Update ${category.name}'s balance from ${category.balance} to ${-account.balance} " +
         "(budgeted from ${category.budgeted} to ${category.budgeted - (category.balance + account.balance)})")
       ynab.categories.updateMonthCategory(
-        budget.id.toString(),
-        LocalDate.now(),
-        category.id.toString(),
-        SaveMonthCategoryWrapper(SaveMonthCategory(category.budgeted - (category.balance + account.balance)))
+        budgetId = budget.id.toString(),
+        month = LocalDate.now(),
+        categoryId = category.id.toString(),
+        data = SaveMonthCategoryWrapper(SaveMonthCategory(category.budgeted - (category.balance + account.balance)))
       )
     } else {
       println("No action: ${category.name}'s balance is ${category.balance}")
     }
   }
 }
-

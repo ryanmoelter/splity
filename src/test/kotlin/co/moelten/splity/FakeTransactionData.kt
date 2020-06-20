@@ -4,18 +4,7 @@ import com.youneedabudget.client.models.SubTransaction
 import com.youneedabudget.client.models.TransactionDetail
 import org.threeten.bp.LocalDate
 import org.threeten.bp.Month
-import java.util.UUID.randomUUID
-
-val FROM_BUDGET_ID = randomUUID()
-val FROM_ACCOUNT_ID = randomUUID()
-const val FROM_ACCOUNT_NAME = "Split - From"
-
-val TO_BUDGET_ID = randomUUID()
-val TO_ACCOUNT_ID = randomUUID()
-const val TO_ACCOUNT_NAME = "Split - To"
-
-val FROM_TRANSFER_SOURCE_ACCOUNT_ID = randomUUID()
-const val FROM_TRANSFER_SOURCE_ACCOUNT_NAME = "Checking"
+import java.util.UUID
 
 val manuallyAddedTransaction = TransactionDetail(
   id = "manuallyAddedTransaction",
@@ -28,9 +17,9 @@ val manuallyAddedTransaction = TransactionDetail(
   accountName = FROM_ACCOUNT_NAME,
   memo = "Manually added transaction",
   flagColor = null,
-  payeeId = randomUUID(),
+  payeeId = UUID.randomUUID(),
   payeeName = "Target",
-  categoryId = randomUUID(),
+  categoryId = UUID.randomUUID(),
   categoryName = "Household goods",
   transferAccountId = null,
   transferTransactionId = null,
@@ -50,9 +39,9 @@ val manuallyAddedTransactionComplement = TransactionDetail(
   accountName = TO_ACCOUNT_NAME,
   memo = "Manually added transaction",
   flagColor = null,
-  payeeId = randomUUID(),
+  payeeId = UUID.randomUUID(),
   payeeName = "Target",
-  categoryId = randomUUID(),
+  categoryId = UUID.randomUUID(),
   categoryName = "Household goods",
   transferAccountId = null,
   transferTransactionId = null,
@@ -72,7 +61,7 @@ val transactionAddedFromTransfer = TransactionDetail(
   accountName = FROM_ACCOUNT_NAME,
   memo = "Transaction added by split",
   flagColor = null,
-  payeeId = randomUUID(),
+  payeeId = UUID.randomUUID(),
   payeeName = "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
@@ -94,13 +83,13 @@ val transactionTransferSplitSource = TransactionDetail(
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Split transaction source",
   flagColor = null,
-  payeeId = randomUUID(),
+  payeeId = UUID.randomUUID(),
   payeeName = "Hello Alfred",
-  categoryId = randomUUID(),
+  categoryId = UUID.randomUUID(),
   categoryName = "Split SubCategory",
   transferAccountId = null,
   transferTransactionId = null,
-  matchedTransactionId = randomUUID().toString(),
+  matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,
   subtransactions = listOf(
     SubTransaction(
@@ -109,9 +98,9 @@ val transactionTransferSplitSource = TransactionDetail(
       amount = -20000,
       deleted = false,
       memo = "I'm not the split you're looking for",
-      payeeId = randomUUID(),
+      payeeId = UUID.randomUUID(),
       payeeName = null,
-      categoryId = randomUUID(),
+      categoryId = UUID.randomUUID(),
       categoryName = "Household Goods",
       transferAccountId = null,
       transferTransactionId = null
@@ -122,7 +111,7 @@ val transactionTransferSplitSource = TransactionDetail(
       amount = -10000,
       deleted = false,
       memo = "I'm the split you're looking for",
-      payeeId = randomUUID(),
+      payeeId = UUID.randomUUID(),
       payeeName = "Transfer : $FROM_ACCOUNT_NAME",
       categoryId = null,
       categoryName = null,
@@ -143,13 +132,13 @@ val transactionTransferNonSplitSource = TransactionDetail(
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Transfer transaction source",
   flagColor = null,
-  payeeId = randomUUID(),
+  payeeId = UUID.randomUUID(),
   payeeName = "Transfer : $FROM_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
   transferAccountId = FROM_ACCOUNT_ID,
   transferTransactionId = "transactionAddedFromTransfer",
-  matchedTransactionId = randomUUID().toString(),
+  matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,
   subtransactions = emptyList()
 )
