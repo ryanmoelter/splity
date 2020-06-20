@@ -21,6 +21,7 @@ import com.youneedabudget.client.models.CategoryGroupWithCategories
 import com.youneedabudget.client.models.CategoryResponse
 import com.youneedabudget.client.models.HybridTransactionsResponse
 import com.youneedabudget.client.models.SaveCategoryResponse
+import com.youneedabudget.client.models.SaveCategoryResponseData
 import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
@@ -241,7 +242,12 @@ class FakeCategories(val fakeDatabase: FakeDatabase) : CategoriesApi {
     categoryId: String,
     data: SaveMonthCategoryWrapper
   ): SaveCategoryResponse {
-    TODO("Not yet implemented")
+    val category = fakeDatabase.budgetToCategoryGroupsMap
+      .getValue(budgetId.toUUID())
+      .flatMap { it.categories }
+      .find { it.id == categoryId.toUUID() }!!
+    category.budgeted = data.category.budgeted
+    return SaveCategoryResponse(SaveCategoryResponseData(category, 0))
   }
 
 }
