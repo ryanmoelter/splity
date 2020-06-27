@@ -249,7 +249,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransferWithLongId.amount)
-      that(transactionList[0].importId).isEqualTo(transactionAddedFromTransferWithLongId.id)
+      that(transactionList[0].importId).isEqualTo(subtransactionTransferSplitSource.id)
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransferWithLongId.date)
       that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
       that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo)

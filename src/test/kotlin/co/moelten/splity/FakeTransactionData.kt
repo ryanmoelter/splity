@@ -6,6 +6,8 @@ import org.threeten.bp.LocalDate
 import org.threeten.bp.Month
 import java.util.UUID
 
+const val TRANSACTION_ADDED_FROM_TRANSFER_ID = "transactionAddedFromTransferLength36"
+
 val manuallyAddedTransaction = TransactionDetail(
   id = "manuallyAddedTransaction",
   date = LocalDate.of(2020, Month.FEBRUARY, 6),
@@ -51,7 +53,7 @@ val manuallyAddedTransactionComplement = TransactionDetail(
 )
 
 val transactionAddedFromTransfer = TransactionDetail(
-  id = "transactionAddedFromTransfer",
+  id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
   amount = -10000,
   cleared = TransactionDetail.ClearedEnum.UNCLEARED,
@@ -97,7 +99,7 @@ val subtransactionTransferSplitSource = SubTransaction(
   categoryId = null,
   categoryName = null,
   transferAccountId = FROM_ACCOUNT_ID,
-  transferTransactionId = "transactionAddedFromTransfer"
+  transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID
 )
 
 val transactionTransferSplitSource = TransactionDetail(
@@ -141,7 +143,7 @@ val transactionTransferNonSplitSource = TransactionDetail(
   categoryId = null,
   categoryName = null,
   transferAccountId = FROM_ACCOUNT_ID,
-  transferTransactionId = "transactionAddedFromTransfer",
+  transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,
   subtransactions = emptyList()
