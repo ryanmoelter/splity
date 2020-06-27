@@ -1,5 +1,6 @@
 package co.moelten.splity
 
+import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.apis.AccountsApi
 import com.youneedabudget.client.apis.BudgetsApi
@@ -138,6 +139,9 @@ class FakeTransactions(
   private val fakeDatabase: FakeDatabase
 ) : TransactionsApi {
   override suspend fun createTransaction(budgetId: String, data: SaveTransactionsWrapper): SaveTransactionsResponse {
+    require(data.transaction!!.importId?.length ?: 0 <= 36) {
+      "import_id (${data.transaction!!.importId}) is too long (maximum is $MAX_IMPORT_ID_LENGTH characters)"
+    }
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
     val accountId = data.transaction!!.accountId
     val accountToTransactionsMap = fakeDatabase.accountToTransactionsMap.toMutableMap()

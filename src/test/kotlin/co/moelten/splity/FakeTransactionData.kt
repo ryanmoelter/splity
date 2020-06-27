@@ -72,6 +72,34 @@ val transactionAddedFromTransfer = TransactionDetail(
   subtransactions = emptyList()
 )
 
+val subtransactionNonTransferSplitSource = SubTransaction(
+  id = "splitNonTransferSubtransaction",
+  transactionId = "transactionTransferSplitSource",
+  amount = -20000,
+  deleted = false,
+  memo = "I'm not the split you're looking for",
+  payeeId = UUID.randomUUID(),
+  payeeName = null,
+  categoryId = UUID.randomUUID(),
+  categoryName = "Household Goods",
+  transferAccountId = null,
+  transferTransactionId = null
+)
+
+val subtransactionTransferSplitSource = SubTransaction(
+  id = "splitTransferSubtransaction",
+  transactionId = "transactionTransferSplitSource",
+  amount = -10000,
+  deleted = false,
+  memo = "I'm the split you're looking for",
+  payeeId = UUID.randomUUID(),
+  payeeName = "Transfer : $FROM_ACCOUNT_NAME",
+  categoryId = null,
+  categoryName = null,
+  transferAccountId = FROM_ACCOUNT_ID,
+  transferTransactionId = "transactionAddedFromTransfer"
+)
+
 val transactionTransferSplitSource = TransactionDetail(
   id = "transactionTransferSplitSource",
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
@@ -92,32 +120,8 @@ val transactionTransferSplitSource = TransactionDetail(
   matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,
   subtransactions = listOf(
-    SubTransaction(
-      id = "splitNonTransferSubtransaction",
-      transactionId = "transactionTransferSplitSource",
-      amount = -20000,
-      deleted = false,
-      memo = "I'm not the split you're looking for",
-      payeeId = UUID.randomUUID(),
-      payeeName = null,
-      categoryId = UUID.randomUUID(),
-      categoryName = "Household Goods",
-      transferAccountId = null,
-      transferTransactionId = null
-    ),
-    SubTransaction(
-      id = "splitTransferSubtransaction",
-      transactionId = "transactionTransferSplitSource",
-      amount = -10000,
-      deleted = false,
-      memo = "I'm the split you're looking for",
-      payeeId = UUID.randomUUID(),
-      payeeName = "Transfer : $FROM_ACCOUNT_NAME",
-      categoryId = null,
-      categoryName = null,
-      transferAccountId = FROM_ACCOUNT_ID,
-      transferTransactionId = "transactionAddedFromTransfer"
-    )
+    subtransactionNonTransferSplitSource,
+    subtransactionTransferSplitSource
   )
 )
 

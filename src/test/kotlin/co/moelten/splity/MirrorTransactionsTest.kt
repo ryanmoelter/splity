@@ -216,6 +216,50 @@ internal class MirrorTransactionsTest {
   }
 
   @Test
+  fun applyActions_create_fromSplitTransfer_recurringTransaction() {
+    val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer.copy(
+      id = transactionAddedFromTransfer.id + "_st_1_2020-06-20"
+    )
+    setUpDatabase {
+      accountToTransactionsMap = mapOf(
+        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
+          subtransactions = listOf(
+            subtransactionNonTransferSplitSource,
+            subtransactionTransferSplitSource.copy(
+              transferTransactionId = subtransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+            )
+          )
+        ))
+      )
+    }
+    runBlocking {
+      applyActions(
+        ynab,
+        listOf(
+          CompleteTransactionAction(
+            transactionAction = TransactionAction.Create(transactionAddedFromTransferWithLongId),
+            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
+            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+          )
+        )
+      )
+    }
+
+    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    expect {
+      that(transactionList).hasSize(1)
+      that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransferWithLongId.amount)
+      that(transactionList[0].importId).isEqualTo(transactionAddedFromTransferWithLongId.id)
+      that(transactionList[0].date).isEqualTo(transactionAddedFromTransferWithLongId.date)
+      that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
+      that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo)
+      that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
+      that(transactionList[0].approved).isFalse()
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+    }
+  }
+
+  @Test
   fun applyActions_update_approved() {
     val ynab = mockk<YnabClient>()
     coEvery { ynab.transactions.updateTransaction(any(), any(), any()) } returns

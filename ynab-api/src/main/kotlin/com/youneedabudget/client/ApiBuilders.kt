@@ -22,7 +22,6 @@ val moshi: Moshi = Moshi.Builder()
   .add(UuidAdapter())
   .build()
 
-
 fun createOkHttpClient(apiKey: String): OkHttpClient = OkHttpClient.Builder()
   .addInterceptor(HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
     override fun log(message: String) {
@@ -59,3 +58,5 @@ class YnabClientImpl(apiKey: String) : YnabClient {
   override val transactions: TransactionsApi by lazy { retrofit.create(TransactionsApi::class.java) }
   override val categories: CategoriesApi by lazy { retrofit.create(CategoriesApi::class.java) }
 }
+
+const val MAX_IMPORT_ID_LENGTH = 36
