@@ -139,14 +139,13 @@ class FakeTransactions(
 ) : TransactionsApi {
   override suspend fun createTransaction(budgetId: String, data: SaveTransactionsWrapper): SaveTransactionsResponse {
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
-    fakeDatabase.accountToTransactionsMap = fakeDatabase.accountToTransactionsMap
-      .mapValues { (accountId, transactionDetails) ->
-        if (accountId == data.transaction!!.accountId) {
-          transactionDetails + newTransactionDetail
-        } else {
-          transactionDetails
-        }
-      }
+    val accountId = data.transaction!!.accountId
+    val accountToTransactionsMap = fakeDatabase.accountToTransactionsMap.toMutableMap()
+    val transactions = accountToTransactionsMap[accountId]?.toMutableList() ?: mutableListOf()
+    transactions.add(newTransactionDetail)
+    accountToTransactionsMap[accountId] = transactions
+    fakeDatabase.accountToTransactionsMap = accountToTransactionsMap.toMap()
+
     return SaveTransactionsResponse(
       SaveTransactionsResponseData(
         listOf(newTransactionDetail.id),
