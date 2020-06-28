@@ -11,6 +11,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import strikt.api.expect
@@ -20,10 +21,16 @@ import strikt.assertions.hasSize
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
+import java.util.UUID.randomUUID
 
 internal class MirrorTransactionsTest {
 
   lateinit var ynab: FakeYnabClient
+
+  @BeforeEach
+  internal fun setUp() {
+    setUpDatabase { }
+  }
 
   private fun setUpDatabase(setUp: FakeDatabase.() -> Unit) {
     ynab = FakeYnabClient(FakeDatabase(setUp = setUp))
@@ -31,10 +38,14 @@ internal class MirrorTransactionsTest {
 
   @Test
   fun addTransaction_add() {
-    val actions = createActionsFromOneAccount(
-      fromTransactions = listOf(manuallyAddedTransaction),
-      toTransactions = listOf()
-    )
+    val actions = runBlocking {
+      createActionsFromOneAccount(
+        fromTransactions = listOf(manuallyAddedTransaction),
+        toTransactions = listOf(),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
+        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      )
+    }
 
     expectThat(actions) {
       hasSize(1)
@@ -44,20 +55,66 @@ internal class MirrorTransactionsTest {
 
   @Test
   fun addTransaction_ignore_alreadyAdded() {
-    val actions = createActionsFromOneAccount(
-      fromTransactions = listOf(manuallyAddedTransaction),
-      toTransactions = listOf(manuallyAddedTransactionComplement)
-    )
+    val actions = runBlocking {
+      createActionsFromOneAccount(
+        fromTransactions = listOf(manuallyAddedTransaction),
+        toTransactions = listOf(manuallyAddedTransactionComplement),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
+        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      )
+    }
 
     expectThat(actions).isEmpty()
   }
 
   @Test
   fun addTransaction_ignore_complement() {
-    val actions = createActionsFromOneAccount(
-      fromTransactions = listOf(manuallyAddedTransactionComplement),
-      toTransactions = listOf(manuallyAddedTransaction)
+    val actions = runBlocking {
+      createActionsFromOneAccount(
+        fromTransactions = listOf(manuallyAddedTransactionComplement),
+        toTransactions = listOf(manuallyAddedTransaction),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
+        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      )
+    }
+
+    expectThat(actions) {
+      isEmpty()
+    }
+  }
+
+  @Test
+  fun addTransaction_ignore_complement_recurringSplit() {
+    val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer.copy(
+      id = transactionAddedFromTransfer.id + "_st_1_2020-06-20"
     )
+    val transactionAddedFromTransferWithLongIdComplement = transactionAddedFromTransferWithLongId.copy(
+      id = randomUUID().toString(),
+      amount = -transactionAddedFromTransferWithLongId.amount,
+      importId = subtransactionTransferSplitSource.id,
+      cleared = TransactionDetail.ClearedEnum.CLEARED,
+      approved = false
+    )
+    setUpDatabase {
+      accountToTransactionsMap = mapOf(
+        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
+          subtransactions = listOf(
+            subtransactionNonTransferSplitSource,
+            subtransactionTransferSplitSource.copy(
+              transferTransactionId = subtransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+            )
+          )
+        ))
+      )
+    }
+    val actions = runBlocking {
+      createActionsFromOneAccount(
+        fromTransactions = listOf(transactionAddedFromTransferWithLongId),
+        toTransactions = listOf(transactionAddedFromTransferWithLongIdComplement),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
+        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      )
+    }
 
     expectThat(actions) {
       isEmpty()
@@ -71,10 +128,14 @@ internal class MirrorTransactionsTest {
   fun updateTransaction_approved() {
     val manuallyAddedTransactionComplementApproved = manuallyAddedTransactionComplement.copy(approved = true)
 
-    val actions = createActionsFromOneAccount(
-      fromTransactions = listOf(manuallyAddedTransactionComplementApproved),
-      toTransactions = listOf(manuallyAddedTransaction)
-    )
+    val actions = runBlocking {
+      createActionsFromOneAccount(
+        fromTransactions = listOf(manuallyAddedTransactionComplementApproved),
+        toTransactions = listOf(manuallyAddedTransaction),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
+        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      )
+    }
 
     expectThat(actions) {
       hasSize(1)
@@ -95,7 +156,8 @@ internal class MirrorTransactionsTest {
             fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
-        )
+        ),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 
@@ -130,7 +192,8 @@ internal class MirrorTransactionsTest {
             fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
-        )
+        ),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 
@@ -150,7 +213,9 @@ internal class MirrorTransactionsTest {
 
   @Test
   fun applyActions_create_fromTransfer_withoutDuplicatingNetworkCalls() {
-    setUpDatabase { }
+    setUpDatabase {
+      accountToTransactionsMap = mapOf(FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferNonSplitSource))
+    }
     runBlocking {
       applyActions(
         ynab,
@@ -161,9 +226,7 @@ internal class MirrorTransactionsTest {
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
         ),
-        mutableMapOf(
-          FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferNonSplitSource)
-        )
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 
@@ -197,7 +260,8 @@ internal class MirrorTransactionsTest {
             fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
-        )
+        ),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 
@@ -241,7 +305,8 @@ internal class MirrorTransactionsTest {
             fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
-        )
+        ),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 
@@ -277,7 +342,8 @@ internal class MirrorTransactionsTest {
             fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
             toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
           )
-        )
+        ),
+        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
       )
     }
 

@@ -31,9 +31,13 @@ suspend fun mirrorTransactions(
   val (secondTransactions, secondAccountAndBudget) =
     getTransactionsAndIds(ynab, budgetResponse, config.secondAccount)
 
+  val otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
+
   val actions = createActionsFromOneAccount(
     fromTransactions = firstTransactions,
-    toTransactions = secondTransactions
+    fromAccountAndBudget = firstAccountAndBudget,
+    toTransactions = secondTransactions,
+    otherAccountTransactionsCache = otherAccountTransactionsCache
   ).map { transactionAction ->
     CompleteTransactionAction(
       transactionAction = transactionAction,
@@ -42,7 +46,9 @@ suspend fun mirrorTransactions(
     )
   } + createActionsFromOneAccount(
     fromTransactions = secondTransactions,
-    toTransactions = firstTransactions
+    fromAccountAndBudget = secondAccountAndBudget,
+    toTransactions = firstTransactions,
+    otherAccountTransactionsCache = otherAccountTransactionsCache
   ).map { transactionAction ->
     CompleteTransactionAction(
       transactionAction = transactionAction,
@@ -51,7 +57,7 @@ suspend fun mirrorTransactions(
     )
   }
 
-  applyActions(ynab, actions)
+  applyActions(ynab, actions, otherAccountTransactionsCache)
 }
 
 private suspend fun getTransactionsAndIds(
@@ -75,28 +81,19 @@ private suspend fun getTransactionsAndIds(
 internal suspend fun applyActions(
   ynab: YnabClient,
   actions: List<CompleteTransactionAction>,
-  otherTransactions: MutableMap<UUID, List<TransactionDetail>> = mutableMapOf()
+  otherAccountTransactionsCache: OtherAccountTransactionsCache
 ) {
   actions.forEach { action ->
     println("Apply: $action")
-    action.apply(ynab, getOtherAccountTransactions = { accountAndBudget ->
-      otherTransactions[accountAndBudget.accountId] ?: ynab.transactions.getTransactionsByAccount(
-        accountAndBudget.budgetId.toString(),
-        accountAndBudget.accountId.toString(),
-        null,
-        null,
-        null
-      )
-        .data
-        .transactions
-        .also { transactions -> otherTransactions[accountAndBudget.accountId] = transactions }
-    })
+    action.apply(ynab, otherAccountTransactionsCache)
   }
 }
 
-fun createActionsFromOneAccount(
+suspend fun createActionsFromOneAccount(
   fromTransactions: List<TransactionDetail>,
-  toTransactions: List<TransactionDetail>
+  fromAccountAndBudget: AccountAndBudget,
+  toTransactions: List<TransactionDetail>,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache
 ): List<TransactionAction> {
   val toTransactionsMap = toTransactions
     .map { it.id to it }
@@ -110,11 +107,26 @@ fun createActionsFromOneAccount(
     .filter { transactionDetail -> !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false) }
     .mapNotNull { fromTransaction ->
       when {
-        fromTransaction.doesNotExistIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap) && fromTransaction.approved -> {
+        fromTransaction.doesNotExistIn(
+          idMap = toTransactionsMap,
+          importIdMap = toTransactionsImportMap,
+          otherAccountTransactionsCache = otherAccountTransactionsCache,
+          fromAccountAndBudget = fromAccountAndBudget
+        ) && fromTransaction.approved -> {
           Create(fromTransaction)
         }
-        fromTransaction.existsIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap) -> {
-          val toTransaction = fromTransaction.findIn(idMap = toTransactionsMap, importIdMap = toTransactionsImportMap)!!
+        fromTransaction.existsIn(
+          idMap = toTransactionsMap,
+          importIdMap = toTransactionsImportMap,
+          otherAccountTransactionsCache = otherAccountTransactionsCache,
+          fromAccountAndBudget = fromAccountAndBudget
+        ) -> {
+          val toTransaction = fromTransaction.findIn(
+            idMap = toTransactionsMap,
+            importIdMap = toTransactionsImportMap,
+            otherAccountTransactionsCache = otherAccountTransactionsCache,
+            fromAccountAndBudget = fromAccountAndBudget
+          )!!
           val updates = findDifferences(
             fromTransaction = fromTransaction,
             toTransaction = toTransaction
@@ -143,20 +155,26 @@ private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: T
   return result
 }
 
-private fun TransactionDetail.doesNotExistIn(
+private suspend fun TransactionDetail.doesNotExistIn(
   idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>
-) = !existsIn(idMap, importIdMap)
+  importIdMap: Map<String, TransactionDetail>,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache,
+  fromAccountAndBudget: AccountAndBudget
+) = !existsIn(idMap, importIdMap, otherAccountTransactionsCache, fromAccountAndBudget)
 
-private fun TransactionDetail.existsIn(
+private suspend fun TransactionDetail.existsIn(
   idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>
-) = idMap.containsKey(importId) || importIdMap.containsKey(id)
+  importIdMap: Map<String, TransactionDetail>,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache,
+  fromAccountAndBudget: AccountAndBudget
+) = idMap.containsKey(importId) || importIdMap.containsKey(otherAccountTransactionsCache.getAssociatedImportId(this, fromAccountAndBudget))
 
-private fun TransactionDetail.findIn(
+private suspend fun TransactionDetail.findIn(
   idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>
-) = idMap[importId] ?: importIdMap[id]
+  importIdMap: Map<String, TransactionDetail>,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache,
+  fromAccountAndBudget: AccountAndBudget
+) = idMap[importId] ?: importIdMap[otherAccountTransactionsCache.getAssociatedImportId(this, fromAccountAndBudget)]
 
 data class CompleteTransactionAction(
   val transactionAction: TransactionAction,
@@ -165,12 +183,12 @@ data class CompleteTransactionAction(
 ) {
   suspend fun apply(
     ynab: YnabClient,
-    getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>
+    otherAccountTransactionsCache: OtherAccountTransactionsCache
   ) = transactionAction.apply(
     ynab = ynab,
     fromAccountAndBudget = fromAccountAndBudget,
     toAccountAndBudget = toAccountAndBudget,
-    getOtherAccountTransactions = getOtherAccountTransactions
+    otherAccountTransactionsCache = otherAccountTransactionsCache
   )
 }
 
@@ -192,11 +210,11 @@ suspend fun TransactionAction.apply(
   ynab: YnabClient,
   fromAccountAndBudget: AccountAndBudget,
   toAccountAndBudget: AccountAndBudget,
-  getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>
+  otherAccountTransactionsCache: OtherAccountTransactionsCache
 ): Unit = when (this) {
   is Create -> applyCreate(
     action = this,
-    getOtherAccountTransactions = getOtherAccountTransactions,
+    otherAccountTransactionsCache = otherAccountTransactionsCache,
     fromAccountAndBudget = fromAccountAndBudget,
     ynab = ynab,
     toAccountAndBudget = toAccountAndBudget
@@ -243,13 +261,13 @@ private suspend fun Update.applyUpdate(
 
 private suspend fun applyCreate(
   action: Create,
-  getOtherAccountTransactions: suspend (AccountAndBudget) -> List<TransactionDetail>,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache,
   fromAccountAndBudget: AccountAndBudget,
   ynab: YnabClient,
   toAccountAndBudget: AccountAndBudget
 ) {
   val transactionDescription = if (action.fromTransaction.transferAccountId != null) {
-    val otherAccountTransactions = getOtherAccountTransactions(
+    val otherAccountTransactions = otherAccountTransactionsCache.getOtherAccountTransactions(
       AccountAndBudget(
         action.fromTransaction.transferAccountId!!,
         fromAccountAndBudget.budgetId
