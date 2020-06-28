@@ -1,4 +1,4 @@
-# Splity – a sync engine for couples using YNAB
+# Splity – a sync engine for couples using YNAB [![Build Status](https://travis-ci.org/ryanmoelter/splity.svg?branch=main)](https://travis-ci.org/ryanmoelter/splity)
 (Work in progress)
 
 ## Getting started
