@@ -6,16 +6,16 @@ This assumes that both people's budgets are in the same account, but that they u
 
 To run:
 
-Package the app using `./gradlew assemble`, unzip `build/distributions/<version>`, and find the executable in the `build/distributions/<version>/bin/` directory.
+Either use one of the pre-packaged releases here on github, or package the app using `./gradlew assemble`, and find the zipped file `build/distributions/splity-<version>`. From there, unzip and find the executable in the `splity-<version>/bin/` directory.
 
 Add your YNAB token and account names to a `config.yaml` file in the directory in which you run the app, like so:
 ```yaml
 ynabToken: "<ynab token>"
 
 firstAccount:
-  budgetName: "<First person's budget name>"
+  budgetName: "<First person's budget name, e.g. '2020.1'>"
   accountName: "<First person's split account, e.g. 'Split - Sarah'>"
 secondAccount:
-  budgetName: "<Second person's budget name>"
+  budgetName: "<Second person's budget name, e.g. 'Sarah's budget 2020'>"
   accountName: "<Second person's split account, e.g. 'Split - Ryan'>"
 ```
