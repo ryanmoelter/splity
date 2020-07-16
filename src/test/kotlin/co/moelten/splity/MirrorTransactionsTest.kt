@@ -39,28 +39,32 @@ internal class MirrorTransactionsTest {
   @Test
   fun addTransaction_add() {
     val actions = runBlocking {
-      createActionsFromOneAccount(
-        fromTransactions = listOf(manuallyAddedTransaction),
-        toTransactions = listOf(),
-        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
-        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransaction),
+        secondTransactions = listOf(),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
       )
     }
 
     expectThat(actions) {
       hasSize(1)
-      contains(TransactionAction.Create(manuallyAddedTransaction))
+      contains(CompleteTransactionAction(
+        TransactionAction.Create(manuallyAddedTransaction),
+        FROM_ACCOUNT_AND_BUDGET,
+        TO_ACCOUNT_AND_BUDGET
+      ))
     }
   }
 
   @Test
   fun addTransaction_ignore_alreadyAdded() {
     val actions = runBlocking {
-      createActionsFromOneAccount(
-        fromTransactions = listOf(manuallyAddedTransaction),
-        toTransactions = listOf(manuallyAddedTransactionComplement),
-        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
-        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransaction),
+        secondTransactions = listOf(manuallyAddedTransactionComplement),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
       )
     }
 
@@ -70,11 +74,11 @@ internal class MirrorTransactionsTest {
   @Test
   fun addTransaction_ignore_complement() {
     val actions = runBlocking {
-      createActionsFromOneAccount(
-        fromTransactions = listOf(manuallyAddedTransactionComplement),
-        toTransactions = listOf(manuallyAddedTransaction),
-        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
-        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransactionComplement),
+        secondTransactions = listOf(manuallyAddedTransaction),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
       )
     }
 
@@ -108,11 +112,11 @@ internal class MirrorTransactionsTest {
       )
     }
     val actions = runBlocking {
-      createActionsFromOneAccount(
-        fromTransactions = listOf(transactionAddedFromTransferWithLongId),
-        toTransactions = listOf(transactionAddedFromTransferWithLongIdComplement),
-        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
-        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      createActionsForBothAccounts(
+        firstTransactions = listOf(transactionAddedFromTransferWithLongId),
+        secondTransactions = listOf(transactionAddedFromTransferWithLongIdComplement),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
       )
     }
 
@@ -121,7 +125,23 @@ internal class MirrorTransactionsTest {
     }
   }
 
-  // TODO: fun addTransaction_ignore_matched()
+  @Test
+  fun addTransaction_ignore_alreadyAdded_noImportId() {
+    val manuallyAddedTransactionComplementWithoutImportId = manuallyAddedTransactionComplement.copy(
+      importId = null,
+      memo = "I'm a different memo"
+    )
+    val actions = runBlocking {
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransaction),
+        secondTransactions = listOf(manuallyAddedTransactionComplementWithoutImportId),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      )
+    }
+
+    expectThat(actions).isEmpty()
+  }
 
   @Test
   @Disabled
@@ -129,11 +149,11 @@ internal class MirrorTransactionsTest {
     val manuallyAddedTransactionComplementApproved = manuallyAddedTransactionComplement.copy(approved = true)
 
     val actions = runBlocking {
-      createActionsFromOneAccount(
-        fromTransactions = listOf(manuallyAddedTransactionComplementApproved),
-        toTransactions = listOf(manuallyAddedTransaction),
-        otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab),
-        fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransactionComplementApproved),
+        secondTransactions = listOf(manuallyAddedTransaction),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     }
 
@@ -153,8 +173,8 @@ internal class MirrorTransactionsTest {
         listOf(
           CompleteTransactionAction(
             transactionAction = TransactionAction.Create(manuallyAddedTransaction),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
@@ -189,8 +209,8 @@ internal class MirrorTransactionsTest {
         listOf(
           CompleteTransactionAction(
             transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
@@ -222,8 +242,8 @@ internal class MirrorTransactionsTest {
         listOf(
           CompleteTransactionAction(
             transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
@@ -257,8 +277,8 @@ internal class MirrorTransactionsTest {
         listOf(
           CompleteTransactionAction(
             transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
@@ -302,8 +322,8 @@ internal class MirrorTransactionsTest {
         listOf(
           CompleteTransactionAction(
             transactionAction = TransactionAction.Create(transactionAddedFromTransferWithLongId),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
@@ -339,8 +359,8 @@ internal class MirrorTransactionsTest {
               toTransaction = manuallyAddedTransaction,
               updateFields = setOf(UpdateField.CLEAR)
             ),
-            fromAccountAndBudget = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID),
-            toAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+            fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+            toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
           )
         ),
         otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)

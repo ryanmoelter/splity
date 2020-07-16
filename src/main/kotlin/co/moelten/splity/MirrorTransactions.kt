@@ -33,29 +33,12 @@ suspend fun mirrorTransactions(
 
   val otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
 
-  val actions = createActionsFromOneAccount(
-    fromTransactions = firstTransactions,
-    fromAccountAndBudget = firstAccountAndBudget,
-    toTransactions = secondTransactions,
-    otherAccountTransactionsCache = otherAccountTransactionsCache
-  ).map { transactionAction ->
-    CompleteTransactionAction(
-      transactionAction = transactionAction,
-      fromAccountAndBudget = firstAccountAndBudget,
-      toAccountAndBudget = secondAccountAndBudget
-    )
-  } + createActionsFromOneAccount(
-    fromTransactions = secondTransactions,
-    fromAccountAndBudget = secondAccountAndBudget,
-    toTransactions = firstTransactions,
-    otherAccountTransactionsCache = otherAccountTransactionsCache
-  ).map { transactionAction ->
-    CompleteTransactionAction(
-      transactionAction = transactionAction,
-      fromAccountAndBudget = secondAccountAndBudget,
-      toAccountAndBudget = firstAccountAndBudget
-    )
-  }
+  val actions = createActionsForBothAccounts(
+    firstTransactions = firstTransactions,
+    firstAccountAndBudget = firstAccountAndBudget,
+    secondTransactions = secondTransactions,
+    secondAccountAndBudget = secondAccountAndBudget
+  )
 
   applyActions(ynab, actions, otherAccountTransactionsCache)
 }
@@ -89,92 +72,40 @@ internal suspend fun applyActions(
   }
 }
 
-suspend fun createActionsFromOneAccount(
-  fromTransactions: List<TransactionDetail>,
-  fromAccountAndBudget: AccountAndBudget,
-  toTransactions: List<TransactionDetail>,
-  otherAccountTransactionsCache: OtherAccountTransactionsCache
-): List<TransactionAction> {
-  val toTransactionsMap = toTransactions
-    .map { it.id to it }
-    .toMap()
-  val toTransactionsImportMap = toTransactions
-    .filter { it.importId != null }
-    .map { it.importId!! to it }
-    .toMap()
+fun createActionsForBothAccounts(
+  firstTransactions: List<TransactionDetail>,
+  firstAccountAndBudget: AccountAndBudget,
+  secondTransactions: List<TransactionDetail>,
+  secondAccountAndBudget: AccountAndBudget
+): List<CompleteTransactionAction> {
+  var filteredFirstTransactions = firstTransactions
+  var filteredSecondTransactions = secondTransactions
 
-  return fromTransactions
-    .filter { transactionDetail -> !(transactionDetail.payeeName?.startsWith("Starting Balance") ?: false) }
-    .mapNotNull { fromTransaction ->
-      when {
-        fromTransaction.doesNotExistIn(
-          idMap = toTransactionsMap,
-          importIdMap = toTransactionsImportMap,
-          otherAccountTransactionsCache = otherAccountTransactionsCache,
-          fromAccountAndBudget = fromAccountAndBudget
-        ) && fromTransaction.approved -> {
-          Create(fromTransaction)
-        }
-        fromTransaction.existsIn(
-          idMap = toTransactionsMap,
-          importIdMap = toTransactionsImportMap,
-          otherAccountTransactionsCache = otherAccountTransactionsCache,
-          fromAccountAndBudget = fromAccountAndBudget
-        ) -> {
-          val toTransaction = fromTransaction.findIn(
-            idMap = toTransactionsMap,
-            importIdMap = toTransactionsImportMap,
-            otherAccountTransactionsCache = otherAccountTransactionsCache,
-            fromAccountAndBudget = fromAccountAndBudget
-          )!!
-          val updates = findDifferences(
-            fromTransaction = fromTransaction,
-            toTransaction = toTransaction
-          )
-          if (updates.isNotEmpty()) {
-            Update(
-              fromTransaction = fromTransaction,
-              toTransaction = toTransaction,
-              updateFields = updates
-            )
-          } else {
-            null
-          }
-        }
-        else -> null
-      }
+  firstTransactions.forEach { transactionDetail ->
+    val complement = secondTransactions
+      .find { it.date == transactionDetail.date && it.amount == -transactionDetail.amount }
+
+    if (complement != null) {
+      filteredFirstTransactions = filteredFirstTransactions - firstTransactions
+      filteredSecondTransactions = filteredSecondTransactions - complement
     }
-}
-
-private fun findDifferences(fromTransaction: TransactionDetail, toTransaction: TransactionDetail): Set<UpdateField> {
-  val result = mutableSetOf<UpdateField>()
-  if (fromTransaction.approved && toTransaction.cleared == UNCLEARED) {
-    // TODO: result.add(CLEAR)
   }
-  // TODO: amount
-  return result
+
+  // All remaining transactions in either list are new
+  return filteredFirstTransactions.map { transactionDetail ->
+    CompleteTransactionAction(
+      transactionAction = Create(transactionDetail),
+      fromAccountAndBudget = firstAccountAndBudget,
+      toAccountAndBudget = secondAccountAndBudget
+    )
+  } + filteredSecondTransactions.map { transactionDetail ->
+    CompleteTransactionAction(
+      transactionAction = Create(transactionDetail),
+      fromAccountAndBudget = secondAccountAndBudget,
+      toAccountAndBudget = firstAccountAndBudget
+    )
+  }
 }
-
-private suspend fun TransactionDetail.doesNotExistIn(
-  idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>,
-  otherAccountTransactionsCache: OtherAccountTransactionsCache,
-  fromAccountAndBudget: AccountAndBudget
-) = !existsIn(idMap, importIdMap, otherAccountTransactionsCache, fromAccountAndBudget)
-
-private suspend fun TransactionDetail.existsIn(
-  idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>,
-  otherAccountTransactionsCache: OtherAccountTransactionsCache,
-  fromAccountAndBudget: AccountAndBudget
-) = idMap.containsKey(importId) || importIdMap.containsKey(otherAccountTransactionsCache.getAssociatedImportId(this, fromAccountAndBudget))
-
-private suspend fun TransactionDetail.findIn(
-  idMap: Map<String, TransactionDetail>,
-  importIdMap: Map<String, TransactionDetail>,
-  otherAccountTransactionsCache: OtherAccountTransactionsCache,
-  fromAccountAndBudget: AccountAndBudget
-) = idMap[importId] ?: importIdMap[otherAccountTransactionsCache.getAssociatedImportId(this, fromAccountAndBudget)]
 
 data class CompleteTransactionAction(
   val transactionAction: TransactionAction,

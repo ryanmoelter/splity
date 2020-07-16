@@ -7,11 +7,13 @@ val FROM_BUDGET_ID = randomUUID()
 const val FROM_BUDGET_NAME = "First budget"
 val FROM_ACCOUNT_ID = randomUUID()
 const val FROM_ACCOUNT_NAME = "Split - From"
+val FROM_ACCOUNT_AND_BUDGET = AccountAndBudget(FROM_ACCOUNT_ID, FROM_BUDGET_ID)
 
 val TO_BUDGET_ID = randomUUID()
 const val TO_BUDGET_NAME = "Second budget"
 val TO_ACCOUNT_ID = randomUUID()
 const val TO_ACCOUNT_NAME = "Split - To"
+val TO_ACCOUNT_AND_BUDGET = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
 
 val FROM_TRANSFER_SOURCE_ACCOUNT_ID = randomUUID()
 const val FROM_TRANSFER_SOURCE_ACCOUNT_NAME = "Checking"
