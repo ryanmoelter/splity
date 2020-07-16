@@ -185,7 +185,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-manuallyAddedTransaction.amount)
-      that(transactionList[0].importId).isEqualTo(manuallyAddedTransaction.id)
+      that(transactionList[0].importId).isEqualTo("splity:-350000:2020-02-06:1")
       that(transactionList[0].date).isEqualTo(manuallyAddedTransaction.date)
       that(transactionList[0].payeeName).isEqualTo(manuallyAddedTransaction.payeeName)
       that(transactionList[0].memo).isEqualTo(manuallyAddedTransaction.memo)
@@ -221,7 +221,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
-      that(transactionList[0].importId).isEqualTo(transactionAddedFromTransfer.id)
+      that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo("Chicken Butt")
       that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo)
@@ -254,7 +254,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
-      that(transactionList[0].importId).isEqualTo(transactionAddedFromTransfer.id)
+      that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo("Chicken Butt")
       that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo)
@@ -289,7 +289,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
-      that(transactionList[0].importId).isEqualTo(transactionAddedFromTransfer.id)
+      that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
       that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo)
@@ -334,7 +334,7 @@ internal class MirrorTransactionsTest {
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransferWithLongId.amount)
-      that(transactionList[0].importId).isEqualTo(subtransactionTransferSplitSource.id)
+      that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransferWithLongId.date)
       that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
       that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo)

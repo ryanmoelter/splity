@@ -5,7 +5,6 @@ import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
-import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
@@ -210,25 +209,12 @@ private suspend fun applyCreate(
         transactionDetail.subtransactions.any { it.transferTransactionId == action.fromTransaction.id }
       }
 
-    val importId = if (action.fromTransaction.id.length > MAX_IMPORT_ID_LENGTH) {
-      // Recurring transfers append the date to their id
-      parentOfSplitTransaction
-        ?.subtransactions
-        ?.find { it.transferTransactionId == action.fromTransaction.id }
-        ?.id
-        ?: throw IllegalStateException("Found a recurring transfer without a matching split transaction:\n${action.fromTransaction}")
-    } else {
-      action.fromTransaction.id
-    }
-
     parentOfSplitTransaction
       ?.transactionDescription
-      ?.copy(importId = importId)
       ?: otherAccountTransactions
         .find { transactionDetail -> transactionDetail.transferTransactionId == action.fromTransaction.id }!!
         .let { transactionDetail ->
           TransactionDescription(
-            importId,
             "Chicken Butt",
             transactionDetail.memo
           )
@@ -251,7 +237,7 @@ private suspend fun applyCreate(
         cleared = SaveTransaction.ClearedEnum.CLEARED,
         approved = false,
         flagColor = null,
-        importId = transactionDescription.importId,
+        importId = "splity:${-action.fromTransaction.amount}:${action.fromTransaction.date}:1",
         subtransactions = null
       )
     )
@@ -274,10 +260,9 @@ fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (thi
 }
 
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
-data class TransactionDescription(val importId: String, val payeeName: String?, val memo: String?)
+data class TransactionDescription(val payeeName: String?, val memo: String?)
 
 val TransactionDetail.transactionDescription get() = TransactionDescription(
-  importId = id,
   payeeName = payeeName,
   memo = memo
 )
