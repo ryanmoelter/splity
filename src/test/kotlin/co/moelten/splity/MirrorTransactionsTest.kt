@@ -58,13 +58,30 @@ internal class MirrorTransactionsTest {
   }
 
   @Test
+  fun addTransaction_ignore_unapproved() {
+    val unapprovedTransaction = manuallyAddedTransaction.copy(approved = false)
+    val actions = runBlocking {
+      createActionsForBothAccounts(
+        firstTransactions = listOf(unapprovedTransaction),
+        secondTransactions = listOf(),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      )
+    }
+
+    expectThat(actions) {
+      isEmpty()
+    }
+  }
+
+  @Test
   fun addTransaction_ignore_alreadyAdded() {
     val actions = runBlocking {
       createActionsForBothAccounts(
         firstTransactions = listOf(manuallyAddedTransaction),
         secondTransactions = listOf(manuallyAddedTransactionComplement),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     }
 
@@ -78,7 +95,7 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransactionComplement),
         secondTransactions = listOf(manuallyAddedTransaction),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     }
 
@@ -116,7 +133,7 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(transactionAddedFromTransferWithLongId),
         secondTransactions = listOf(transactionAddedFromTransferWithLongIdComplement),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     }
 

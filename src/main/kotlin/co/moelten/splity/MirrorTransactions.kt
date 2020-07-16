@@ -91,19 +91,23 @@ fun createActionsForBothAccounts(
   }
 
   // All remaining transactions in either list are new
-  return filteredFirstTransactions.map { transactionDetail ->
-    CompleteTransactionAction(
-      transactionAction = Create(transactionDetail),
-      fromAccountAndBudget = firstAccountAndBudget,
-      toAccountAndBudget = secondAccountAndBudget
-    )
-  } + filteredSecondTransactions.map { transactionDetail ->
-    CompleteTransactionAction(
-      transactionAction = Create(transactionDetail),
-      fromAccountAndBudget = secondAccountAndBudget,
-      toAccountAndBudget = firstAccountAndBudget
-    )
-  }
+  return filteredFirstTransactions
+    .filter { it.approved }
+    .map { transactionDetail ->
+      CompleteTransactionAction(
+        transactionAction = Create(transactionDetail),
+        fromAccountAndBudget = firstAccountAndBudget,
+        toAccountAndBudget = secondAccountAndBudget
+      )
+    } + filteredSecondTransactions
+    .filter { it.approved }
+    .map { transactionDetail ->
+      CompleteTransactionAction(
+        transactionAction = Create(transactionDetail),
+        fromAccountAndBudget = secondAccountAndBudget,
+        toAccountAndBudget = firstAccountAndBudget
+      )
+    }
 }
 
 data class CompleteTransactionAction(
