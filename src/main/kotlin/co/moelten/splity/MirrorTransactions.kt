@@ -85,12 +85,11 @@ fun createActionsForBothAccounts(
       .find { it.date == transactionDetail.date && it.amount == -transactionDetail.amount }
 
     if (complement != null) {
-      filteredFirstTransactions = filteredFirstTransactions - firstTransactions
+      filteredFirstTransactions = filteredFirstTransactions - transactionDetail
       filteredSecondTransactions = filteredSecondTransactions - complement
     }
   }
 
-  // All remaining transactions in either list are new
   return filteredFirstTransactions
     .filter { it.approved }
     .map { transactionDetail ->
