@@ -2,7 +2,7 @@ package com.youneedabudget.client
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
-import java.util.*
+import java.util.UUID
 
 class UuidAdapter {
   @ToJson
