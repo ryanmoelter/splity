@@ -14,6 +14,8 @@ import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.threeten.bp.LocalDate
+import org.threeten.bp.Month
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.contains
@@ -43,7 +45,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransaction),
         secondTransactions = listOf(),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID)
+        secondAccountAndBudget = AccountAndBudget(TO_ACCOUNT_ID, TO_BUDGET_ID),
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 
@@ -65,7 +68,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(unapprovedTransaction),
         secondTransactions = listOf(),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 
@@ -81,7 +85,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransaction),
         secondTransactions = listOf(manuallyAddedTransactionComplement),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 
@@ -95,7 +100,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransactionComplement),
         secondTransactions = listOf(manuallyAddedTransaction),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 
@@ -133,7 +139,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(transactionAddedFromTransferWithLongId),
         secondTransactions = listOf(transactionAddedFromTransferWithLongIdComplement),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 
@@ -153,7 +160,23 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransaction),
         secondTransactions = listOf(manuallyAddedTransactionComplementWithoutImportId),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
+      )
+    }
+
+    expectThat(actions).isEmpty()
+  }
+
+  @Test
+  fun addTransaction_ignore_beforeStartDate() {
+    val actions = runBlocking {
+      createActionsForBothAccounts(
+        firstTransactions = listOf(manuallyAddedTransaction),
+        secondTransactions = emptyList(),
+        firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = manuallyAddedTransaction.date.plusDays(1)
       )
     }
 
@@ -170,7 +193,8 @@ internal class MirrorTransactionsTest {
         firstTransactions = listOf(manuallyAddedTransactionComplementApproved),
         secondTransactions = listOf(manuallyAddedTransaction),
         firstAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        secondAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        startDate = LocalDate.of(1994, Month.FEBRUARY, 6)
       )
     }
 

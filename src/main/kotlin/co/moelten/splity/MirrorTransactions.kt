@@ -17,6 +17,7 @@ import com.youneedabudget.client.models.TransactionDetail.ClearedEnum
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.RECONCILED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
+import org.threeten.bp.LocalDate
 import java.util.UUID
 
 suspend fun mirrorTransactions(
@@ -36,7 +37,8 @@ suspend fun mirrorTransactions(
     firstTransactions = firstTransactions,
     firstAccountAndBudget = firstAccountAndBudget,
     secondTransactions = secondTransactions,
-    secondAccountAndBudget = secondAccountAndBudget
+    secondAccountAndBudget = secondAccountAndBudget,
+    startDate = config.startDate
   )
 
   applyActions(ynab, actions, otherAccountTransactionsCache)
@@ -75,10 +77,13 @@ fun createActionsForBothAccounts(
   firstTransactions: List<TransactionDetail>,
   firstAccountAndBudget: AccountAndBudget,
   secondTransactions: List<TransactionDetail>,
-  secondAccountAndBudget: AccountAndBudget
+  secondAccountAndBudget: AccountAndBudget,
+  startDate: LocalDate
 ): List<CompleteTransactionAction> {
   var filteredFirstTransactions = firstTransactions
+    .filter { it.date.isAfter(startDate.minusDays(1)) }
   var filteredSecondTransactions = secondTransactions
+    .filter { it.date.isAfter(startDate.minusDays(1)) }
 
   firstTransactions.forEach { transactionDetail ->
     val complement = secondTransactions
