@@ -7,7 +7,10 @@ import java.io.File
 
 fun main() {
   runBlocking {
-    val config = ConfigLoader().loadConfigOrThrow<Config>(File("./config.yaml"))
+    val configLoader = ConfigLoader.Builder()
+      .addDecoder(DateDecoder())
+      .build()
+    val config = configLoader.loadConfigOrThrow<Config>(File("./config.yaml"))
     val ynab = YnabClientImpl(config.ynabToken)
 
     val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
