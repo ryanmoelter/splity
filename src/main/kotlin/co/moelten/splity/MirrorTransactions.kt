@@ -268,6 +268,7 @@ fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long): String {
 /** Convert a YNAB amount (int representing value * 1000) into a $X.XX string, avoiding precision loss */
 fun Long.toMoneyString() = "\$${"%,d".format(this / 1000)}.${"%02d".format((this / 10) % 100)}"
 
+/** Calculate this as a percentage of [total], represented as a double from 0-100 */
 fun Long.absolutePercentageOf(total: Long) = ((this * 100).toDouble() / total).absoluteValue
 
 /** Convert a percentage (double representing value in percent, i.e. 0-100) into a percentage string */
