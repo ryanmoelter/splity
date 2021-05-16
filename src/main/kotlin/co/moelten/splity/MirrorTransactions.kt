@@ -19,6 +19,7 @@ import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.RECONCILED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import org.threeten.bp.LocalDate
 import java.util.UUID
+import kotlin.math.absoluteValue
 
 suspend fun mirrorTransactions(
   ynab: YnabClient,
@@ -224,7 +225,8 @@ private suspend fun applyCreate(
         .let { transactionDetail ->
           TransactionDescription(
             "Chicken Butt",
-            transactionDetail.memo
+            transactionDetail.memo,
+            transactionDetail.amount
           )
         }
   } else {
@@ -241,7 +243,10 @@ private suspend fun applyCreate(
         payeeId = null,
         payeeName = transactionDescription.payeeName,
         categoryId = null,
-        memo = transactionDescription.memo,
+        memo = transactionDescription.memo + getExtraDetailsForMemo(
+          transactionDescription.totalAmount,
+          action.fromTransaction.amount
+        ),
         cleared = SaveTransaction.ClearedEnum.CLEARED,
         approved = false,
         flagColor = null,
@@ -251,6 +256,22 @@ private suspend fun applyCreate(
     )
   )
 }
+
+fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long): String {
+  return """
+
+
+    Out of ${totalAmount.absoluteValue.toMoneyString()}, you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}
+  """.trimIndent()
+}
+
+/** Convert a YNAB amount (int representing value * 1000) into a $X.XX string, avoiding precision loss */
+fun Long.toMoneyString() = "\$${"%,d".format(this / 1000)}.${"%02d".format((this / 10) % 100)}"
+
+fun Long.absolutePercentageOf(total: Long) = ((this * 100).toDouble() / total).absoluteValue
+
+/** Convert a percentage (double representing value in percent, i.e. 0-100) into a percentage string */
+fun Double.toPercentageString() = "%.1f".format(this) + "%"
 
 fun ClearedEnum.toSaveTransactionClearedEnum() = when (this) {
   CLEARED -> SaveTransaction.ClearedEnum.CLEARED
@@ -268,11 +289,12 @@ fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (thi
 }
 
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
-data class TransactionDescription(val payeeName: String?, val memo: String?)
+data class TransactionDescription(val payeeName: String?, val memo: String?, val totalAmount: Long)
 
 val TransactionDetail.transactionDescription get() = TransactionDescription(
   payeeName = payeeName,
-  memo = memo
+  memo = memo,
+  totalAmount = amount
 )
 fun List<BudgetSummary>.findByName(name: String) =
   find { it.name == name } ?: throw IllegalStateException("Can't find budget: \"$name\"")

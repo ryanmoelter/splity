@@ -16,7 +16,7 @@ Add your YNAB token and account names to a `config.yaml` file in the directory i
 
 ```yaml
 ynabToken: "<ynab token>"
-startDate: "<optional inclusive start date, e.g. '2021-02-23'>"
+startDate: "<optional inclusive start date, e.g. '2021-02-23' (useful if someone does a fresh start)>"
 
 firstAccount:
   budgetName: "<First person's budget name, e.g. '2020.1'>"
