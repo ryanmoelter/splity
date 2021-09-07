@@ -1,7 +1,8 @@
 plugins {
     id "java"
-    id "org.jetbrains.kotlin.jvm" version "1.5.21"
+    id "org.jetbrains.kotlin.jvm" version "1.5.30"
     id "application"
+    id "com.diffplug.spotless" version "5.15.0"
 }
 
 group "co.moelten"
@@ -13,12 +14,12 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.30"
     testImplementation group: "junit", name: "junit", version: "4.12"
 
     implementation(project(":ynab-api"))
 
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.1"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.7'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.7'
 
@@ -40,4 +41,18 @@ compileKotlin {
 }
 compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
+}
+
+spotless {
+    format 'misc', {
+        target '*.gradle', '*.md', '.gitignore'
+
+        trimTrailingWhitespace()
+        indentWithSpaces(2)
+        endWithNewline()
+    }
+    kotlin {
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }
