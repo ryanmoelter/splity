@@ -1,6 +1,6 @@
 # Splity – a sync engine for couples using YNAB
 
-![Build badge](https://github.com/ryanmoelter/splity/actions/workflows/build.yml/badge.svg?branch=main)
+[![Build badge](https://github.com/ryanmoelter/splity/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/ryanmoelter/splity/actions/workflows/build.yml)
 
 (Work in progress)
 
