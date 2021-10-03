@@ -6,20 +6,28 @@ import com.sksamuel.hoplite.DecoderContext
 import com.sksamuel.hoplite.Node
 import com.sksamuel.hoplite.StringNode
 import com.sksamuel.hoplite.decoder.Decoder
-import com.sksamuel.hoplite.fp.Validated.*
+import com.sksamuel.hoplite.fp.Validated.Invalid
+import com.sksamuel.hoplite.fp.Validated.Valid
 import org.threeten.bp.LocalDate
 import kotlin.reflect.KType
 
 data class Config(
+  val version: String,
   val ynabToken: String,
   val firstAccount: AccountConfig,
   val secondAccount: AccountConfig,
-  val startDate: LocalDate = LocalDate.of(1900, 1, 1)  // LocalDate.MIN causes exceptions
+  val startDate: LocalDate = LocalDate.of(1900, 1, 1), // LocalDate.MIN causes exceptions
+  val sentryConfig: SentryConfig? = null,
+  val ensureZeroBalanceOnCreditCards: Boolean = false
 )
 
 data class AccountConfig(
   val budgetName: String,
   val accountName: String
+)
+
+data class SentryConfig(
+  val dsn: String
 )
 
 class DateDecoder : Decoder<LocalDate> {

@@ -22,6 +22,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.7'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.7'
+    implementation 'io.sentry:sentry:5.1.2'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
     testImplementation 'io.strikt:strikt-core:0.32.0'
@@ -37,10 +38,10 @@ application {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 
 spotless {
@@ -55,4 +56,21 @@ spotless {
         trimTrailingWhitespace()
         endWithNewline()
     }
+}
+
+task createProperties(dependsOn: processResources) {
+    doLast {
+        mkdir("$buildDir/resources/main")
+        def file = new File("$buildDir/resources/main/version.properties")
+        file.createNewFile()
+        file.withWriter { w ->
+            Properties p = new Properties()
+            p['version'] = project.version.toString()
+            p.store w, null
+        }
+    }
+}
+
+classes {
+    dependsOn createProperties
 }
