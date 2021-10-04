@@ -27,3 +27,12 @@ secondAccount:
   budgetName: "<Second person's budget name, e.g. 'Sarah's budget 2020'>"
   accountName: "<Second person's split account, e.g. 'Split - Ryan'>"
 ```
+
+### Sentry integration
+
+If you (like me) want to be alerted when budget syncing fails, create a new project on [Sentry](https://sentry.io) and put the DSN in your `config.yaml` file.
+
+```yaml
+sentryConfig:
+  dsn: "<Paste dsn here>"
+```

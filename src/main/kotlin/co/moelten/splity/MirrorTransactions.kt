@@ -138,6 +138,7 @@ sealed class TransactionAction {
     val toTransaction: TransactionDetail,
     val updateFields: Set<UpdateField>
   ) : TransactionAction()
+
   data class Delete(val transactionId: UUID) : TransactionAction()
 }
 
@@ -243,10 +244,10 @@ private suspend fun applyCreate(
         payeeId = null,
         payeeName = transactionDescription.payeeName,
         categoryId = null,
-        memo = transactionDescription.memo + getExtraDetailsForMemo(
+        memo = (transactionDescription.memo + getExtraDetailsForMemo(
           transactionDescription.totalAmount,
           action.fromTransaction.amount
-        ),
+        )).trim(),
         cleared = SaveTransaction.ClearedEnum.CLEARED,
         approved = false,
         flagColor = null,
@@ -292,11 +293,13 @@ fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (thi
 data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
 data class TransactionDescription(val payeeName: String?, val memo: String?, val totalAmount: Long)
 
-val TransactionDetail.transactionDescription get() = TransactionDescription(
-  payeeName = payeeName,
-  memo = memo,
-  totalAmount = amount
-)
+val TransactionDetail.transactionDescription
+  get() = TransactionDescription(
+    payeeName = payeeName,
+    memo = memo,
+    totalAmount = amount
+  )
+
 fun List<BudgetSummary>.findByName(name: String) =
   find { it.name == name } ?: throw IllegalStateException("Can't find budget: \"$name\"")
 
