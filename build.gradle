@@ -6,7 +6,7 @@ plugins {
 }
 
 group "co.moelten"
-version "0.7.0"
+version "0.7.1"
 
 repositories {
     mavenCentral()
@@ -38,10 +38,10 @@ application {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "13"
+    kotlinOptions.jvmTarget = "11"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "13"
+    kotlinOptions.jvmTarget = "11"
 }
 
 spotless {
