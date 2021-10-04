@@ -1,7 +1,8 @@
 plugins {
     id "java"
-    id "org.jetbrains.kotlin.jvm" version "1.4.30"
+    id "org.jetbrains.kotlin.jvm" version "1.5.31"
     id "application"
+    id "com.diffplug.spotless" version "5.15.0"
 }
 
 group "co.moelten"
@@ -13,18 +14,19 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31"
     testImplementation group: "junit", name: "junit", version: "4.12"
 
     implementation(project(":ynab-api"))
 
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2"
-    implementation 'com.sksamuel.hoplite:hoplite-core:1.4.0'
-    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.0'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
+    implementation 'com.sksamuel.hoplite:hoplite-core:1.4.7'
+    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.7'
+    implementation 'io.sentry:sentry:5.2.0'
 
-    testImplementation "org.junit.jupiter:junit-jupiter:5.4.2"
-    testImplementation "io.strikt:strikt-core:0.29.0"
-    testImplementation "io.mockk:mockk:1.10.6"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+    testImplementation 'io.strikt:strikt-core:0.32.0'
+    testImplementation 'io.mockk:mockk:1.12.0'
 }
 
 test {
@@ -36,8 +38,39 @@ application {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
+}
+
+spotless {
+    format 'misc', {
+        target '*.gradle', '*.md', '.gitignore'
+
+        trimTrailingWhitespace()
+        indentWithSpaces(2)
+        endWithNewline()
+    }
+    kotlin {
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+task createProperties(dependsOn: processResources) {
+    doLast {
+        mkdir("$buildDir/resources/main")
+        def file = new File("$buildDir/resources/main/version.properties")
+        file.createNewFile()
+        file.withWriter { w ->
+            Properties p = new Properties()
+            p['version'] = project.version.toString()
+            p.store w, null
+        }
+    }
+}
+
+classes {
+    dependsOn createProperties
 }

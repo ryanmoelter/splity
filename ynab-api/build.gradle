@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm'
     id("kotlin-kapt")
     id("com.yelp.codegen.plugin").version("1.4.1")
+    id("com.diffplug.spotless")
 }
 
 group 'co.moelten'
@@ -14,23 +15,24 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.31'
 
-    def moshiVersion = "1.11.0"
+    def moshiVersion = "1.12.0"
     implementation "com.squareup.moshi:moshi:${moshiVersion}"
     implementation "com.squareup.moshi:moshi-kotlin:${moshiVersion}"
     implementation "com.squareup.moshi:moshi-adapters:${moshiVersion}"
-    implementation "com.squareup.okhttp3:okhttp:4.9.1"
+    api "com.squareup.okhttp3:okhttp:4.9.1"
     implementation "com.squareup.okhttp3:logging-interceptor:4.9.1"
     implementation "com.squareup.retrofit2:retrofit:2.9.0"
     implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
     kapt "com.squareup.moshi:moshi-kotlin-codegen:${moshiVersion}"
 
-    api "org.threeten:threetenbp:1.4.4"
+    api "org.threeten:threetenbp:1.5.1"
 
-    testImplementation "junit:junit:4.12"
-    testImplementation "com.squareup.okhttp3:mockwebserver:3.12.6"
-    testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.3.3"
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'com.squareup.okhttp3:mockwebserver:4.9.1'
+    testImplementation 'org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2'
 }
 
 generateSwagger {
@@ -41,8 +43,22 @@ generateSwagger {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
+}
+
+spotless {
+    format 'misc', {
+        target '*.gradle', '*.md', '.gitignore'
+
+        trimTrailingWhitespace()
+        indentWithSpaces(2)
+        endWithNewline()
+    }
+    kotlin {
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
 }

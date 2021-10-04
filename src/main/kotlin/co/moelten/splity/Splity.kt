@@ -1,21 +1,35 @@
 package co.moelten.splity
 
 import com.sksamuel.hoplite.ConfigLoader
+import com.sksamuel.hoplite.PropertySource
 import com.youneedabudget.client.YnabClientImpl
 import kotlinx.coroutines.runBlocking
 import java.io.File
 
 fun main() {
-  runBlocking {
-    val configLoader = ConfigLoader.Builder()
-      .addDecoder(DateDecoder())
-      .build()
-    val config = configLoader.loadConfigOrThrow<Config>(File("./config.yaml"))
-    val ynab = YnabClientImpl(config.ynabToken)
+  val configLoader = ConfigLoader.Builder()
+    .addDecoder(DateDecoder())
+    .addSource(PropertySource.resource("/version.properties"))
+    .build()
+  val config = configLoader.loadConfigOrThrow<Config>(File("./config.yaml"))
+  val sentry = setUpSentry(config.sentryConfig, config.version)
 
-    val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
+  sentry.doInTransaction(operation = "runBlocking()", name = "run splity") {
+    runBlocking {
+      val ynab = YnabClientImpl(config.ynabToken, sentry::doInSpan)
 
-    mirrorTransactions(ynab = ynab, budgetResponse = budgetResponse, config = config)
-    ensureZeroBalanceOnCreditCards(ynab = ynab, config = config, budgetResponse = budgetResponse)
+      sentry.doInSpan(operation = "run (suspended)") {
+        val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
+
+        sentry.doInSpan(operation = "mirrorTransactions()") {
+          mirrorTransactions(ynab = ynab, budgetResponse = budgetResponse, config = config)
+        }
+        if (config.ensureZeroBalanceOnCreditCards) {
+          sentry.doInSpan(operation = "ensureZeroBalanceOnCreditCards()") {
+            ensureZeroBalanceOnCreditCards(ynab = ynab, config = config, budgetResponse = budgetResponse)
+          }
+        }
+      }
+    }
   }
 }

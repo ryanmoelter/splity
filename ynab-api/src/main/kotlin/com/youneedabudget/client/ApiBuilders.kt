@@ -11,6 +11,7 @@ import com.youneedabudget.client.tools.TypesAdapterFactory
 import com.youneedabudget.client.tools.XNullableAdapterFactory
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.Response
 import okhttp3.logging.HttpLoggingInterceptor
 import okhttp3.logging.HttpLoggingInterceptor.Level.BODY
 import retrofit2.Retrofit
@@ -22,12 +23,11 @@ val moshi: Moshi = Moshi.Builder()
   .add(UuidAdapter())
   .build()
 
-fun createOkHttpClient(apiKey: String): OkHttpClient = OkHttpClient.Builder()
-  .addInterceptor(HttpLoggingInterceptor(object : HttpLoggingInterceptor.Logger {
-    override fun log(message: String) {
-      println(message)
-    }
-  }).apply {
+fun createOkHttpClient(
+  apiKey: String,
+  doInSpan: (operation: String, () -> Response) -> Response
+): OkHttpClient = OkHttpClient.Builder()
+  .addInterceptor(HttpLoggingInterceptor { message -> println(message) }.apply {
     level = BODY
   })
   .addInterceptor { chain ->
@@ -36,11 +36,19 @@ fun createOkHttpClient(apiKey: String): OkHttpClient = OkHttpClient.Builder()
       .build()
     chain.proceed(newRequest)
   }
+  .addInterceptor { chain ->
+    doInSpan("${chain.request().method} ${chain.request().url}") {
+      chain.proceed(chain.request())
+    }
+  }
   .build()
 
-fun createRetrofit(apiKey: String): Retrofit = Retrofit.Builder()
+fun createRetrofit(
+  apiKey: String,
+  doInSpan: (operation: String, () -> Response) -> Response
+): Retrofit = Retrofit.Builder()
   .baseUrl("https://api.youneedabudget.com/v1/")
-  .client(createOkHttpClient(apiKey))
+  .client(createOkHttpClient(apiKey, doInSpan))
   .addConverterFactory(GeneratedCodeConverters.converterFactory(moshi))
   .build()
 
@@ -51,8 +59,8 @@ interface YnabClient {
   val categories: CategoriesApi
 }
 
-class YnabClientImpl(apiKey: String) : YnabClient {
-  private val retrofit by lazy { createRetrofit(apiKey) }
+class YnabClientImpl(apiKey: String, doInSpan: (operation: String, () -> Response) -> Response) : YnabClient {
+  private val retrofit by lazy { createRetrofit(apiKey, doInSpan) }
   override val budgets: BudgetsApi by lazy { retrofit.create(BudgetsApi::class.java) }
   override val accounts: AccountsApi by lazy { retrofit.create(AccountsApi::class.java) }
   override val transactions: TransactionsApi by lazy { retrofit.create(TransactionsApi::class.java) }

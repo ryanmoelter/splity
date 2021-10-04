@@ -99,4 +99,3 @@ val firstCreditCardAccountFreedom = Account(
   deleted = false,
   note = null
 )
-
