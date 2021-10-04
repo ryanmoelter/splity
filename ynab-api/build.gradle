@@ -15,8 +15,8 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.30"
-    implementation "org.jetbrains.kotlin:kotlin-reflect:1.5.30"
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31'
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.31'
 
     def moshiVersion = "1.12.0"
     implementation "com.squareup.moshi:moshi:${moshiVersion}"
@@ -43,10 +43,10 @@ generateSwagger {
 }
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "13"
 }
 
 spotless {

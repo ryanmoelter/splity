@@ -20,7 +20,12 @@ const val FROM_TRANSFER_SOURCE_ACCOUNT_NAME = "Checking"
 
 val firstAccountConfig = AccountConfig(FROM_BUDGET_NAME, FROM_ACCOUNT_NAME)
 val secondAccountConfig = AccountConfig(TO_BUDGET_NAME, TO_ACCOUNT_NAME)
-val fakeConfig = Config("fakeToken", firstAccountConfig, secondAccountConfig)
+val fakeConfig = Config(
+  version = "0.0.0-TEST",
+  ynabToken = "fakeToken",
+  firstAccount = firstAccountConfig,
+  secondAccount = secondAccountConfig
+)
 
 val firstBudget = BudgetSummary(
   FROM_BUDGET_ID,
