@@ -12,22 +12,20 @@ fun main() {
     .addSource(PropertySource.resource("/version.properties"))
     .build()
   val config = configLoader.loadConfigOrThrow<Config>(File("./config.yaml"))
-  if (config.sentryConfig != null) {
-    setUpSentry(config.sentryConfig, config.version)
-  }
+  val sentry = setUpSentry(config.sentryConfig, config.version)
 
-  doInTransaction(operation = "runBlocking()", name = "run splity") {
+  sentry.doInTransaction(operation = "runBlocking()", name = "run splity") {
     runBlocking {
-      val ynab = YnabClientImpl(config.ynabToken, ::doInSpan)
+      val ynab = YnabClientImpl(config.ynabToken, sentry::doInSpan)
 
-      doInSpan(operation = "run (suspended)") {
+      sentry.doInSpan(operation = "run (suspended)") {
         val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
 
-        doInSpan(operation = "mirrorTransactions()") {
+        sentry.doInSpan(operation = "mirrorTransactions()") {
           mirrorTransactions(ynab = ynab, budgetResponse = budgetResponse, config = config)
         }
         if (config.ensureZeroBalanceOnCreditCards) {
-          doInSpan(operation = "ensureZeroBalanceOnCreditCards()") {
+          sentry.doInSpan(operation = "ensureZeroBalanceOnCreditCards()") {
             ensureZeroBalanceOnCreditCards(ynab = ynab, config = config, budgetResponse = budgetResponse)
           }
         }
