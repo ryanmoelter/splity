@@ -41,7 +41,7 @@ class SentryWrapperImpl(
   ) {
     val transaction = Sentry.startTransaction(name, operation, true)
     try {
-      action()
+      action().also { transaction.status = SpanStatus.OK }
     } catch (e: Throwable) {
       transaction.throwable = e
       transaction.status = SpanStatus.INTERNAL_ERROR
@@ -57,7 +57,7 @@ class SentryWrapperImpl(
   ): T {
     val span = Sentry.getSpan()!!.startChild(operation)
     return try {
-      action()
+      action().also { span.status = SpanStatus.OK }
     } catch (e: Throwable) {
       span.throwable = e
       span.status = SpanStatus.INTERNAL_ERROR
@@ -73,7 +73,7 @@ class SentryWrapperImpl(
   ) {
     val span = Sentry.getSpan()!!.startChild(operation)
     try {
-      action()
+      action().also { span.status = SpanStatus.OK }
     } catch (e: Throwable) {
       span.throwable = e
       span.status = SpanStatus.INTERNAL_ERROR
