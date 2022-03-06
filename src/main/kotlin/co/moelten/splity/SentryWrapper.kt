@@ -29,7 +29,7 @@ class SentryWrapperImpl(
   init {
     Sentry.init { options ->
       options.dsn = sentryConfig.dsn
-      options.tracesSampleRate = 1.0
+      options.tracesSampleRate = 0.1
       options.release = version
     }
   }
