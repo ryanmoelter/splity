@@ -229,11 +229,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].importId).isEqualTo("splity:-350000:2020-02-06:1")
       that(transactionList[0].date).isEqualTo(manuallyAddedTransaction.date)
       that(transactionList[0].payeeName).isEqualTo(manuallyAddedTransaction.payeeName)
-      that(transactionList[0].memo).isEqualTo(manuallyAddedTransaction.memo + """
-
-
-        Out of $350.00, you paid 100.0%
-      """.trimIndent())
+      that(transactionList[0].memo).isEqualTo(manuallyAddedTransaction.memo + " • Out of $350.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
       that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
@@ -269,11 +265,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo("Chicken Butt")
-      that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + """
-
-
-        Out of $10.00, you paid 100.0%
-      """.trimIndent())
+      that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
       that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
@@ -306,11 +298,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo("Chicken Butt")
-      that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + """
-
-
-        Out of $10.00, you paid 100.0%
-      """.trimIndent())
+      that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
       that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
@@ -345,11 +333,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransfer.date)
       that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
-      that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + """
-
-
-        Out of $30.00, you paid 33.3%
-      """.trimIndent())
+      that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
       that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
@@ -394,11 +378,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].importId).isEqualTo("splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1")
       that(transactionList[0].date).isEqualTo(transactionAddedFromTransferWithLongId.date)
       that(transactionList[0].payeeName).isEqualTo(transactionTransferSplitSource.payeeName)
-      that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + """
-
-
-        Out of $30.00, you paid 33.3%
-      """.trimIndent())
+      that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
       that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
