@@ -20,13 +20,13 @@ dependencies {
     implementation(project(":ynab-api"))
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
-    implementation 'com.sksamuel.hoplite:hoplite-core:1.4.7'
-    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.7'
-    implementation 'io.sentry:sentry:5.2.0'
+    implementation 'com.sksamuel.hoplite:hoplite-core:1.4.16'
+    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.16'
+    implementation 'io.sentry:sentry:5.6.2'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
-    testImplementation 'io.strikt:strikt-core:0.32.0'
-    testImplementation 'io.mockk:mockk:1.12.0'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation 'io.strikt:strikt-core:0.33.0'
+    testImplementation 'io.mockk:mockk:1.12.2'
 }
 
 test {
