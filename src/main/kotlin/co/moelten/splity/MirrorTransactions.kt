@@ -246,7 +246,8 @@ private suspend fun applyCreate(
         categoryId = null,
         memo = (transactionDescription.memo + getExtraDetailsForMemo(
           transactionDescription.totalAmount,
-          action.fromTransaction.amount
+          action.fromTransaction.amount,
+          transactionDescription.memo.isNullOrEmpty()
         )).trim(),
         cleared = SaveTransaction.ClearedEnum.CLEARED,
         approved = false,
@@ -258,12 +259,10 @@ private suspend fun applyCreate(
   )
 }
 
-fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long): String {
-  return """
-
-
-    Out of ${totalAmount.absoluteValue.toMoneyString()}, you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}
-  """.trimIndent()
+fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boolean): String {
+  return if (isBaseEmpty) { "" } else { " • " } +
+    "Out of ${totalAmount.absoluteValue.toMoneyString()}, " +
+    "you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}"
 }
 
 /** Convert a YNAB amount (int representing value * 1000) into a $X.XX string, avoiding precision loss */
