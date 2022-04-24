@@ -53,7 +53,7 @@ compileTestKotlin.kotlinOptions {
 
 spotless {
   format("misc") {
-    target("*.gradle", "*.md", ".gitignore")
+    target("*.gradle.kts", "*.md", ".gitignore")
 
     trimTrailingWhitespace()
     indentWithSpaces(2)

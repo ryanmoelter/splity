@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 
 plugins {
   java
-  alias(libs.plugins.kotlin.jvm)
   application
-  id("com.diffplug.spotless").version("5.15.0")
+  alias(libs.plugins.kotlin.jvm)
+  alias(libs.plugins.spotless)
 }
 
 group = "co.moelten"
@@ -48,7 +48,7 @@ compileTestKotlin.kotlinOptions {
 
 spotless {
   format("misc") {
-    target("*.gradle", "*.md", ".gitignore")
+    target("*.gradle.kts", "*.md", ".gitignore")
 
     trimTrailingWhitespace()
     indentWithSpaces(2)
