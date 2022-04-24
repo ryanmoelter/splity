@@ -1,0 +1,14 @@
+import com.youneedabudget.client.models.Account;
+import java.util.UUID;
+
+CREATE TABLE account (
+  id TEXT AS UUID PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT AS Account.TypeEnum,
+  onBudget BOOL NOT NULL,
+  closed BOOL NOT NULL,
+  transferPayeeId TEXT AS UUID NOT NULL,
+  deleted BOOL NOT NULL,
+  budgetId TEXT AS UUID NOT NULL,
+  FOREIGN KEY(budgetId) REFERENCES budget(id)
+);

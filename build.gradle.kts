@@ -5,6 +5,7 @@ plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.spotless)
+  alias(libs.plugins.sqldelight)
 }
 
 group = "co.moelten"
@@ -21,6 +22,8 @@ dependencies {
   implementation(libs.hoplite.core)
   implementation(libs.hoplite.yaml)
   implementation(libs.sentry)
+
+  implementation(libs.sqldelight.driver.jvm)
 
   testImplementation(libs.junit5)
   testImplementation(libs.coroutines.test)
@@ -43,6 +46,14 @@ compileKotlin.kotlinOptions {
 }
 compileTestKotlin.kotlinOptions {
   jvmTarget = "11"
+}
+
+sqldelight {
+  database("Database") {
+    packageName = "com.ryanmoelter.ynab.database"
+    schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
+    verifyMigrations = true
+  }
 }
 
 spotless {

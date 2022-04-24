@@ -1,0 +1,8 @@
+import java.util.UUID;
+import org.threeten.bp.LocalDate;
+
+CREATE TABLE budget (
+  id TEXT AS UUID PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  lastModifiedOn TEXT AS LocalDate
+);

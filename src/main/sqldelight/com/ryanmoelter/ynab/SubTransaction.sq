@@ -1,0 +1,23 @@
+import java.util.UUID;
+
+CREATE TABLE subTransaction (
+  id TEXT AS UUID PRIMARY KEY NOT NULL,
+
+  transactionId TEXT AS UUID NOT NULL,
+  amount INTEGER NOT NULL,
+  deleted BOOL NOT NULL,
+  memo TEXT,
+  payeeId TEXT AS UUID,
+  payeeName TEXT,
+  categoryId TEXT AS UUID,
+  categoryName TEXT,
+  transferAccountId TEXT AS UUID,
+  transferTransactionId TEXT AS UUID,
+
+
+  budgetId TEXT AS UUID NOT NULL,
+  FOREIGN KEY(budgetId) REFERENCES budget(id),
+  FOREIGN KEY(transactionId) REFERENCES transaction(id),
+  FOREIGN KEY(transferAccountId) REFERENCES account(id),
+  FOREIGN KEY(transferTransactionId) REFERENCES transaction(id)
+);
