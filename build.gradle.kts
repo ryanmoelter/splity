@@ -12,7 +12,6 @@ version = "0.7.3-SNAPSHOT"
 
 repositories {
   mavenCentral()
-  jcenter()
 }
 
 dependencies {
@@ -34,7 +33,7 @@ tasks.withType<Test> {
 }
 
 application {
-  mainClassName = "co.moelten.splity.SplityKt"
+  mainClass.set("co.moelten.splity.SplityKt")
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks

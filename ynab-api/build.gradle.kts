@@ -13,7 +13,6 @@ version = "0.2-SNAPSHOT"
 
 repositories {
   mavenCentral()
-  jcenter()
 }
 
 dependencies {
