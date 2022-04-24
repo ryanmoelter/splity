@@ -1,6 +1,6 @@
 plugins {
     id "java"
-    id "org.jetbrains.kotlin.jvm" version "1.5.31"
+    alias(libs.plugins.kotlin.jvm)
     id "application"
     id "com.diffplug.spotless" version "5.15.0"
 }
@@ -14,17 +14,15 @@ repositories {
 }
 
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31"
-    testImplementation group: "junit", name: "junit", version: "4.12"
-
     implementation(project(":ynab-api"))
 
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2"
-    implementation 'com.sksamuel.hoplite:hoplite-core:1.4.16'
-    implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.16'
-    implementation 'io.sentry:sentry:5.6.2'
+    implementation(libs.coroutines.core)
+    implementation(libs.hoplite.core)
+    implementation(libs.hoplite.yaml)
+    implementation(libs.sentry)
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.8.2'
+    testImplementation(libs.coroutines.test)
     testImplementation 'io.strikt:strikt-core:0.33.0'
     testImplementation 'io.mockk:mockk:1.12.2'
 }

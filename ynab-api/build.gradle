@@ -4,6 +4,7 @@ plugins {
     id("kotlin-kapt")
     id("com.yelp.codegen.plugin").version("1.4.1")
     id("com.diffplug.spotless")
+    alias(libs.plugins.ksp)
 }
 
 group 'co.moelten'
@@ -15,18 +16,16 @@ repositories {
 }
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.5.31'
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.31'
 
-    def moshiVersion = "1.12.0"
-    implementation "com.squareup.moshi:moshi:${moshiVersion}"
-    implementation "com.squareup.moshi:moshi-kotlin:${moshiVersion}"
-    implementation "com.squareup.moshi:moshi-adapters:${moshiVersion}"
-    api "com.squareup.okhttp3:okhttp:4.9.1"
-    implementation "com.squareup.okhttp3:logging-interceptor:4.9.1"
-    implementation "com.squareup.retrofit2:retrofit:2.9.0"
-    implementation "com.squareup.retrofit2:converter-moshi:2.9.0"
-    kapt "com.squareup.moshi:moshi-kotlin-codegen:${moshiVersion}"
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
+    implementation(libs.moshi.adapters)
+    ksp(libs.moshi.kotlin.codegen)
+    api(libs.okhttp)
+    implementation(libs.okhttp.logging.interceptor)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.moshi)
 
     api "org.threeten:threetenbp:1.5.1"
 
