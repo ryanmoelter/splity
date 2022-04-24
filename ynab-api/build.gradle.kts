@@ -3,13 +3,13 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 plugins {
   java
   alias(libs.plugins.kotlin.jvm)
-  id("com.yelp.codegen.plugin").version("1.4.1")
+  alias(libs.plugins.yelp.codegen)
   alias(libs.plugins.spotless)
   alias(libs.plugins.ksp)
 }
 
 group = "co.moelten"
-version = "0.1-SNAPSHOT"
+version = "0.2-SNAPSHOT"
 
 repositories {
   mavenCentral()
@@ -28,11 +28,11 @@ dependencies {
   implementation(libs.retrofit)
   implementation(libs.retrofit.converter.moshi)
 
-  api("org.threeten:threetenbp:1.5.1")
+  api(libs.threetenbp)
 
-  testImplementation("junit:junit:4.13.2")
-  testImplementation("com.squareup.okhttp3:mockwebserver:4.9.1")
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.5.2")
+  testImplementation(libs.junit4)
+  testImplementation(libs.okhttp.mockwebserver)
+  testImplementation(libs.coroutines.test)
 }
 
 generateSwagger {

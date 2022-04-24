@@ -23,10 +23,10 @@ dependencies {
   implementation(libs.hoplite.yaml)
   implementation(libs.sentry)
 
-  testImplementation("org.junit.jupiter:junit-jupiter:5.8.2")
+  testImplementation(libs.junit5)
   testImplementation(libs.coroutines.test)
-  testImplementation("io.strikt:strikt-core:0.33.0")
-  testImplementation("io.mockk:mockk:1.12.2")
+  testImplementation(libs.strikt)
+  testImplementation(libs.mockk)
 }
 
 tasks.withType<Test> {
