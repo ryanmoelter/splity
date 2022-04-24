@@ -13,6 +13,7 @@ retrofit = "2.9.0"
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqldelight" }
+spotless = { id = "com.diffplug.spotless", version = "5.15.0" }
 
 [libraries]
 # Kotlin
