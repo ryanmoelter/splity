@@ -6,3 +6,5 @@ CREATE TABLE budget (
   name TEXT NOT NULL,
   lastModifiedOn TEXT AS LocalDate
 );
+
+CREATE INDEX budgetId ON budget(id);
