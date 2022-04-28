@@ -1,0 +1,19 @@
+import co.moelten.splity.database.AccountId;
+import co.moelten.splity.database.BudgetId;
+import co.moelten.splity.database.PayeeId;
+import com.youneedabudget.client.models.Account;
+import kotlin.Boolean;
+
+CREATE TABLE storedAccount (
+  id TEXT AS AccountId PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  type TEXT AS Account.TypeEnum,
+  onBudget INTEGER AS Boolean NOT NULL,
+  closed INTEGER AS Boolean NOT NULL,
+  transferPayeeId TEXT AS PayeeId NOT NULL,
+  deleted INTEGER AS Boolean NOT NULL,
+  budgetId TEXT AS BudgetId NOT NULL,
+  FOREIGN KEY(budgetId) REFERENCES storedBudget(id)
+);
+
+CREATE INDEX accountId ON storedAccount(id);

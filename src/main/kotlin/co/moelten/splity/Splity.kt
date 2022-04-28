@@ -24,11 +24,6 @@ fun main() {
         sentry.doInSpan(operation = "mirrorTransactions()") {
           mirrorTransactions(ynab = ynab, budgetResponse = budgetResponse, config = config)
         }
-        if (config.ensureZeroBalanceOnCreditCards) {
-          sentry.doInSpan(operation = "ensureZeroBalanceOnCreditCards()") {
-            ensureZeroBalanceOnCreditCards(ynab = ynab, config = config, budgetResponse = budgetResponse)
-          }
-        }
       }
     }
   }

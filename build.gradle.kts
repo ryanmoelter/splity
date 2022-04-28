@@ -6,6 +6,7 @@ plugins {
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.spotless)
   alias(libs.plugins.sqldelight)
+  alias(libs.plugins.ksp)
 }
 
 group = "co.moelten"
@@ -18,10 +19,13 @@ repositories {
 dependencies {
   implementation(project(":ynab-api"))
 
+  implementation(libs.kotlin.inject.runtime)
   implementation(libs.coroutines.core)
   implementation(libs.hoplite.core)
   implementation(libs.hoplite.yaml)
   implementation(libs.sentry)
+
+  ksp(libs.kotlin.inject.compiler.ksp)
 
   implementation(libs.sqldelight.driver.jvm)
 

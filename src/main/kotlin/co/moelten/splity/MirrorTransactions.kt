@@ -27,12 +27,12 @@ suspend fun mirrorTransactions(
   config: Config
 ) {
 
-  val (firstTransactions, firstAccountAndBudget) =
-    getTransactionsAndIds(ynab, budgetResponse, config.firstAccount)
-  val (secondTransactions, secondAccountAndBudget) =
-    getTransactionsAndIds(ynab, budgetResponse, config.secondAccount)
-
   val otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
+
+  val (firstTransactions, firstAccountAndBudget) =
+    getTransactionsAndIds(otherAccountTransactionsCache, budgetResponse, config.firstAccount)
+  val (secondTransactions, secondAccountAndBudget) =
+    getTransactionsAndIds(otherAccountTransactionsCache, budgetResponse, config.secondAccount)
 
   val actions = createActionsForBothAccounts(
     firstTransactions = firstTransactions,
@@ -46,20 +46,14 @@ suspend fun mirrorTransactions(
 }
 
 private suspend fun getTransactionsAndIds(
-  ynab: YnabClient,
+  otherAccountTransactionsCache: OtherAccountTransactionsCache,
   budgetResponse: BudgetSummaryResponseData,
   accoungConfig: AccountConfig
 ): Pair<List<TransactionDetail>, AccountAndBudget> {
   val budget = budgetResponse.budgets.findByName(accoungConfig.budgetName)
   val splitAccountId = budget.accounts!!.findByName(accoungConfig.accountName).id
-  val transactions = ynab.transactions.getTransactionsByAccount(
-    budgetId = budget.id.toString(),
-    accountId = splitAccountId.toString(),
-    sinceDate = null,
-    type = null,
-    lastKnowledgeOfServer = null
-  ).data.transactions
   val accountAndBudget = AccountAndBudget(splitAccountId, budget.id)
+  val transactions = otherAccountTransactionsCache.getOtherAccountTransactions(accountAndBudget)
   return Pair(transactions, accountAndBudget)
 }
 
@@ -260,7 +254,11 @@ private suspend fun applyCreate(
 }
 
 fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boolean): String {
-  return if (isBaseEmpty) { "" } else { " • " } +
+  return if (isBaseEmpty) {
+    ""
+  } else {
+    " • "
+  } +
     "Out of ${totalAmount.absoluteValue.toMoneyString()}, " +
     "you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}"
 }

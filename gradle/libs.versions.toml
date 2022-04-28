@@ -2,6 +2,7 @@
 kotlin = "1.6.21"
 coroutines = "1.6.0"
 ksp = "1.6.21-1.0.5"
+inject = "0.4.1"
 hoplite = "1.4.16"
 sqldelight = "1.5.3"
 datetime = "0.3.2"
@@ -21,6 +22,10 @@ yelp-codegen = { id = "com.yelp.codegen.plugin", version = "1.4.1" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Injection
+kotlin-inject-runtime = { module = "me.tatarka.inject:kotlin-inject-runtime", version.ref = "inject" }
+kotlin-inject-compiler-ksp = { module = "me.tatarka.inject:kotlin-inject-compiler-ksp", version.ref = "inject" }
 
 # Config
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
