@@ -92,15 +92,15 @@ fun List<StoredTransaction>.toApiTransactions(
         amount = amount,
         cleared = cleared,
         approved = approved,
-        accountId = accountId.id,
+        accountId = accountId.plainUuid,
         deleted = processedState == ProcessedState.DELETED,
         accountName = accountName,
         subtransactions = subTransactions[id]!!.toApiSubTransactions(),
         memo = memo,
         flagColor = flagColor,
-        payeeId = payeeId?.id,
-        categoryId = categoryId?.id,
-        transferAccountId = transferAccountId?.id
+        payeeId = payeeId?.plainUuid,
+        categoryId = categoryId?.plainUuid,
+        transferAccountId = transferAccountId?.plainUuid
       )
     }
   }
@@ -113,11 +113,11 @@ fun List<StoredSubTransaction>.toApiSubTransactions() = map {
       amount = amount,
       deleted = processedState == ProcessedState.DELETED,
       memo = memo,
-      payeeId = payeeId?.id,
+      payeeId = payeeId?.plainUuid,
       payeeName = payeeName,
-      categoryId = categoryId?.id,
+      categoryId = categoryId?.plainUuid,
       categoryName = categoryName,
-      transferAccountId = transferAccountId?.id
+      transferAccountId = transferAccountId?.plainUuid
     )
   }
 }

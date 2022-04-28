@@ -4,8 +4,8 @@ import com.squareup.sqldelight.ColumnAdapter
 import java.util.UUID
 
 @JvmInline
-value class BudgetId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class BudgetId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toBudgetId() = BudgetId(UUID.fromString(this))
@@ -17,8 +17,8 @@ val budgetIdAdapter = object : ColumnAdapter<BudgetId, String> {
 }
 
 @JvmInline
-value class AccountId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class AccountId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toAccountId() = AccountId(UUID.fromString(this))
@@ -30,8 +30,8 @@ val accountIdAdapter = object : ColumnAdapter<AccountId, String> {
 }
 
 @JvmInline
-value class TransactionId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class TransactionId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toTransactionId() = TransactionId(UUID.fromString(this))
@@ -43,8 +43,8 @@ val transactionIdAdapter = object : ColumnAdapter<TransactionId, String> {
 }
 
 @JvmInline
-value class SubTransactionId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class SubTransactionId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toSubTransactionId() = SubTransactionId(UUID.fromString(this))
@@ -56,8 +56,8 @@ val subTransactionIdAdapter = object : ColumnAdapter<SubTransactionId, String> {
 }
 
 @JvmInline
-value class CategoryId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class CategoryId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toCategoryId() = CategoryId(UUID.fromString(this))
@@ -69,8 +69,8 @@ val categoryIdAdapter = object : ColumnAdapter<CategoryId, String> {
 }
 
 @JvmInline
-value class PayeeId(val id: UUID) {
-  override fun toString(): String = id.toString()
+value class PayeeId(val plainUuid: UUID) {
+  override fun toString(): String = plainUuid.toString()
 }
 
 fun String.toPayeeId() = PayeeId(UUID.fromString(this))

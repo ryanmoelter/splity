@@ -236,7 +236,7 @@ private suspend fun applyCreate(
     toAccountAndBudget.budgetId.toString(),
     SaveTransactionsWrapper(
       SaveTransaction(
-        accountId = toAccountAndBudget.accountId.id,
+        accountId = toAccountAndBudget.accountId.plainUuid,
         date = action.fromTransaction.date,
         amount = -action.fromTransaction.amount,
         payeeId = null,

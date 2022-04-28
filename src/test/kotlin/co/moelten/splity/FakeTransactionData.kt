@@ -14,7 +14,7 @@ val manuallyAddedTransaction = TransactionDetail(
   amount = 350000,
   cleared = TransactionDetail.ClearedEnum.UNCLEARED,
   approved = true,
-  accountId = FROM_ACCOUNT_ID,
+  accountId = FROM_ACCOUNT_ID.plainUuid,
   deleted = false,
   accountName = FROM_ACCOUNT_NAME,
   memo = "Manually added transaction",
@@ -36,7 +36,7 @@ val manuallyAddedTransactionComplement = TransactionDetail(
   amount = -350000,
   cleared = TransactionDetail.ClearedEnum.CLEARED,
   approved = false,
-  accountId = TO_ACCOUNT_ID,
+  accountId = TO_ACCOUNT_ID.plainUuid,
   deleted = false,
   accountName = TO_ACCOUNT_NAME,
   memo = "Manually added transaction",
@@ -58,7 +58,7 @@ val transactionAddedFromTransfer = TransactionDetail(
   amount = -10000,
   cleared = TransactionDetail.ClearedEnum.UNCLEARED,
   approved = true,
-  accountId = FROM_ACCOUNT_ID,
+  accountId = FROM_ACCOUNT_ID.plainUuid,
   deleted = false,
   accountName = FROM_ACCOUNT_NAME,
   memo = "Transaction added by split",
@@ -67,15 +67,15 @@ val transactionAddedFromTransfer = TransactionDetail(
   payeeName = "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
-  transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid,
   transferTransactionId = null,
   matchedTransactionId = null,
   importId = null,
   subtransactions = emptyList()
 )
 
-val subtransactionNonTransferSplitSource = SubTransaction(
-  id = "splitNonTransferSubtransaction",
+val subTransactionNonTransferSplitSource = SubTransaction(
+  id = "splitNonTransferSubTransaction",
   transactionId = "transactionTransferSplitSource",
   amount = -20000,
   deleted = false,
@@ -88,8 +88,8 @@ val subtransactionNonTransferSplitSource = SubTransaction(
   transferTransactionId = null
 )
 
-val subtransactionTransferSplitSource = SubTransaction(
-  id = "splitTransferSubtransaction",
+val subTransactionTransferSplitSource = SubTransaction(
+  id = "splitTransferSubTransaction",
   transactionId = "transactionTransferSplitSource",
   amount = -10000,
   deleted = false,
@@ -98,7 +98,7 @@ val subtransactionTransferSplitSource = SubTransaction(
   payeeName = "Transfer : $FROM_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
-  transferAccountId = FROM_ACCOUNT_ID,
+  transferAccountId = FROM_ACCOUNT_ID.plainUuid,
   transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID
 )
 
@@ -108,7 +108,7 @@ val transactionTransferSplitSource = TransactionDetail(
   amount = -30000,
   cleared = TransactionDetail.ClearedEnum.CLEARED,
   approved = true,
-  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid,
   deleted = false,
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Split transaction source",
@@ -122,8 +122,8 @@ val transactionTransferSplitSource = TransactionDetail(
   matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,
   subtransactions = listOf(
-    subtransactionNonTransferSplitSource,
-    subtransactionTransferSplitSource
+    subTransactionNonTransferSplitSource,
+    subTransactionTransferSplitSource
   )
 )
 
@@ -133,7 +133,7 @@ val transactionTransferNonSplitSource = TransactionDetail(
   amount = -10000,
   cleared = TransactionDetail.ClearedEnum.CLEARED,
   approved = true,
-  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid,
   deleted = false,
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Transfer transaction source",
@@ -142,7 +142,7 @@ val transactionTransferNonSplitSource = TransactionDetail(
   payeeName = "Transfer : $FROM_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
-  transferAccountId = FROM_ACCOUNT_ID,
+  transferAccountId = FROM_ACCOUNT_ID.plainUuid,
   transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   matchedTransactionId = UUID.randomUUID().toString(),
   importId = null,

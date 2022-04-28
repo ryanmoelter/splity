@@ -1,23 +1,25 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.toAccountId
+import co.moelten.splity.database.toCategoryId
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.Category
 import com.youneedabudget.client.models.CategoryGroupWithCategories
 import java.util.UUID.randomUUID
 
-val FIRST_CREDIT_CARD_CATEGORY_GROUP_ID = randomUUID()!!
+val FIRST_CREDIT_CARD_CATEGORY_GROUP_ID = randomUUID().toCategoryId()
 const val CREDIT_CARD_CATEGORY_GROUP_NAME = "Credit Card Payments"
-val FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_ID = randomUUID()!!
+val FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_ID = randomUUID().toCategoryId()
 const val FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_NAME = "Chase Sapphire"
-val FIRST_CREDIT_CARD_CATEGORY_FREEDOM_ID = randomUUID()!!
+val FIRST_CREDIT_CARD_CATEGORY_FREEDOM_ID = randomUUID().toCategoryId()
 const val FIRST_CREDIT_CARD_CATEGORY_FREEDOM_NAME = "Chase Freedom"
 
-val FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID = randomUUID()!!
-val FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID = randomUUID()!!
+val FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID = randomUUID().toAccountId()
+val FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID = randomUUID().toAccountId()
 
 val firstCreditCardCategorySapphire = Category(
-  id = FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_ID,
-  categoryGroupId = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID,
+  id = FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_ID.plainUuid,
+  categoryGroupId = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_NAME,
   hidden = false,
   budgeted = 0,
@@ -34,8 +36,8 @@ val firstCreditCardCategorySapphire = Category(
 )
 
 val firstCreditCardCategoryFreedom = Category(
-  id = FIRST_CREDIT_CARD_CATEGORY_FREEDOM_ID,
-  categoryGroupId = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID,
+  id = FIRST_CREDIT_CARD_CATEGORY_FREEDOM_ID.plainUuid,
+  categoryGroupId = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_FREEDOM_NAME,
   hidden = false,
   budgeted = 0,
@@ -52,7 +54,7 @@ val firstCreditCardCategoryFreedom = Category(
 )
 
 val firstCreditCardCategoryGroup = CategoryGroupWithCategories(
-  id = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID,
+  id = FIRST_CREDIT_CARD_CATEGORY_GROUP_ID.plainUuid,
   name = CREDIT_CARD_CATEGORY_GROUP_NAME,
   hidden = false,
   deleted = false,
@@ -73,7 +75,7 @@ val firstNonCreditCardCategoryGroup = CategoryGroupWithCategories(
 )
 
 val firstCreditCardAccountSapphire = Account(
-  id = FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID,
+  id = FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_NAME,
   type = Account.TypeEnum.CREDITCARD,
   onBudget = true,
@@ -87,7 +89,7 @@ val firstCreditCardAccountSapphire = Account(
 )
 
 val firstCreditCardAccountFreedom = Account(
-  id = FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID,
+  id = FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_FREEDOM_NAME,
   type = Account.TypeEnum.CREDITCARD,
   onBudget = true,

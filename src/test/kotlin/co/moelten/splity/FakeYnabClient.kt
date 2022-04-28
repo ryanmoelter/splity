@@ -1,5 +1,11 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.AccountId
+import co.moelten.splity.database.BudgetId
+import co.moelten.splity.database.CategoryId
+import co.moelten.splity.database.toAccountId
+import co.moelten.splity.database.toBudgetId
+import co.moelten.splity.database.toCategoryId
 import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.apis.AccountsApi
@@ -38,23 +44,23 @@ import com.youneedabudget.client.models.UpdateTransactionsWrapper
 import org.threeten.bp.LocalDate
 import java.util.UUID
 
-data class FakeDatabase(
-  var budgetToAccountsMap: Map<UUID, List<Account>> = mapOf(),
-  var budgetToCategoryGroupsMap: Map<UUID, List<CategoryGroupWithCategories>> = mapOf(),
+data class FakeYnabServerDatabase(
+  var budgetToAccountsMap: Map<BudgetId, List<Account>> = mapOf(),
+  var budgetToCategoryGroupsMap: Map<BudgetId, List<CategoryGroupWithCategories>> = mapOf(),
   var budgets: List<BudgetSummary> = emptyList(),
-  var accountToTransactionsMap: Map<UUID, List<TransactionDetail>> = mapOf(),
-  val setUp: FakeDatabase.() -> Unit = { }
+  var accountToTransactionsMap: Map<AccountId, List<TransactionDetail>> = mapOf(),
+  val setUp: FakeYnabServerDatabase.() -> Unit = { }
 ) {
   init {
     this.setUp()
   }
 
-  fun getBudgetedAmountForCategory(categoryId: UUID) = findCategory(categoryId).budgeted
+  fun getBudgetedAmountForCategory(categoryId: CategoryId) = findCategory(categoryId).budgeted
 
-  fun getBalanceForCategory(categoryId: UUID) = findCategory(categoryId).balance
+  fun getBalanceForCategory(categoryId: CategoryId) = findCategory(categoryId).balance
 
   fun setBudgetedAmountForCategory(
-    categoryId: UUID,
+    categoryId: CategoryId,
     balanceAmount: Long,
     budgetedAmount: Long
   ) {
@@ -65,40 +71,43 @@ data class FakeDatabase(
       }
   }
 
-  private fun findCategory(categoryId: UUID): Category {
+  private fun findCategory(categoryId: CategoryId): Category {
     return budgetToCategoryGroupsMap
       .flatMap { (_, categoryGroupList) -> categoryGroupList }
       .flatMap { it.categories }
-      .find { it.id == categoryId }!!
+      .find { it.id == categoryId.plainUuid }!!
   }
 
-  fun getBalanceForAccount(accountId: UUID) = budgetToAccountsMap
+  fun getBalanceForAccount(accountId: AccountId) = budgetToAccountsMap
     .flatMap { (_, accounts) -> accounts }
-    .find { it.id == accountId }!!
+    .find { it.id == accountId.plainUuid }!!
     .balance
 
   fun setBalanceForAccount(
-    accountId: UUID,
+    accountId: AccountId,
     balanceAmount: Long
   ) {
     budgetToAccountsMap
       .flatMap { (_, accounts) -> accounts }
-      .find { it.id == accountId }!!
+      .find { it.id == accountId.plainUuid }!!
       .balance = balanceAmount
   }
 }
 
-class FakeYnabClient(val fakeDatabase: FakeDatabase) : YnabClient {
-  override val budgets: BudgetsApi = FakeBudgets(fakeDatabase)
-  override val accounts: AccountsApi = FakeAccounts(fakeDatabase)
-  override val transactions: TransactionsApi = FakeTransactions(fakeDatabase)
-  override val categories: CategoriesApi = FakeCategories(fakeDatabase)
+class FakeYnabClient(val fakeYnabServerDatabase: FakeYnabServerDatabase) : YnabClient {
+  override val budgets: BudgetsApi = FakeBudgets(fakeYnabServerDatabase)
+  override val accounts: AccountsApi = FakeAccounts(fakeYnabServerDatabase)
+  override val transactions: TransactionsApi = FakeTransactions(fakeYnabServerDatabase)
+  override val categories: CategoriesApi = FakeCategories(fakeYnabServerDatabase)
 }
 
 class FakeBudgets(
-  private val fakeDatabase: FakeDatabase
+  private val fakeYnabServerDatabase: FakeYnabServerDatabase
 ) : BudgetsApi {
-  override suspend fun getBudgetById(budgetId: String, lastKnowledgeOfServer: Long?): BudgetDetailResponse {
+  override suspend fun getBudgetById(
+    budgetId: String,
+    lastKnowledgeOfServer: Long?
+  ): BudgetDetailResponse {
     TODO("Not yet implemented")
   }
 
@@ -107,28 +116,33 @@ class FakeBudgets(
   }
 
   override suspend fun getBudgets(includeAccounts: Boolean?): BudgetSummaryResponse {
-    val budgets = if (includeAccounts ?: false) {
-      fakeDatabase.budgets.map { budgetSummary ->
-        budgetSummary.copy(accounts = fakeDatabase.budgetToAccountsMap[budgetSummary.id])
+    val budgets = if (includeAccounts == true) {
+      fakeYnabServerDatabase.budgets.map { budgetSummary ->
+        budgetSummary.copy(
+          accounts = fakeYnabServerDatabase.budgetToAccountsMap[budgetSummary.id.toBudgetId()]
+        )
       }
     } else {
-      fakeDatabase.budgets
+      fakeYnabServerDatabase.budgets
     }
     return BudgetSummaryResponse(BudgetSummaryResponseData(budgets = budgets))
   }
 }
 
 class FakeAccounts(
-  private val fakeDatabase: FakeDatabase
+  private val fakeYnabServerDatabase: FakeYnabServerDatabase
 ) : AccountsApi {
   override suspend fun getAccountById(budgetId: String, accountId: UUID): AccountResponse {
     TODO("Not yet implemented")
   }
 
-  override suspend fun getAccounts(budgetId: String, lastKnowledgeOfServer: Long?): AccountsResponse {
+  override suspend fun getAccounts(
+    budgetId: String,
+    lastKnowledgeOfServer: Long?
+  ): AccountsResponse {
     return AccountsResponse(
       AccountsResponseData(
-        accounts = fakeDatabase.budgetToAccountsMap.getValue(budgetId.toUUID()),
+        accounts = fakeYnabServerDatabase.budgetToAccountsMap.getValue(budgetId.toBudgetId()),
         serverKnowledge = 0
       )
     )
@@ -136,19 +150,22 @@ class FakeAccounts(
 }
 
 class FakeTransactions(
-  private val fakeDatabase: FakeDatabase
+  private val fakeYnabServerDatabase: FakeYnabServerDatabase
 ) : TransactionsApi {
-  override suspend fun createTransaction(budgetId: String, data: SaveTransactionsWrapper): SaveTransactionsResponse {
-    require(data.transaction!!.importId?.length ?: 0 <= 36) {
+  override suspend fun createTransaction(
+    budgetId: String,
+    data: SaveTransactionsWrapper
+  ): SaveTransactionsResponse {
+    require((data.transaction!!.importId?.length ?: 0) <= 36) {
       "import_id (${data.transaction!!.importId}) is too long (maximum is $MAX_IMPORT_ID_LENGTH characters)"
     }
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
-    val accountId = data.transaction!!.accountId
-    val accountToTransactionsMap = fakeDatabase.accountToTransactionsMap.toMutableMap()
+    val accountId = data.transaction!!.accountId.toAccountId()
+    val accountToTransactionsMap = fakeYnabServerDatabase.accountToTransactionsMap.toMutableMap()
     val transactions = accountToTransactionsMap[accountId]?.toMutableList() ?: mutableListOf()
     transactions.add(newTransactionDetail)
     accountToTransactionsMap[accountId] = transactions
-    fakeDatabase.accountToTransactionsMap = accountToTransactionsMap.toMap()
+    fakeYnabServerDatabase.accountToTransactionsMap = accountToTransactionsMap.toMap()
 
     return SaveTransactionsResponse(
       SaveTransactionsResponseData(
@@ -161,7 +178,10 @@ class FakeTransactions(
     )
   }
 
-  override suspend fun getTransactionById(budgetId: String, transactionId: String): TransactionResponse {
+  override suspend fun getTransactionById(
+    budgetId: String,
+    transactionId: String
+  ): TransactionResponse {
     TODO("Not yet implemented")
   }
 
@@ -183,7 +203,7 @@ class FakeTransactions(
   ): TransactionsResponse {
     return TransactionsResponse(
       TransactionsResponseData(
-        fakeDatabase.accountToTransactionsMap.getValue(accountId.toUUID()),
+        fakeYnabServerDatabase.accountToTransactionsMap.getValue(accountId.toAccountId()),
         0
       )
     )
@@ -221,21 +241,37 @@ class FakeTransactions(
     TODO("Not yet implemented")
   }
 
-  override suspend fun updateTransactions(budgetId: String, data: UpdateTransactionsWrapper): SaveTransactionsResponse {
+  override suspend fun updateTransactions(
+    budgetId: String,
+    data: UpdateTransactionsWrapper
+  ): SaveTransactionsResponse {
     TODO("Not yet implemented")
   }
 }
 
-class FakeCategories(val fakeDatabase: FakeDatabase) : CategoriesApi {
-  override suspend fun getCategories(budgetId: String, lastKnowledgeOfServer: Long?): CategoriesResponse {
-    return CategoriesResponse(CategoriesResponseData(fakeDatabase.budgetToCategoryGroupsMap.getValue(budgetId.toUUID()), 0))
+class FakeCategories(private val fakeYnabServerDatabase: FakeYnabServerDatabase) : CategoriesApi {
+  override suspend fun getCategories(
+    budgetId: String,
+    lastKnowledgeOfServer: Long?
+  ): CategoriesResponse {
+    return CategoriesResponse(
+      CategoriesResponseData(
+        fakeYnabServerDatabase.budgetToCategoryGroupsMap.getValue(
+          budgetId.toBudgetId()
+        ), 0
+      )
+    )
   }
 
   override suspend fun getCategoryById(budgetId: String, categoryId: String): CategoryResponse {
     TODO("Not yet implemented")
   }
 
-  override suspend fun getMonthCategoryById(budgetId: String, month: LocalDate, categoryId: String): CategoryResponse {
+  override suspend fun getMonthCategoryById(
+    budgetId: String,
+    month: LocalDate,
+    categoryId: String
+  ): CategoryResponse {
     TODO("Not yet implemented")
   }
 
@@ -245,17 +281,16 @@ class FakeCategories(val fakeDatabase: FakeDatabase) : CategoriesApi {
     categoryId: String,
     data: SaveMonthCategoryWrapper
   ): SaveCategoryResponse {
-    val category = fakeDatabase.budgetToCategoryGroupsMap
-      .getValue(budgetId.toUUID())
+    val category = fakeYnabServerDatabase.budgetToCategoryGroupsMap
+      .getValue(budgetId.toBudgetId())
       .flatMap { it.categories }
-      .find { it.id == categoryId.toUUID() }!!
+      .find { it.id == categoryId.toCategoryId().plainUuid }!!
     category.budgeted = data.category.budgeted
     return SaveCategoryResponse(SaveCategoryResponseData(category, 0))
   }
 
 }
 
-private fun String.toUUID() = UUID.fromString(this)
 private fun SaveTransaction.toNewTransactionDetail() = TransactionDetail(
   UUID.randomUUID().toString(),
   date,
@@ -265,7 +300,7 @@ private fun SaveTransaction.toNewTransactionDetail() = TransactionDetail(
   accountId,
   false,
   "",  // TODO: Add account name
-  if (subtransactions.isNullOrEmpty()) emptyList() else TODO("Add subtransaction support"),
+  if (subtransactions.isNullOrEmpty()) emptyList() else TODO("Add sub-transaction support"),
   memo,
   flagColor?.toRegularFlagColorEnum(),
   payeeId,

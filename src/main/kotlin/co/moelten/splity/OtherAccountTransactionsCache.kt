@@ -12,7 +12,7 @@ data class OtherAccountTransactionsCache(
 ) {
 
   suspend fun getOtherAccountTransactions(accountAndBudget: AccountAndBudget): List<TransactionDetail> =
-    otherAccountTransactions[accountAndBudget.accountId.id]
+    otherAccountTransactions[accountAndBudget.accountId.plainUuid]
       ?: ynab.transactions.getTransactionsByAccount(
         accountAndBudget.budgetId.toString(),
         accountAndBudget.accountId.toString(),
@@ -22,7 +22,7 @@ data class OtherAccountTransactionsCache(
       )
         .data
         .transactions
-        .also { transactions -> otherAccountTransactions[accountAndBudget.accountId.id] = transactions }
+        .also { transactions -> otherAccountTransactions[accountAndBudget.accountId.plainUuid] = transactions }
 
   suspend fun getAssociatedImportId(
     fromTransaction: TransactionDetail,

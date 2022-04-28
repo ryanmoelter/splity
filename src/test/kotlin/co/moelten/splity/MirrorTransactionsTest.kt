@@ -27,15 +27,15 @@ import java.util.UUID.randomUUID
 
 internal class MirrorTransactionsTest {
 
-  lateinit var ynab: FakeYnabClient
+  private lateinit var ynab: FakeYnabClient
 
   @BeforeEach
   internal fun setUp() {
     setUpDatabase { }
   }
 
-  private fun setUpDatabase(setUp: FakeDatabase.() -> Unit) {
-    ynab = FakeYnabClient(FakeDatabase(setUp = setUp))
+  private fun setUpDatabase(setUp: FakeYnabServerDatabase.() -> Unit) {
+    ynab = FakeYnabClient(FakeYnabServerDatabase(setUp = setUp))
   }
 
   @Test
@@ -118,7 +118,7 @@ internal class MirrorTransactionsTest {
     val transactionAddedFromTransferWithLongIdComplement = transactionAddedFromTransferWithLongId.copy(
       id = randomUUID().toString(),
       amount = -transactionAddedFromTransferWithLongId.amount,
-      importId = subtransactionTransferSplitSource.id,
+      importId = subTransactionTransferSplitSource.id,
       cleared = TransactionDetail.ClearedEnum.CLEARED,
       approved = false
     )
@@ -126,9 +126,9 @@ internal class MirrorTransactionsTest {
       accountToTransactionsMap = mapOf(
         FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
           subtransactions = listOf(
-            subtransactionNonTransferSplitSource,
-            subtransactionTransferSplitSource.copy(
-              transferTransactionId = subtransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+            subTransactionNonTransferSplitSource,
+            subTransactionTransferSplitSource.copy(
+              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
             )
           )
         ))
@@ -222,7 +222,7 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-manuallyAddedTransaction.amount)
@@ -232,7 +232,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].memo).isEqualTo(manuallyAddedTransaction.memo + " • Out of $350.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
-      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID.plainUuid)
     }
   }
 
@@ -258,7 +258,7 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -268,7 +268,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
-      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID.plainUuid)
     }
   }
 
@@ -291,7 +291,7 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -301,7 +301,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].memo).isEqualTo(transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
-      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID.plainUuid)
     }
   }
 
@@ -326,7 +326,7 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -336,7 +336,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
-      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID.plainUuid)
     }
   }
 
@@ -349,9 +349,9 @@ internal class MirrorTransactionsTest {
       accountToTransactionsMap = mapOf(
         FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
           subtransactions = listOf(
-            subtransactionNonTransferSplitSource,
-            subtransactionTransferSplitSource.copy(
-              transferTransactionId = subtransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+            subTransactionNonTransferSplitSource,
+            subTransactionTransferSplitSource.copy(
+              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
             )
           )
         ))
@@ -371,7 +371,7 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransferWithLongId.amount)
@@ -381,7 +381,7 @@ internal class MirrorTransactionsTest {
       that(transactionList[0].memo).isEqualTo(transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%")
       that(transactionList[0].cleared).isEqualTo(TransactionDetail.ClearedEnum.CLEARED)
       that(transactionList[0].approved).isFalse()
-      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID)
+      that(transactionList[0].accountId).isEqualTo(TO_ACCOUNT_ID.plainUuid)
     }
   }
 
