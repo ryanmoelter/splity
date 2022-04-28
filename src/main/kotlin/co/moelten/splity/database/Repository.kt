@@ -3,6 +3,10 @@ package co.moelten.splity.database
 import co.moelten.splity.AccountAndBudget
 import co.moelten.splity.AccountConfig
 import co.moelten.splity.Config
+import co.moelten.splity.database.ProcessedState.CREATED
+import co.moelten.splity.database.ProcessedState.DELETED
+import co.moelten.splity.database.ProcessedState.UPDATED
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.findByName
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
@@ -10,7 +14,6 @@ import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.BudgetSummaryResponseData
-import com.youneedabudget.client.models.SubTransaction
 import com.youneedabudget.client.models.TransactionDetail
 import kotlinx.coroutines.coroutineScope
 import me.tatarka.inject.annotations.Inject
@@ -40,7 +43,7 @@ class Repository(
 
   /**
    * Fetch new [TransactionDetail]s for processing and store them in database.
-   * Also, find the budget / split account IDs if necessary.
+   * Also, find the [BudgetId]s and split [AccountId]s if necessary.
    */
   suspend fun fetchNewTransactions() {
     val syncData = getSyncData() ?: coroutineScope {
@@ -73,8 +76,7 @@ class Repository(
 
     processAndSaveTransactions(
       transactions = firstResponse.data.transactions,
-      budgetId = syncData.firstBudgetId,
-      accountId = syncData.firstAccountId
+      budgetId = syncData.firstBudgetId
     )
 
     replaceSyncData(
@@ -85,31 +87,76 @@ class Repository(
     )
   }
 
+  /**
+   * Take the new transactions and save them into the database. Mark each transaction with the
+   * appropriate [ProcessedState]:
+   *
+   * - [ProcessedState.UPDATED] if there's an existing [StoredTransaction] with the same
+   *   [StoredTransaction.id]
+   * - [ProcessedState.DELETED] if the transaction is marked as [TransactionDetail.deleted]
+   * - [ProcessedState.CREATED] otherwise
+   *
+   * Also, for [ProcessedState.UPDATED] and [ProcessedState.DELETED], add to ReplacedTransactions db
+   */
   private fun processAndSaveTransactions(
     transactions: List<TransactionDetail>,
-    budgetId: BudgetId,
-    accountId: AccountId
+    budgetId: BudgetId
   ) {
-    var (firstTransactions, firstSubTransactions) = transactions
+    val (storedTransactions, storedSubTransactions) = transactions
       .toUnprocessedStoredTransactions(budgetId)
 
     // Compare against transactions in database, specifically by id
     database.storedTransactionQueries.transaction {
-     firstTransactions = firstTransactions.map { transaction ->
-        val existingTransaction =
-          database.storedTransactionQueries.getById(transaction.id).executeAsOneOrNull()
-        if (existingTransaction != null) {
-          TODO("Copy into other database")
-          database.storedTransactionQueries.replaceSingle(transaction)
+      storedTransactions
+        .map { storedTransaction ->
+          val existingTransaction =
+            database.storedTransactionQueries.getById(storedTransaction.id).executeAsOneOrNull()
+          if (existingTransaction != null) {
+            database.replacedTransactionQueries.insert(existingTransaction.toReplacedTransaction())
 
-          transaction.copy(processedState = ProcessedState.UPDATED)
-        } else {
-          transaction
+            when (val state = storedTransaction.processedState) {
+              CREATED -> storedTransaction.copy(processedState = UPDATED)
+              DELETED -> storedTransaction
+              UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
+            }
+          } else {
+            storedTransaction
+          }
         }
-      }
+        .forEach { storedTransaction ->
+          database.storedTransactionQueries.replaceSingle(storedTransaction)
+        }
+    }
+
+    database.storedSubTransactionQueries.transaction {
+      storedSubTransactions
+        .map { storedSubTransaction ->
+          val existingTransaction =
+            database.storedSubTransactionQueries.getById(storedSubTransaction.id)
+              .executeAsOneOrNull()
+          if (existingTransaction != null) {
+            database.replacedSubTransactionQueries
+              .insert(existingTransaction.toReplacedSubTransaction())
+
+            when (val state = storedSubTransaction.processedState) {
+              CREATED -> storedSubTransaction.copy(processedState = UPDATED)
+              DELETED -> storedSubTransaction
+              UP_TO_DATE, UPDATED -> error("New sub-transactions should never be $state")
+            }
+          } else {
+            storedSubTransaction
+          }
+        }
+        .forEach { storedSubTransaction ->
+          database.storedSubTransactionQueries.replaceSingle(storedSubTransaction)
+        }
     }
   }
 
+  /**
+   * Find the [BudgetId] and [AccountId] specified by the given [accountConfig] in the given
+   * [budgetResponse]. Returned as an [AccountAndBudget] object for conciseness.
+   */
   private fun findAccountAndBudget(
     budgetResponse: BudgetSummaryResponseData,
     accountConfig: AccountConfig
@@ -128,122 +175,5 @@ class Repository(
       database.syncDataQueries.clear()
       database.syncDataQueries.insert(syncData)
     }
-  }
-}
-
-data class TransactionsAndSubTransactions(
-  val transactions: List<StoredTransaction>,
-  val subTransactions: List<StoredSubTransaction>
-)
-
-fun List<TransactionDetail>.toUnprocessedStoredTransactions(
-  budgetId: BudgetId
-): TransactionsAndSubTransactions {
-  val newSubTransactions = mutableListOf<StoredSubTransaction>()
-  val newTransactions = buildList {
-    this@toUnprocessedStoredTransactions.forEach { transactionDetail ->
-      with(transactionDetail) {
-        add(
-          StoredTransaction(
-            id = id.toTransactionId(),
-            date = date,
-            amount = amount,
-            cleared = cleared,
-            approved = approved,
-            accountId = accountId.toAccountId(),
-            accountName = accountName,
-            memo = memo,
-            flagColor = flagColor,
-            payeeId = payeeId?.toPayeeId(),
-            categoryId = categoryId?.toCategoryId(),
-            transferAccountId = transferAccountId?.toAccountId(),
-            transferTransactionId = transferTransactionId?.toTransactionId(),
-            matchedTransactionId = matchedTransactionId?.toTransactionId(),
-            importId = importId,
-            payeeName = payeeName,
-            categoryName = categoryName,
-            processedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED,
-            budgetId = budgetId
-          )
-        )
-        if (subtransactions.isNotEmpty()) {
-          newSubTransactions +=
-            subtransactions.toUnprocessedStoredSubTransactions(budgetId, accountId.toAccountId())
-        }
-      }
-    }
-  }
-
-  return TransactionsAndSubTransactions(newTransactions, newSubTransactions)
-}
-
-fun List<SubTransaction>.toUnprocessedStoredSubTransactions(
-  budgetId: BudgetId,
-  accountId: AccountId
-): List<StoredSubTransaction> {
-  return buildList {
-    this@toUnprocessedStoredSubTransactions.forEach { subTransaction ->
-      with(subTransaction) {
-        add(
-          StoredSubTransaction(
-            id = id.toSubTransactionId(),
-            transactionId = transactionId.toTransactionId(),
-            amount = amount,
-            memo = memo,
-            payeeId = payeeId?.toPayeeId(),
-            payeeName = payeeName,
-            categoryId = categoryId?.toCategoryId(),
-            categoryName = categoryName,
-            transferAccountId = transferAccountId?.toAccountId(),
-            transferTransactionId = transferTransactionId?.toTransactionId(),
-            processedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED,
-            accountId = accountId,
-            budgetId = budgetId
-          )
-        )
-      }
-    }
-  }
-}
-
-
-fun List<StoredTransaction>.toApiTransactions(
-  subTransactions: Map<TransactionId, List<StoredSubTransaction>>
-) =
-  map { storedTransaction ->
-    with(storedTransaction) {
-      TransactionDetail(
-        id = id.toString(),
-        date = date,
-        amount = amount,
-        cleared = cleared,
-        approved = approved,
-        accountId = accountId.id,
-        deleted = processedState == ProcessedState.DELETED,
-        accountName = accountName,
-        subtransactions = subTransactions[id]!!.toApiSubTransactions(),
-        memo = memo,
-        flagColor = flagColor,
-        payeeId = payeeId?.id,
-        categoryId = categoryId?.id,
-        transferAccountId = transferAccountId?.id
-      )
-    }
-  }
-
-fun List<StoredSubTransaction>.toApiSubTransactions() = map {
-  with(it) {
-    SubTransaction(
-      id = id.toString(),
-      transactionId = transactionId.toString(),
-      amount = amount,
-      deleted = processedState == ProcessedState.DELETED,
-      memo = memo,
-      payeeId = payeeId?.id,
-      payeeName = payeeName,
-      categoryId = categoryId?.id,
-      categoryName = categoryName,
-      transferAccountId = transferAccountId?.id
-    )
   }
 }

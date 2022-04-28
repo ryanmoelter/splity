@@ -9,6 +9,8 @@ import co.moelten.splity.database.localDateAdapter
 import co.moelten.splity.database.payeeIdAdapter
 import co.moelten.splity.database.subTransactionIdAdapter
 import co.moelten.splity.database.transactionIdAdapter
+import com.ryanmoelter.ynab.ReplacedSubTransaction
+import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredAccount
 import com.ryanmoelter.ynab.StoredBudget
 import com.ryanmoelter.ynab.StoredSubTransaction
@@ -87,6 +89,29 @@ interface SplityComponent {
       firstAccountIdAdapter = accountIdAdapter,
       secondBudgetIdAdapter = budgetIdAdapter,
       secondAccountIdAdapter = accountIdAdapter
-    )
+    ),
+    replacedTransactionAdapter = ReplacedTransaction.Adapter(
+      idAdapter = transactionIdAdapter,
+      dateAdapter = localDateAdapter,
+      clearedAdapter = EnumColumnAdapter(),
+      accountIdAdapter = accountIdAdapter,
+      flagColorAdapter = EnumColumnAdapter(),
+      payeeIdAdapter = payeeIdAdapter,
+      categoryIdAdapter = categoryIdAdapter,
+      transferAccountIdAdapter = accountIdAdapter,
+      transferTransactionIdAdapter = transactionIdAdapter,
+      matchedTransactionIdAdapter = transactionIdAdapter,
+      budgetIdAdapter = budgetIdAdapter
+    ),
+    replacedSubTransactionAdapter = ReplacedSubTransaction.Adapter(
+      idAdapter = subTransactionIdAdapter,
+      transactionIdAdapter = transactionIdAdapter,
+      payeeIdAdapter = payeeIdAdapter,
+      categoryIdAdapter = categoryIdAdapter,
+      transferAccountIdAdapter = accountIdAdapter,
+      transferTransactionIdAdapter = transactionIdAdapter,
+      accountIdAdapter = accountIdAdapter,
+      budgetIdAdapter = budgetIdAdapter
+    ),
   )
 }

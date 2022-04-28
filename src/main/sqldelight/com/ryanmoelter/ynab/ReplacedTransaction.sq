@@ -1,0 +1,53 @@
+import co.moelten.splity.database.AccountId;
+import co.moelten.splity.database.BudgetId;
+import co.moelten.splity.database.CategoryId;
+import co.moelten.splity.database.PayeeId;
+import co.moelten.splity.database.TransactionId;
+import com.youneedabudget.client.models.TransactionDetail;
+import kotlin.Boolean;
+import org.threeten.bp.LocalDate;
+
+CREATE TABLE replacedTransaction (
+  id TEXT AS TransactionId PRIMARY KEY NOT NULL,
+  date TEXT AS LocalDate NOT NULL,
+  amount INTEGER NOT NULL,
+  cleared TEXT AS TransactionDetail.ClearedEnum NOT NULL,
+  approved INTEGER AS Boolean NOT NULL,
+  accountId TEXT AS AccountId NOT NULL,
+  accountName TEXT NOT NULL,
+  memo TEXT,
+  flagColor TEXT AS TransactionDetail.FlagColorEnum,
+  payeeId TEXT AS PayeeId,
+  categoryId TEXT AS CategoryId,
+  transferAccountId TEXT AS AccountId,
+  transferTransactionId TEXT AS TransactionId,
+  matchedTransactionId TEXT AS TransactionId,
+  importId TEXT,
+  payeeName TEXT,
+  categoryName TEXT,
+
+  budgetId TEXT AS BudgetId NOT NULL,
+  FOREIGN KEY(id) REFERENCES storedTransaction(id),
+  FOREIGN KEY(budgetId) REFERENCES storedBudget(id),
+  FOREIGN KEY(accountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferAccountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferTransactionId) REFERENCES storedTransaction(id),
+  FOREIGN KEY(matchedTransactionId) REFERENCES storedTransaction(id)
+);
+
+CREATE INDEX replacedTransactionId ON replacedTransaction(id);
+
+getById:
+SELECT *
+FROM replacedTransaction
+WHERE id = ?
+;
+
+insert:
+INSERT INTO replacedTransaction
+VALUES ?
+;
+
+clear:
+DELETE FROM replacedTransaction
+;
