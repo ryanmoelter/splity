@@ -68,7 +68,8 @@ interface SplityComponent {
       transferAccountIdAdapter = accountIdAdapter,
       transferTransactionIdAdapter = transactionIdAdapter,
       matchedTransactionIdAdapter = transactionIdAdapter,
-      budgetIdAdapter = budgetIdAdapter
+      budgetIdAdapter = budgetIdAdapter,
+      processedStateAdapter = EnumColumnAdapter()
     ),
     storedSubTransactionAdapter = StoredSubTransaction.Adapter(
       idAdapter = subTransactionIdAdapter,
@@ -78,7 +79,8 @@ interface SplityComponent {
       transferAccountIdAdapter = accountIdAdapter,
       transferTransactionIdAdapter = transactionIdAdapter,
       accountIdAdapter = accountIdAdapter,
-      budgetIdAdapter = budgetIdAdapter
+      budgetIdAdapter = budgetIdAdapter,
+      processedStateAdapter = EnumColumnAdapter()
     ),
     syncDataAdapter = SyncData.Adapter(
       firstBudgetIdAdapter = budgetIdAdapter,

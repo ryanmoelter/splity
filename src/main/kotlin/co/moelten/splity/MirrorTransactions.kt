@@ -5,6 +5,10 @@ import co.moelten.splity.TransactionAction.Delete
 import co.moelten.splity.TransactionAction.Update
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
+import co.moelten.splity.database.AccountId
+import co.moelten.splity.database.BudgetId
+import co.moelten.splity.database.toAccountId
+import co.moelten.splity.database.toBudgetId
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
@@ -51,8 +55,8 @@ private suspend fun getTransactionsAndIds(
   accoungConfig: AccountConfig
 ): Pair<List<TransactionDetail>, AccountAndBudget> {
   val budget = budgetResponse.budgets.findByName(accoungConfig.budgetName)
-  val splitAccountId = budget.accounts!!.findByName(accoungConfig.accountName).id
-  val accountAndBudget = AccountAndBudget(splitAccountId, budget.id)
+  val splitAccountId = budget.accounts!!.findByName(accoungConfig.accountName).id.toAccountId()
+  val accountAndBudget = AccountAndBudget(splitAccountId, budget.id.toBudgetId())
   val transactions = otherAccountTransactionsCache.getOtherAccountTransactions(accountAndBudget)
   return Pair(transactions, accountAndBudget)
 }
@@ -203,7 +207,7 @@ private suspend fun applyCreate(
   val transactionDescription = if (action.fromTransaction.transferAccountId != null) {
     val otherAccountTransactions = otherAccountTransactionsCache.getOtherAccountTransactions(
       AccountAndBudget(
-        action.fromTransaction.transferAccountId!!,
+        action.fromTransaction.transferAccountId!!.toAccountId(),
         fromAccountAndBudget.budgetId
       )
     )
@@ -232,7 +236,7 @@ private suspend fun applyCreate(
     toAccountAndBudget.budgetId.toString(),
     SaveTransactionsWrapper(
       SaveTransaction(
-        accountId = toAccountAndBudget.accountId,
+        accountId = toAccountAndBudget.accountId.id,
         date = action.fromTransaction.date,
         amount = -action.fromTransaction.amount,
         payeeId = null,
@@ -287,7 +291,7 @@ fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (thi
   TransactionDetail.FlagColorEnum.PURPLE -> SaveTransaction.FlagColorEnum.PURPLE
 }
 
-data class AccountAndBudget(val accountId: UUID, val budgetId: UUID)
+data class AccountAndBudget(val accountId: AccountId, val budgetId: BudgetId)
 data class TransactionDescription(val payeeName: String?, val memo: String?, val totalAmount: Long)
 
 val TransactionDetail.transactionDescription

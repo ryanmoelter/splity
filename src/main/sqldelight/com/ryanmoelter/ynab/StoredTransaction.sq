@@ -2,6 +2,7 @@ import co.moelten.splity.database.AccountId;
 import co.moelten.splity.database.BudgetId;
 import co.moelten.splity.database.CategoryId;
 import co.moelten.splity.database.PayeeId;
+import co.moelten.splity.database.ProcessedState;
 import co.moelten.splity.database.TransactionId;
 import com.youneedabudget.client.models.TransactionDetail;
 import kotlin.Boolean;
@@ -14,7 +15,6 @@ CREATE TABLE storedTransaction (
   cleared TEXT AS TransactionDetail.ClearedEnum NOT NULL,
   approved INTEGER AS Boolean NOT NULL,
   accountId TEXT AS AccountId NOT NULL,
-  deleted INTEGER AS Boolean NOT NULL,
   accountName TEXT NOT NULL,
   memo TEXT,
   flagColor TEXT AS TransactionDetail.FlagColorEnum,
@@ -27,6 +27,7 @@ CREATE TABLE storedTransaction (
   payeeName TEXT,
   categoryName TEXT,
 
+  processedState TEXT AS ProcessedState NOT NULL,
   budgetId TEXT AS BudgetId NOT NULL,
   FOREIGN KEY(budgetId) REFERENCES storedBudget(id),
   FOREIGN KEY(accountId) REFERENCES storedAccount(id),
@@ -37,6 +38,12 @@ CREATE TABLE storedTransaction (
 
 CREATE INDEX transactionId ON storedTransaction(id);
 
+getById:
+SELECT *
+FROM storedTransaction
+WHERE id = ?
+;
+
 getByAccount:
 SELECT *
 FROM storedTransaction
@@ -44,3 +51,7 @@ WHERE accountId = ?
 ORDER BY date ASC
 ;
 
+replaceSingle:
+REPLACE INTO storedTransaction
+VALUES ?
+;

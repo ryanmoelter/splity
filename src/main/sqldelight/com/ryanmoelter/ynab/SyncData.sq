@@ -1,19 +1,24 @@
 import co.moelten.splity.database.AccountId;
 import co.moelten.splity.database.BudgetId;
 
-
 CREATE TABLE syncData (
-  firstServerKnowledge INTEGER NOT NULL,
+  firstServerKnowledge INTEGER,
   firstBudgetId TEXT AS BudgetId NOT NULL,
   firstAccountId TEXT AS AccountId NOT NULL,
-  firstAccountFetchedName TEXT NOT NULL,
-  secondServerKnowledge INTEGER NOT NULL,
+  secondServerKnowledge INTEGER,
   secondBudgetId TEXT AS BudgetId NOT NULL,
-  secondAccountId TEXT AS AccountId NOT NULL,
-  secondAccountFetchedName TEXT NOT NULL
+  secondAccountId TEXT AS AccountId NOT NULL
 );
 
 getOnly:
 SELECT *
 FROM syncData
+;
+
+insert:
+INSERT INTO syncData
+VALUES ?;
+
+clear:
+DELETE FROM syncData
 ;

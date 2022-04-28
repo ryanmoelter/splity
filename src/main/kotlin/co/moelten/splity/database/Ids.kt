@@ -9,6 +9,7 @@ value class BudgetId(val id: UUID) {
 }
 
 fun String.toBudgetId() = BudgetId(UUID.fromString(this))
+fun UUID.toBudgetId() = BudgetId(this)
 
 val budgetIdAdapter = object : ColumnAdapter<BudgetId, String> {
   override fun decode(databaseValue: String) = databaseValue.toBudgetId()
@@ -21,6 +22,7 @@ value class AccountId(val id: UUID) {
 }
 
 fun String.toAccountId() = AccountId(UUID.fromString(this))
+fun UUID.toAccountId() = AccountId(this)
 
 val accountIdAdapter = object : ColumnAdapter<AccountId, String> {
   override fun decode(databaseValue: String) = databaseValue.toAccountId()
@@ -33,6 +35,7 @@ value class TransactionId(val id: UUID) {
 }
 
 fun String.toTransactionId() = TransactionId(UUID.fromString(this))
+fun UUID.toTransactionId() = TransactionId(this)
 
 val transactionIdAdapter = object : ColumnAdapter<TransactionId, String> {
   override fun decode(databaseValue: String) = databaseValue.toTransactionId()
@@ -45,6 +48,7 @@ value class SubTransactionId(val id: UUID) {
 }
 
 fun String.toSubTransactionId() = SubTransactionId(UUID.fromString(this))
+fun UUID.toSubTransactionId() = SubTransactionId(this)
 
 val subTransactionIdAdapter = object : ColumnAdapter<SubTransactionId, String> {
   override fun decode(databaseValue: String) = databaseValue.toSubTransactionId()
@@ -57,6 +61,7 @@ value class CategoryId(val id: UUID) {
 }
 
 fun String.toCategoryId() = CategoryId(UUID.fromString(this))
+fun UUID.toCategoryId() = CategoryId(this)
 
 val categoryIdAdapter = object : ColumnAdapter<CategoryId, String> {
   override fun decode(databaseValue: String) = databaseValue.toCategoryId()
@@ -69,6 +74,7 @@ value class PayeeId(val id: UUID) {
 }
 
 fun String.toPayeeId() = PayeeId(UUID.fromString(this))
+fun UUID.toPayeeId() = PayeeId(this)
 
 val payeeIdAdapter = object : ColumnAdapter<PayeeId, String> {
   override fun decode(databaseValue: String) = databaseValue.toPayeeId()
