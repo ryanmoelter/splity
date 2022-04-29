@@ -6,7 +6,7 @@ import kotlinx.coroutines.runBlocking
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
-internal class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
+class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
 
   private lateinit var ynab: FakeYnabClient
 
@@ -15,18 +15,18 @@ internal class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
   }
 
   @Test
-  internal fun noAction_zero() {
+  fun noAction_zero() {
     setUpDatabase {
-      budgets = listOf(firstBudget)
+      budgets = listOf(fromBudget)
       budgetToAccountsMap =
         mapOf(
-          firstBudget.id.toBudgetId() to listOf(
+          fromBudget.id.toBudgetId() to listOf(
             firstCreditCardAccountSapphire,
             firstCreditCardAccountFreedom
           )
         )
       budgetToCategoryGroupsMap =
-        mapOf(firstBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
+        mapOf(fromBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
 
       setBalanceForAccount(FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID, balanceAmount = 0)
       setBalanceForAccount(FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID, balanceAmount = 0)
@@ -65,18 +65,18 @@ internal class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
   }
 
   @Test
-  internal fun noAction_nonZero() {
+  fun noAction_nonZero() {
     setUpDatabase {
-      budgets = listOf(firstBudget)
+      budgets = listOf(fromBudget)
       budgetToAccountsMap =
         mapOf(
-          firstBudget.id.toBudgetId() to listOf(
+          fromBudget.id.toBudgetId() to listOf(
             firstCreditCardAccountSapphire,
             firstCreditCardAccountFreedom
           )
         )
       budgetToCategoryGroupsMap =
-        mapOf(firstBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
+        mapOf(fromBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
 
       setBalanceForAccount(FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID, balanceAmount = -50)
       setBalanceForAccount(FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID, balanceAmount = -100)
@@ -115,18 +115,18 @@ internal class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
   }
 
   @Test
-  internal fun fixMismatchedBalances() {
+  fun fixMismatchedBalances() {
     setUpDatabase {
-      budgets = listOf(firstBudget)
+      budgets = listOf(fromBudget)
       budgetToAccountsMap =
         mapOf(
-          firstBudget.id.toBudgetId() to listOf(
+          fromBudget.id.toBudgetId() to listOf(
             firstCreditCardAccountSapphire,
             firstCreditCardAccountFreedom
           )
         )
       budgetToCategoryGroupsMap =
-        mapOf(firstBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
+        mapOf(fromBudget.id.toBudgetId() to listOf(firstCreditCardCategoryGroup))
 
       setBalanceForAccount(
         FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID,

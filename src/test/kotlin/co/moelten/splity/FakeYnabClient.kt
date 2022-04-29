@@ -1,8 +1,5 @@
 package co.moelten.splity
 
-import co.moelten.splity.database.AccountId
-import co.moelten.splity.database.BudgetId
-import co.moelten.splity.database.CategoryId
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.database.toCategoryId
@@ -12,19 +9,15 @@ import com.youneedabudget.client.apis.AccountsApi
 import com.youneedabudget.client.apis.BudgetsApi
 import com.youneedabudget.client.apis.CategoriesApi
 import com.youneedabudget.client.apis.TransactionsApi
-import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.AccountResponse
 import com.youneedabudget.client.models.AccountsResponse
 import com.youneedabudget.client.models.AccountsResponseData
 import com.youneedabudget.client.models.BudgetDetailResponse
 import com.youneedabudget.client.models.BudgetSettingsResponse
-import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.BudgetSummaryResponse
 import com.youneedabudget.client.models.BudgetSummaryResponseData
 import com.youneedabudget.client.models.CategoriesResponse
 import com.youneedabudget.client.models.CategoriesResponseData
-import com.youneedabudget.client.models.Category
-import com.youneedabudget.client.models.CategoryGroupWithCategories
 import com.youneedabudget.client.models.CategoryResponse
 import com.youneedabudget.client.models.HybridTransactionsResponse
 import com.youneedabudget.client.models.SaveCategoryResponse
@@ -43,56 +36,6 @@ import com.youneedabudget.client.models.TransactionsResponseData
 import com.youneedabudget.client.models.UpdateTransactionsWrapper
 import org.threeten.bp.LocalDate
 import java.util.UUID
-
-data class FakeYnabServerDatabase(
-  var budgetToAccountsMap: Map<BudgetId, List<Account>> = mapOf(),
-  var budgetToCategoryGroupsMap: Map<BudgetId, List<CategoryGroupWithCategories>> = mapOf(),
-  var budgets: List<BudgetSummary> = emptyList(),
-  var accountToTransactionsMap: Map<AccountId, List<TransactionDetail>> = mapOf(),
-  val setUp: FakeYnabServerDatabase.() -> Unit = { }
-) {
-  init {
-    this.setUp()
-  }
-
-  fun getBudgetedAmountForCategory(categoryId: CategoryId) = findCategory(categoryId).budgeted
-
-  fun getBalanceForCategory(categoryId: CategoryId) = findCategory(categoryId).balance
-
-  fun setBudgetedAmountForCategory(
-    categoryId: CategoryId,
-    balanceAmount: Long,
-    budgetedAmount: Long
-  ) {
-    findCategory(categoryId)
-      .apply {
-        balance = balanceAmount
-        budgeted = budgetedAmount
-      }
-  }
-
-  private fun findCategory(categoryId: CategoryId): Category {
-    return budgetToCategoryGroupsMap
-      .flatMap { (_, categoryGroupList) -> categoryGroupList }
-      .flatMap { it.categories }
-      .find { it.id == categoryId.plainUuid }!!
-  }
-
-  fun getBalanceForAccount(accountId: AccountId) = budgetToAccountsMap
-    .flatMap { (_, accounts) -> accounts }
-    .find { it.id == accountId.plainUuid }!!
-    .balance
-
-  fun setBalanceForAccount(
-    accountId: AccountId,
-    balanceAmount: Long
-  ) {
-    budgetToAccountsMap
-      .flatMap { (_, accounts) -> accounts }
-      .find { it.id == accountId.plainUuid }!!
-      .balance = balanceAmount
-  }
-}
 
 class FakeYnabClient(val fakeYnabServerDatabase: FakeYnabServerDatabase) : YnabClient {
   override val budgets: BudgetsApi = FakeBudgets(fakeYnabServerDatabase)
@@ -336,5 +279,3 @@ private fun SaveTransaction.FlagColorEnum.toRegularFlagColorEnum() = when (this)
   SaveTransaction.FlagColorEnum.BLUE -> TransactionDetail.FlagColorEnum.BLUE
   SaveTransaction.FlagColorEnum.PURPLE -> TransactionDetail.FlagColorEnum.PURPLE
 }
-
-fun createEmptyFakeYnabClient() = FakeYnabClient(FakeYnabServerDatabase())
