@@ -30,12 +30,11 @@ val accountIdAdapter = object : ColumnAdapter<AccountId, String> {
 }
 
 @JvmInline
-value class TransactionId(val plainUuid: UUID) {
-  override fun toString(): String = plainUuid.toString()
+value class TransactionId(val string: String) {
+  override fun toString(): String = string
 }
 
-fun String.toTransactionId() = TransactionId(UUID.fromString(this))
-fun UUID.toTransactionId() = TransactionId(this)
+fun String.toTransactionId() = TransactionId(this)
 
 val transactionIdAdapter = object : ColumnAdapter<TransactionId, String> {
   override fun decode(databaseValue: String) = databaseValue.toTransactionId()
