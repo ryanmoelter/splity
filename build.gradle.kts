@@ -7,6 +7,7 @@ plugins {
   alias(libs.plugins.spotless)
   alias(libs.plugins.sqldelight)
   alias(libs.plugins.ksp)
+  idea
 }
 
 group = "co.moelten"
@@ -29,7 +30,9 @@ dependencies {
 
   implementation(libs.sqldelight.driver.jvm)
 
-  testImplementation(libs.junit5)
+  testImplementation(libs.kotest.runner)
+  testImplementation(libs.kotest.assertions.core)
+  testImplementation(libs.kotest.framework.datatest)
   testImplementation(libs.coroutines.test)
   testImplementation(libs.strikt)
   testImplementation(libs.mockk)
@@ -90,3 +93,12 @@ task("createProperties") {
 
 val classes: Task by tasks
 classes.dependsOn("createProperties")
+
+idea {
+  module {
+    // Not using += due to https://github.com/gradle/gradle/issues/8749
+    sourceDirs = sourceDirs + file("build/generated/ksp/main/kotlin") // or tasks["kspKotlin"].destination
+    testSourceDirs = testSourceDirs + file("build/generated/ksp/test/kotlin")
+    generatedSourceDirs = generatedSourceDirs + file("build/generated/ksp/main/kotlin") + file("build/generated/ksp/test/kotlin")
+  }
+}

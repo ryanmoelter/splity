@@ -8,6 +8,8 @@ import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.findByName
+import co.moelten.splity.models.PublicTransactionDetail
+import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.SyncData
@@ -24,7 +26,7 @@ class Repository(
   private val api: YnabClient,
   private val config: Config
 ) {
-  fun getTransactionsByAccount(accountId: AccountId): List<TransactionDetail> {
+  fun getTransactionsByAccount(accountId: AccountId): List<PublicTransactionDetail> {
     val storedTransactions =
       database.storedTransactionQueries.getByAccount(accountId).executeAsList()
     val storedSubTransactions =
@@ -38,11 +40,15 @@ class Repository(
       }
     }
 
-    return storedTransactions.toApiTransactions(subTransactionMap)
+    return storedTransactions.map { storedTransaction ->
+      storedTransaction.toPublicTransactionDetail(
+        subTransactionMap[storedTransaction.id] ?: emptyList()
+      )
+    }
   }
 
   /**
-   * Fetch new [TransactionDetail]s for processing and store them in database.
+   * Fetch new transactions for processing and store them in database.
    * Also, find the [BudgetId]s and split [AccountId]s if necessary.
    */
   suspend fun fetchNewTransactions() {

@@ -6,14 +6,12 @@ import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionResponse
 import com.youneedabudget.client.models.TransactionResponseData
+import io.kotest.core.spec.style.AnnotationSpec
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
 import org.threeten.bp.LocalDate
 import org.threeten.bp.Month
 import strikt.api.expect
@@ -25,7 +23,7 @@ import strikt.assertions.isEqualTo
 import strikt.assertions.isFalse
 import java.util.UUID.randomUUID
 
-internal class MirrorTransactionsTest {
+internal class MirrorTransactionsTest : AnnotationSpec() {
 
   private lateinit var ynab: FakeYnabClient
 
@@ -52,11 +50,13 @@ internal class MirrorTransactionsTest {
 
     expectThat(actions) {
       hasSize(1)
-      contains(CompleteTransactionAction(
-        TransactionAction.Create(manuallyAddedTransaction),
-        FROM_ACCOUNT_AND_BUDGET,
-        TO_ACCOUNT_AND_BUDGET
-      ))
+      contains(
+        CompleteTransactionAction(
+          TransactionAction.Create(manuallyAddedTransaction),
+          FROM_ACCOUNT_AND_BUDGET,
+          TO_ACCOUNT_AND_BUDGET
+        )
+      )
     }
   }
 
@@ -115,23 +115,26 @@ internal class MirrorTransactionsTest {
     val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer.copy(
       id = transactionAddedFromTransfer.id + "_st_1_2020-06-20"
     )
-    val transactionAddedFromTransferWithLongIdComplement = transactionAddedFromTransferWithLongId.copy(
-      id = randomUUID().toString(),
-      amount = -transactionAddedFromTransferWithLongId.amount,
-      importId = subTransactionTransferSplitSource.id,
-      cleared = TransactionDetail.ClearedEnum.CLEARED,
-      approved = false
-    )
+    val transactionAddedFromTransferWithLongIdComplement =
+      transactionAddedFromTransferWithLongId.copy(
+        id = randomUUID().toString(),
+        amount = -transactionAddedFromTransferWithLongId.amount,
+        importId = subTransactionTransferSplitSource.id,
+        cleared = TransactionDetail.ClearedEnum.CLEARED,
+        approved = false
+      )
     setUpDatabase {
       accountToTransactionsMap = mapOf(
-        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
-          subtransactions = listOf(
-            subTransactionNonTransferSplitSource,
-            subTransactionTransferSplitSource.copy(
-              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(
+          transactionTransferSplitSource.copy(
+            subtransactions = listOf(
+              subTransactionNonTransferSplitSource,
+              subTransactionTransferSplitSource.copy(
+                transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+              )
             )
           )
-        ))
+        )
       )
     }
     val actions = runBlocking {
@@ -184,9 +187,10 @@ internal class MirrorTransactionsTest {
   }
 
   @Test
-  @Disabled
+  @Ignore
   fun updateTransaction_approved() {
-    val manuallyAddedTransactionComplementApproved = manuallyAddedTransactionComplement.copy(approved = true)
+    val manuallyAddedTransactionComplementApproved =
+      manuallyAddedTransactionComplement.copy(approved = true)
 
     val actions = runBlocking {
       createActionsForBothAccounts(
@@ -200,7 +204,13 @@ internal class MirrorTransactionsTest {
 
     expectThat(actions) {
       hasSize(1)
-      contains(TransactionAction.Update(manuallyAddedTransactionComplementApproved, manuallyAddedTransaction, setOf(UpdateField.CLEAR)))
+      contains(
+        TransactionAction.Update(
+          manuallyAddedTransactionComplementApproved,
+          manuallyAddedTransaction,
+          setOf(UpdateField.CLEAR)
+        )
+      )
     }
   }
 
@@ -222,7 +232,8 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList =
+      ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-manuallyAddedTransaction.amount)
@@ -258,7 +269,8 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList =
+      ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -275,7 +287,8 @@ internal class MirrorTransactionsTest {
   @Test
   fun applyActions_create_fromTransfer_withoutDuplicatingNetworkCalls() {
     setUpDatabase {
-      accountToTransactionsMap = mapOf(FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferNonSplitSource))
+      accountToTransactionsMap =
+        mapOf(FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferNonSplitSource))
     }
     runBlocking {
       applyActions(
@@ -291,7 +304,8 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList =
+      ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -326,7 +340,8 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList =
+      ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransfer.amount)
@@ -347,14 +362,16 @@ internal class MirrorTransactionsTest {
     )
     setUpDatabase {
       accountToTransactionsMap = mapOf(
-        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(transactionTransferSplitSource.copy(
-          subtransactions = listOf(
-            subTransactionNonTransferSplitSource,
-            subTransactionTransferSplitSource.copy(
-              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+        FROM_TRANSFER_SOURCE_ACCOUNT_ID to listOf(
+          transactionTransferSplitSource.copy(
+            subtransactions = listOf(
+              subTransactionNonTransferSplitSource,
+              subTransactionTransferSplitSource.copy(
+                transferTransactionId = subTransactionTransferSplitSource.transferTransactionId + "_st_1_2020-06-20"
+              )
             )
           )
-        ))
+        )
       )
     }
     runBlocking {
@@ -371,7 +388,8 @@ internal class MirrorTransactionsTest {
       )
     }
 
-    val transactionList = ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList =
+      ynab.fakeYnabServerDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
     expect {
       that(transactionList).hasSize(1)
       that(transactionList[0].amount).isEqualTo(-transactionAddedFromTransferWithLongId.amount)
@@ -409,20 +427,28 @@ internal class MirrorTransactionsTest {
     }
 
     val saveTransactionSlot = slot<SaveTransactionWrapper>()
-    coVerify { ynab.transactions.updateTransaction(TO_BUDGET_ID.toString(), manuallyAddedTransaction.id, capture(saveTransactionSlot)) }
-    expectThat(saveTransactionSlot.captured.transaction).isEqualTo(SaveTransaction(
-      accountId = manuallyAddedTransaction.accountId,
-      date = manuallyAddedTransaction.date,
-      amount = manuallyAddedTransaction.amount,
-      payeeId = manuallyAddedTransaction.payeeId,
-      payeeName = null,
-      categoryId = manuallyAddedTransaction.categoryId,
-      memo = manuallyAddedTransaction.memo,
-      cleared = SaveTransaction.ClearedEnum.CLEARED,
-      approved = manuallyAddedTransaction.approved,
-      flagColor = manuallyAddedTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
-      importId = manuallyAddedTransaction.importId,
-      subtransactions = null
-    ))
+    coVerify {
+      ynab.transactions.updateTransaction(
+        TO_BUDGET_ID.toString(),
+        manuallyAddedTransaction.id,
+        capture(saveTransactionSlot)
+      )
+    }
+    expectThat(saveTransactionSlot.captured.transaction).isEqualTo(
+      SaveTransaction(
+        accountId = manuallyAddedTransaction.accountId,
+        date = manuallyAddedTransaction.date,
+        amount = manuallyAddedTransaction.amount,
+        payeeId = manuallyAddedTransaction.payeeId,
+        payeeName = null,
+        categoryId = manuallyAddedTransaction.categoryId,
+        memo = manuallyAddedTransaction.memo,
+        cleared = SaveTransaction.ClearedEnum.CLEARED,
+        approved = manuallyAddedTransaction.approved,
+        flagColor = manuallyAddedTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
+        importId = manuallyAddedTransaction.importId,
+        subtransactions = null
+      )
+    )
   }
 }

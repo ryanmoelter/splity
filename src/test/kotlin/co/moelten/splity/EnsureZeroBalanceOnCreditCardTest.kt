@@ -1,12 +1,12 @@
 package co.moelten.splity
 
 import co.moelten.splity.database.toBudgetId
+import io.kotest.core.spec.style.AnnotationSpec
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.assertions.isEqualTo
 
-internal class EnsureZeroBalanceOnCreditCardTest {
+internal class EnsureZeroBalanceOnCreditCardTest : AnnotationSpec() {
 
   private lateinit var ynab: FakeYnabClient
 

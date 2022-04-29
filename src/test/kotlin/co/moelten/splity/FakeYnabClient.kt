@@ -191,7 +191,16 @@ class FakeTransactions(
     type: String?,
     lastKnowledgeOfServer: Long?
   ): TransactionsResponse {
-    TODO("Not yet implemented")
+    return TransactionsResponse(
+      TransactionsResponseData(
+        fakeYnabServerDatabase
+          .budgetToAccountsMap.getValue(budgetId.toBudgetId())
+          .flatMap { account ->
+            fakeYnabServerDatabase.accountToTransactionsMap.getValue(account.id.toAccountId())
+          },
+        0
+      )
+    )
   }
 
   override suspend fun getTransactionsByAccount(
@@ -327,3 +336,5 @@ private fun SaveTransaction.FlagColorEnum.toRegularFlagColorEnum() = when (this)
   SaveTransaction.FlagColorEnum.BLUE -> TransactionDetail.FlagColorEnum.BLUE
   SaveTransaction.FlagColorEnum.PURPLE -> TransactionDetail.FlagColorEnum.PURPLE
 }
+
+fun createEmptyFakeYnabClient() = FakeYnabClient(FakeYnabServerDatabase())
