@@ -12,6 +12,7 @@ import com.youneedabudget.client.models.Category
 import com.youneedabudget.client.models.CategoryGroupWithCategories
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.TransactionDetail
+import io.kotest.matchers.collections.shouldBeEmpty
 
 data class FakeYnabServerDatabase(
   var budgetToAccountsMap: Map<BudgetId, List<Account>> = mapOf(),
@@ -84,6 +85,10 @@ data class FakeYnabServerDatabase(
       .find { it.id == accountId.plainUuid }!!
       .balance = balanceAmount
   }
+}
+
+fun FakeYnabServerDatabase.shouldHaveNoTransactions() {
+  accountToTransactionsMap.values.flatten().shouldBeEmpty()
 }
 
 private fun <Key, Value> Map<Key, Value>.mutate(

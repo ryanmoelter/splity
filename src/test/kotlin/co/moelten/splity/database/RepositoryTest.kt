@@ -11,8 +11,11 @@ import co.moelten.splity.TO_ACCOUNT_ID
 import co.moelten.splity.TO_BUDGET_ID
 import co.moelten.splity.fromBudget
 import co.moelten.splity.injection.createFakeSplityComponent
+import co.moelten.splity.manuallyAddedTransaction
+import co.moelten.splity.manuallyAddedTransactionComplement
 import co.moelten.splity.publicUnremarkableTransactionInTransferSource
 import co.moelten.splity.test.Setup
+import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.toBudget
 import co.moelten.splity.unremarkableTransactionInTransferSource
 import com.ryanmoelter.ynab.SyncData
@@ -105,6 +108,27 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
             publicUnremarkableTransactionInTransferSource(ProcessedState.UPDATED)
           )
       }
+    }
+  }
+
+  context("with manually added complement transactions") {
+    setUpServerDatabase {
+      addTransactionsForAccount(
+        FROM_ACCOUNT_ID,
+        listOf(manuallyAddedTransaction.toApiTransaction())
+      )
+      addTransactionsForAccount(
+        TO_ACCOUNT_ID,
+        listOf(manuallyAddedTransactionComplement.toApiTransaction())
+      )
+    }
+
+    test("fetchNewTransactions finds new transactions") {
+      repository.fetchNewTransactions()
+      repository.getTransactionsByAccount(FROM_ACCOUNT_ID) shouldHaveSingleElement
+        manuallyAddedTransaction
+      repository.getTransactionsByAccount(TO_ACCOUNT_ID) shouldHaveSingleElement
+        manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
     }
   }
 }

@@ -109,6 +109,10 @@ class Repository(
       transactions = firstResponse.data.transactions,
       budgetId = syncData.firstBudgetId
     )
+    processAndSaveTransactions(
+      transactions = secondResponse.data.transactions,
+      budgetId = syncData.secondBudgetId
+    )
 
     replaceSyncData(
       syncData.copy(
