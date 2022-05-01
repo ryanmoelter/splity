@@ -1,28 +1,29 @@
 package co.moelten.splity
 
-import com.sksamuel.hoplite.ConfigLoader
-import com.sksamuel.hoplite.PropertySource
-import com.youneedabudget.client.YnabClientImpl
+import co.moelten.splity.database.RealDatabaseModule
+import co.moelten.splity.database.create
+import co.moelten.splity.injection.RealApiModule
+import co.moelten.splity.injection.RealConfigModule
+import co.moelten.splity.injection.SplityComponent
+import co.moelten.splity.injection.create
 import kotlinx.coroutines.runBlocking
-import java.io.File
 
 fun main() {
-  val configLoader = ConfigLoader.Builder()
-    .addDecoder(DateDecoder())
-    .addSource(PropertySource.resource("/version.properties"))
-    .build()
-  val config = configLoader.loadConfigOrThrow<Config>(File("./config.yaml"))
-  val sentry = setUpSentry(config.sentryConfig, config.version)
+  val component = SplityComponent::class.create(
+    RealDatabaseModule::class.create(),
+    RealConfigModule::class.create(),
+    RealApiModule::class.create()
+  )
+  val sentry = component.sentry
 
   sentry.doInTransaction(operation = "runBlocking()", name = "run splity") {
     runBlocking {
-      val ynab = YnabClientImpl(config.ynabToken, sentry::doInSpan)
-
       sentry.doInSpan(operation = "run (suspended)") {
+        val ynab = component.api
         val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
 
         sentry.doInSpan(operation = "mirrorTransactions()") {
-          mirrorTransactions(ynab = ynab, budgetResponse = budgetResponse, config = config)
+          mirrorTransactions(component = component, budgetResponse = budgetResponse)
         }
       }
     }

@@ -51,6 +51,14 @@ WHERE accountId = ?
 ORDER BY date ASC
 ;
 
+getUnprocessedByAccount:
+SELECT *
+FROM storedTransaction
+WHERE accountId = ?
+  AND processedState != "UP_TO_DATE"
+ORDER BY date ASC
+;
+
 replaceSingle:
 REPLACE INTO storedTransaction
 VALUES ?

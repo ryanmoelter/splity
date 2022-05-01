@@ -19,6 +19,7 @@ abstract class SplityComponent(
   abstract val config: Config
   abstract val database: Database
   abstract val api: YnabClient
+  abstract val sentry: SentryWrapper
 
   @Provides
   @Singleton

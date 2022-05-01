@@ -29,14 +29,9 @@ class RepositoryTest : FunSpec({
   val localDatabase = component.database
   val repository = Repository(localDatabase, component.api, component.config)
 
-  val setUpServerDatabase: Setup<FakeYnabServerDatabase> =
-    { setUp: FakeYnabServerDatabase.() -> Unit ->
-      serverDatabase.also(setUp)
-    }
+  val setUpServerDatabase: Setup<FakeYnabServerDatabase> = { setUp -> serverDatabase.also(setUp) }
 
-  val setUpLocalDatabase: Setup<Database> = { setUp: Database.() -> Unit ->
-    localDatabase.also(setUp)
-  }
+  val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
 
   setUpServerDatabase {
     setUpBudgetsAndAccounts(
@@ -54,7 +49,8 @@ class RepositoryTest : FunSpec({
           firstAccountId = FROM_ACCOUNT_ID,
           secondServerKnowledge = 0,
           secondBudgetId = TO_BUDGET_ID,
-          secondAccountId = TO_ACCOUNT_ID
+          secondAccountId = TO_ACCOUNT_ID,
+          shouldMatchTransactions = false
         )
       )
     }

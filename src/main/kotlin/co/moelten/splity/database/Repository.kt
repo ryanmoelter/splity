@@ -26,25 +26,26 @@ class Repository(
   private val api: YnabClient,
   private val config: Config
 ) {
+  fun getUnprocessedTransactionsByAccount(
+    accountAndBudget: AccountAndBudget
+  ): List<PublicTransactionDetail> {
+    val storedTransactions =
+      database.storedTransactionQueries.getUnprocessedByAccount(accountAndBudget.accountId).executeAsList()
+    // We don't need to specifically get unprocessed SubTransactions, because the API will always
+    // return an updated TransactionDetail with the updated SubTransactions
+    val storedSubTransactions =
+      database.storedSubTransactionQueries.getByAccount(accountAndBudget.accountId).executeAsList()
+
+    return storedTransactions.toPublicTransactionList(storedSubTransactions)
+  }
+
   fun getTransactionsByAccount(accountId: AccountId): List<PublicTransactionDetail> {
     val storedTransactions =
       database.storedTransactionQueries.getByAccount(accountId).executeAsList()
     val storedSubTransactions =
       database.storedSubTransactionQueries.getByAccount(accountId).executeAsList()
-    val subTransactionMap = buildMap<TransactionId, List<StoredSubTransaction>> {
-      storedSubTransactions.forEach { storedSubTransaction ->
-        put(
-          storedSubTransaction.transactionId,
-          (get(storedSubTransaction.transactionId) ?: emptyList()) + storedSubTransaction
-        )
-      }
-    }
 
-    return storedTransactions.map { storedTransaction ->
-      storedTransaction.toPublicTransactionDetail(
-        subTransactionMap[storedTransaction.id] ?: emptyList()
-      )
-    }
+    return storedTransactions.toPublicTransactionList(storedSubTransactions)
   }
 
   /**
@@ -64,6 +65,7 @@ class Repository(
         secondServerKnowledge = null,
         secondBudgetId = secondAccountAndBudget.budgetId,
         secondAccountId = secondAccountAndBudget.accountId,
+        shouldMatchTransactions = true
       )
     }
 
@@ -181,5 +183,24 @@ class Repository(
       database.syncDataQueries.clear()
       database.syncDataQueries.insert(syncData)
     }
+  }
+}
+
+private fun List<StoredTransaction>.toPublicTransactionList(
+  storedSubTransactions: List<StoredSubTransaction>
+): List<PublicTransactionDetail> {
+  val subTransactionMap = buildMap<TransactionId, List<StoredSubTransaction>> {
+    storedSubTransactions.forEach { storedSubTransaction ->
+      put(
+        storedSubTransaction.transactionId,
+        (get(storedSubTransaction.transactionId) ?: emptyList()) + storedSubTransaction
+      )
+    }
+  }
+
+  return map { storedTransaction ->
+    storedTransaction.toPublicTransactionDetail(
+      subTransactionMap[storedTransaction.id] ?: emptyList()
+    )
   }
 }

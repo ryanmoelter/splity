@@ -9,6 +9,7 @@ import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
+import co.moelten.splity.injection.SplityComponent
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
@@ -26,11 +27,11 @@ import java.util.UUID
 import kotlin.math.absoluteValue
 
 suspend fun mirrorTransactions(
-  ynab: YnabClient,
-  budgetResponse: BudgetSummaryResponseData,
-  config: Config
+  component: SplityComponent,
+  budgetResponse: BudgetSummaryResponseData
 ) {
-
+  val config = component.config
+  val ynab = component.api
   val otherAccountTransactionsCache = OtherAccountTransactionsCache(ynab)
 
   val (firstTransactions, firstAccountAndBudget) =
