@@ -1,6 +1,7 @@
 package co.moelten.splity.injection
 
 import co.moelten.splity.ActionApplier
+import co.moelten.splity.ActionCreator
 import co.moelten.splity.Config
 import co.moelten.splity.SentryWrapper
 import co.moelten.splity.TransactionMirrorer
@@ -24,6 +25,7 @@ abstract class SplityComponent(
   abstract val sentry: SentryWrapper
   abstract val transactionMirrorer: TransactionMirrorer
   abstract val actionApplier: ActionApplier
+  abstract val actionCreator: ActionCreator
 
   @Provides
   @Singleton

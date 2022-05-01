@@ -53,7 +53,7 @@ class ActionApplierTest : FunSpec({
 
   context("with non-split transfer") {
     setUpLocalDatabase {
-      addTransactions(listOf(transactionTransferNonSplitSource))
+      addTransactions(transactionTransferNonSplitSource)
     }
 
     test("create from transfer") {
@@ -106,7 +106,7 @@ class ActionApplierTest : FunSpec({
 
   test("create from split transfer") {
     setUpLocalDatabase {
-      addTransactions(listOf(transactionTransferSplitSource))
+      addTransactions(transactionTransferSplitSource)
     }
     CompleteTransactionAction(
       transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
@@ -138,14 +138,12 @@ class ActionApplierTest : FunSpec({
     )
     setUpLocalDatabase {
       addTransactions(
-        listOf(
-          transactionTransferSplitSource.copy(
-            subTransactions = listOf(
-              subTransactionNonTransferSplitSource,
-              subTransactionTransferSplitSource.copy(
-                transferTransactionId = subTransactionTransferSplitSource.transferTransactionId!! +
-                  "_st_1_2020-06-20"
-              )
+        transactionTransferSplitSource.copy(
+          subTransactions = listOf(
+            subTransactionNonTransferSplitSource,
+            subTransactionTransferSplitSource.copy(
+              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId!! +
+                "_st_1_2020-06-20"
             )
           )
         )

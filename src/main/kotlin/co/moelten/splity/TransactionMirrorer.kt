@@ -6,10 +6,7 @@ import co.moelten.splity.TransactionAction.Update
 import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.Repository
-import co.moelten.splity.database.firstAccountAndBudget
-import co.moelten.splity.database.secondAccountAndBudget
 import co.moelten.splity.models.PublicTransactionDetail
-import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.SaveTransaction
@@ -19,87 +16,19 @@ import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.RECONCILED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import me.tatarka.inject.annotations.Inject
-import org.threeten.bp.LocalDate
 import java.util.UUID
 import kotlin.math.absoluteValue
 
 @Inject
 class TransactionMirrorer(
-  val config: Config,
-  val repository: Repository,
-  val ynab: YnabClient,
-  val actionApplier: ActionApplier
+  private val repository: Repository,
+  private val actionApplier: ActionApplier,
+  private val actionCreator: ActionCreator
 ) {
   suspend fun mirrorTransactions() {
     repository.fetchNewTransactions()
 
-    val syncData = repository.getSyncData()!!
-
-    val firstTransactions =
-      repository.getTransactionsByAccount(syncData.firstAccountId)
-    val secondTransactions =
-      repository.getTransactionsByAccount(syncData.secondAccountId)
-
-    val actions = createDifferentialActionsForBothAccounts(
-      firstTransactions = firstTransactions,
-      firstAccountAndBudget = syncData.firstAccountAndBudget,
-      secondTransactions = secondTransactions,
-      secondAccountAndBudget = syncData.secondAccountAndBudget,
-      startDate = config.startDate
-    )
-
-    applyActions(actions)
-  }
-
-  fun createDifferentialActionsForBothAccounts(
-    firstTransactions: List<PublicTransactionDetail>,
-    firstAccountAndBudget: AccountAndBudget,
-    secondTransactions: List<PublicTransactionDetail>,
-    secondAccountAndBudget: AccountAndBudget,
-    startDate: LocalDate
-  ): List<CompleteTransactionAction> {
-    // TODO: Match against all transactions, not just new ones
-    var filteredFirstTransactions = firstTransactions
-      .filter { it.date.isAfter(startDate.minusDays(1)) }
-    var filteredSecondTransactions = secondTransactions
-      .filter { it.date.isAfter(startDate.minusDays(1)) }
-
-    firstTransactions.forEach { transactionDetail ->
-      val complement = secondTransactions
-        .find { it.date == transactionDetail.date && it.amount == -transactionDetail.amount }
-
-      if (complement != null) {
-        filteredFirstTransactions = filteredFirstTransactions - transactionDetail
-        filteredSecondTransactions = filteredSecondTransactions - complement
-      }
-    }
-
-    return filteredFirstTransactions
-      .filter { it.approved }
-      .map { transactionDetail ->
-        CompleteTransactionAction(
-          transactionAction = Create(transactionDetail),
-          fromAccountAndBudget = firstAccountAndBudget,
-          toAccountAndBudget = secondAccountAndBudget
-        )
-      } + filteredSecondTransactions
-      .filter { it.approved }
-      .map { transactionDetail ->
-        CompleteTransactionAction(
-          transactionAction = Create(transactionDetail),
-          fromAccountAndBudget = secondAccountAndBudget,
-          toAccountAndBudget = firstAccountAndBudget
-        )
-      }
-  }
-
-  internal suspend fun applyActions(
-    actions: List<CompleteTransactionAction>,
-  ) {
-    actions.forEach { action ->
-      println("Apply: $action")
-      action.apply(actionApplier = actionApplier)
-    }
+    actionApplier.applyActions(actionCreator.createDifferentialActionsForBothAccounts())
   }
 }
 

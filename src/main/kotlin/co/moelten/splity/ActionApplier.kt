@@ -13,6 +13,16 @@ class ActionApplier(
   val repository: Repository,
   val ynab: YnabClient
 ) {
+
+  suspend fun applyActions(
+    actions: List<CompleteTransactionAction>,
+  ) {
+    actions.forEach { action ->
+      println("Apply: $action")
+      action.apply(actionApplier = this)
+    }
+  }
+
   suspend fun applyUpdate(
     action: TransactionAction.Update,
     toAccountAndBudget: AccountAndBudget

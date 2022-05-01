@@ -18,7 +18,7 @@ import com.youneedabudget.client.models.TransactionDetail
 
 typealias Setup<Subject> = (Subject.() -> Unit) -> Unit
 
-fun Database.addTransactions(transactions: List<PublicTransactionDetail>) {
+fun Database.addTransactions(vararg transactions: PublicTransactionDetail) {
   storedTransactionQueries.transaction {
     transactions.forEach { transaction ->
       storedTransactionQueries.replaceSingle(transaction.toStoredTransaction())
