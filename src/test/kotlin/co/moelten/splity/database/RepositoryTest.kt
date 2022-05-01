@@ -12,6 +12,7 @@ import co.moelten.splity.TO_BUDGET_ID
 import co.moelten.splity.fromBudget
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.publicUnremarkableTransactionInTransferSource
+import co.moelten.splity.test.Setup
 import co.moelten.splity.toBudget
 import co.moelten.splity.unremarkableTransactionInTransferSource
 import com.ryanmoelter.ynab.SyncData
@@ -20,8 +21,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSingleElement
-
-typealias Setup<Subject> = (Subject.() -> Unit) -> Unit
 
 class RepositoryTest : FunSpec({
   val serverDatabase = FakeYnabServerDatabase()

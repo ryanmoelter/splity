@@ -35,6 +35,8 @@ value class TransactionId(val string: String) {
 }
 
 fun String.toTransactionId() = TransactionId(this)
+fun UUID.toTransactionId() = TransactionId(this.toString())
+operator fun TransactionId.plus(postfix: String) = TransactionId(string + postfix)
 
 val transactionIdAdapter = object : ColumnAdapter<TransactionId, String> {
   override fun decode(databaseValue: String) = databaseValue.toTransactionId()
@@ -42,12 +44,13 @@ val transactionIdAdapter = object : ColumnAdapter<TransactionId, String> {
 }
 
 @JvmInline
-value class SubTransactionId(val plainUuid: UUID) {
-  override fun toString(): String = plainUuid.toString()
+value class SubTransactionId(val string: String) {
+  override fun toString(): String = string
 }
 
-fun String.toSubTransactionId() = SubTransactionId(UUID.fromString(this))
-fun UUID.toSubTransactionId() = SubTransactionId(this)
+fun String.toSubTransactionId() = SubTransactionId(this)
+fun UUID.toSubTransactionId() = SubTransactionId(this.toString())
+operator fun SubTransactionId.plus(postfix: String) = SubTransactionId(string + postfix)
 
 val subTransactionIdAdapter = object : ColumnAdapter<SubTransactionId, String> {
   override fun decode(databaseValue: String) = databaseValue.toSubTransactionId()

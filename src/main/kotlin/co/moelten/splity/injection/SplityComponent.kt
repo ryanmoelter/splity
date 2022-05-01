@@ -2,6 +2,7 @@ package co.moelten.splity.injection
 
 import co.moelten.splity.Config
 import co.moelten.splity.SentryWrapper
+import co.moelten.splity.TransactionMirrorer
 import co.moelten.splity.database.DatabaseModule
 import co.moelten.splity.setUpSentry
 import com.ryanmoelter.ynab.database.Database
@@ -20,6 +21,7 @@ abstract class SplityComponent(
   abstract val database: Database
   abstract val api: YnabClient
   abstract val sentry: SentryWrapper
+  abstract val transactionMirrorer: TransactionMirrorer
 
   @Provides
   @Singleton

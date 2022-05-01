@@ -36,10 +36,27 @@ FROM storedSubTransaction
 WHERE id = ?
 ;
 
+getByTransactionId:
+SELECT *
+FROM storedSubTransaction
+WHERE transactionId = ?
+;
+
 getByAccount:
 SELECT *
 FROM storedSubTransaction
 WHERE accountId = ?
+;
+
+getTransactionFromSubTransactionTransferId:
+WITH targetTransactionId AS (
+  SELECT transactionId
+  FROM storedSubTransaction
+  WHERE transferTransactionId = ?
+)
+SELECT *
+FROM storedTransaction
+WHERE id IN targetTransactionId
 ;
 
 replaceSingle:

@@ -19,11 +19,8 @@ fun main() {
   sentry.doInTransaction(operation = "runBlocking()", name = "run splity") {
     runBlocking {
       sentry.doInSpan(operation = "run (suspended)") {
-        val ynab = component.api
-        val budgetResponse = ynab.budgets.getBudgets(includeAccounts = true).data
-
         sentry.doInSpan(operation = "mirrorTransactions()") {
-          mirrorTransactions(component = component, budgetResponse = budgetResponse)
+          component.transactionMirrorer.mirrorTransactions()
         }
       }
     }

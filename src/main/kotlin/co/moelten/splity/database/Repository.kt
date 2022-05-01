@@ -30,13 +30,36 @@ class Repository(
     accountAndBudget: AccountAndBudget
   ): List<PublicTransactionDetail> {
     val storedTransactions =
-      database.storedTransactionQueries.getUnprocessedByAccount(accountAndBudget.accountId).executeAsList()
+      database.storedTransactionQueries.getUnprocessedByAccount(accountAndBudget.accountId)
+        .executeAsList()
     // We don't need to specifically get unprocessed SubTransactions, because the API will always
     // return an updated TransactionDetail with the updated SubTransactions
     val storedSubTransactions =
       database.storedSubTransactionQueries.getByAccount(accountAndBudget.accountId).executeAsList()
 
     return storedTransactions.toPublicTransactionList(storedSubTransactions)
+  }
+
+  fun getTransactionByTransferId(
+    transferId: TransactionId
+  ): PublicTransactionDetail? {
+    val storedTransaction = database.storedSubTransactionQueries
+      .getTransactionFromSubTransactionTransferId(transferId)
+      .executeAsOneOrNull()
+    return storedTransaction?.toPublicTransactionDetail(
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+    )
+  }
+
+  fun getTransactionBySubTransactionTransferId(
+    transferId: TransactionId
+  ): PublicTransactionDetail? {
+    val storedTransaction = database.storedSubTransactionQueries
+      .getTransactionFromSubTransactionTransferId(transferId)
+      .executeAsOneOrNull()
+    return storedTransaction?.toPublicTransactionDetail(
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+    )
   }
 
   fun getTransactionsByAccount(accountId: AccountId): List<PublicTransactionDetail> {
@@ -176,7 +199,7 @@ class Repository(
 
   // -- SyncDataRepository, could be a separate file -----------------------------------------------
 
-  private fun getSyncData(): SyncData? = database.syncDataQueries.getOnly().executeAsOneOrNull()
+  fun getSyncData(): SyncData? = database.syncDataQueries.getOnly().executeAsOneOrNull()
 
   private fun replaceSyncData(syncData: SyncData) {
     database.syncDataQueries.transaction {
