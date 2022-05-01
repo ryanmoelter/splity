@@ -399,8 +399,8 @@ internal class MirrorTransactionsTest : FunSpec({
                 toTransaction = manuallyAddedTransaction,
                 updateFields = setOf(UpdateField.CLEAR)
               ),
-              fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-              toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+              fromAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+              toAccountAndBudget = FROM_ACCOUNT_AND_BUDGET
             )
           )
         )

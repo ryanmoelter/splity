@@ -35,6 +35,7 @@ import com.youneedabudget.client.models.TransactionsImportResponse
 import com.youneedabudget.client.models.TransactionsResponse
 import com.youneedabudget.client.models.TransactionsResponseData
 import com.youneedabudget.client.models.UpdateTransactionsWrapper
+import io.kotest.matchers.collections.shouldContain
 import org.threeten.bp.LocalDate
 import java.util.UUID
 
@@ -191,7 +192,11 @@ class FakeTransactions(
     transactionId: String,
     data: SaveTransactionWrapper
   ): TransactionResponse {
-    // TODO: Crash if transaction is not associated with budget
+    fakeYnabServerDatabase.budgetToAccountsMap
+      .getValue(budgetId.toBudgetId())
+      .map { account -> account.id.toAccountId() } shouldContain
+      data.transaction.accountId.toAccountId()
+
     val newTransaction = fakeYnabServerDatabase.updateTransaction(transactionId, data.transaction)
 
     return TransactionResponse(TransactionResponseData(newTransaction))
