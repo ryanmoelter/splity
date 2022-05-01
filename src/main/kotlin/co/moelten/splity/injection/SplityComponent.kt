@@ -1,5 +1,6 @@
 package co.moelten.splity.injection
 
+import co.moelten.splity.ActionApplier
 import co.moelten.splity.Config
 import co.moelten.splity.SentryWrapper
 import co.moelten.splity.TransactionMirrorer
@@ -22,6 +23,7 @@ abstract class SplityComponent(
   abstract val api: YnabClient
   abstract val sentry: SentryWrapper
   abstract val transactionMirrorer: TransactionMirrorer
+  abstract val actionApplier: ActionApplier
 
   @Provides
   @Singleton
