@@ -43,8 +43,8 @@ class Repository(
   fun getTransactionByTransferId(
     transferId: TransactionId
   ): PublicTransactionDetail? {
-    val storedTransaction = database.storedSubTransactionQueries
-      .getTransactionFromSubTransactionTransferId(transferId)
+    val storedTransaction = database.storedTransactionQueries
+      .getByTransferId(transferId)
       .executeAsOneOrNull()
     return storedTransaction?.toPublicTransactionDetail(
       database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
@@ -54,8 +54,8 @@ class Repository(
   fun getTransactionBySubTransactionTransferId(
     transferId: TransactionId
   ): PublicTransactionDetail? {
-    val storedTransaction = database.storedSubTransactionQueries
-      .getTransactionFromSubTransactionTransferId(transferId)
+    val storedTransaction = database.storedTransactionQueries
+      .getBySubTransactionTransferId(transferId)
       .executeAsOneOrNull()
     return storedTransaction?.toPublicTransactionDetail(
       database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()

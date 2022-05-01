@@ -30,6 +30,7 @@ import com.youneedabudget.client.models.SaveTransactionsResponseData
 import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionResponse
+import com.youneedabudget.client.models.TransactionResponseData
 import com.youneedabudget.client.models.TransactionsImportResponse
 import com.youneedabudget.client.models.TransactionsResponse
 import com.youneedabudget.client.models.TransactionsResponseData
@@ -190,7 +191,10 @@ class FakeTransactions(
     transactionId: String,
     data: SaveTransactionWrapper
   ): TransactionResponse {
-    TODO("Not yet implemented")
+    // TODO: Crash if transaction is not associated with budget
+    val newTransaction = fakeYnabServerDatabase.updateTransaction(transactionId, data.transaction)
+
+    return TransactionResponse(TransactionResponseData(newTransaction))
   }
 
   override suspend fun updateTransactions(
@@ -243,15 +247,18 @@ class FakeCategories(private val fakeYnabServerDatabase: FakeYnabServerDatabase)
 
 }
 
-private fun SaveTransaction.toNewTransactionDetail() = TransactionDetail(
-  UUID.randomUUID().toString(),
+fun SaveTransaction.toNewTransactionDetail(
+  id: String = UUID.randomUUID().toString(),
+  oldTransaction: TransactionDetail? = null
+) = TransactionDetail(
+  id,
   date,
   amount,
   cleared?.toTransactionDetailClearedEnum() ?: TransactionDetail.ClearedEnum.UNCLEARED,
   approved ?: false,
   accountId,
   false,
-  "",  // TODO: Add account name
+  oldTransaction?.accountName ?: "",
   if (subtransactions.isNullOrEmpty()) emptyList() else TODO("Add sub-transaction support"),
   memo,
   flagColor?.toRegularFlagColorEnum(),
@@ -261,8 +268,8 @@ private fun SaveTransaction.toNewTransactionDetail() = TransactionDetail(
   null,
   null,
   importId,
-  payeeName,
-  ""  // TODO: Add category name
+  payeeName ?: oldTransaction?.payeeName,
+  oldTransaction?.categoryName ?: ""
 )
 
 private fun SaveTransaction.ClearedEnum.toTransactionDetailClearedEnum() = when (this) {

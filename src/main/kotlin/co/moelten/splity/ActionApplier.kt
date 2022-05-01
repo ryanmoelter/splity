@@ -52,14 +52,14 @@ class ActionApplier(
     fromAccountAndBudget: AccountAndBudget,
     toAccountAndBudget: AccountAndBudget
   ) {
-    val transactionDescription = if (action.fromTransaction.transferTransactionId != null) {
-      val parentOfSplitTransaction = repository.getTransactionBySubTransactionTransferId(
-        action.fromTransaction.transferTransactionId
-      )
+    val transactionDescription = if (action.fromTransaction.transferAccountId != null) {
+      val parentOfSplitTransaction =
+        repository.getTransactionBySubTransactionTransferId(action.fromTransaction.id)
 
-      parentOfSplitTransaction?.transactionDescription
+      parentOfSplitTransaction
+        ?.transactionDescription
         ?: repository.getTransactionByTransferId(
-          action.fromTransaction.transferTransactionId
+          action.fromTransaction.id
         )!!
           .let { transactionDetail ->
             TransactionDescription(

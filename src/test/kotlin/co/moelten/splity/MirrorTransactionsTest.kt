@@ -6,22 +6,14 @@ import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addTransactions
+import co.moelten.splity.test.toApiTransaction
 import com.ryanmoelter.ynab.database.Database
-import com.youneedabudget.client.YnabClient
-import com.youneedabudget.client.models.SaveTransaction
-import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.TransactionDetail
-import com.youneedabudget.client.models.TransactionResponse
-import com.youneedabudget.client.models.TransactionResponseData
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.mockk
-import io.mockk.slot
 import kotlinx.coroutines.runBlocking
 import org.threeten.bp.LocalDate
 import org.threeten.bp.Month
@@ -391,9 +383,13 @@ internal class MirrorTransactionsTest : FunSpec({
     }
 
     test("update approved") {
-      val ynab = mockk<YnabClient>()
-      coEvery { ynab.transactions.updateTransaction(any(), any(), any()) } returns
-        TransactionResponse(TransactionResponseData(mockk()))
+      setUpServerDatabase {
+        setUpBudgetsAndAccounts(fromBudget to listOf(FROM_ACCOUNT))
+        addTransactionsForAccount(
+          FROM_ACCOUNT_ID,
+          listOf(manuallyAddedTransaction.toApiTransaction())
+        )
+      }
       runBlocking {
         transactionMirrorer.applyActions(
           listOf(
@@ -410,30 +406,9 @@ internal class MirrorTransactionsTest : FunSpec({
         )
       }
 
-      val saveTransactionSlot = slot<SaveTransactionWrapper>()
-      coVerify {
-        ynab.transactions.updateTransaction(
-          TO_BUDGET_ID.toString(),
-          manuallyAddedTransaction.id.string,
-          capture(saveTransactionSlot)
-        )
-      }
-      expectThat(saveTransactionSlot.captured.transaction).isEqualTo(
-        SaveTransaction(
-          accountId = manuallyAddedTransaction.accountId.plainUuid,
-          date = manuallyAddedTransaction.date,
-          amount = manuallyAddedTransaction.amount,
-          payeeId = manuallyAddedTransaction.payeeId!!.plainUuid,
-          payeeName = null,
-          categoryId = manuallyAddedTransaction.categoryId!!.plainUuid,
-          memo = manuallyAddedTransaction.memo,
-          cleared = SaveTransaction.ClearedEnum.CLEARED,
-          approved = manuallyAddedTransaction.approved,
-          flagColor = manuallyAddedTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
-          importId = manuallyAddedTransaction.importId,
-          subtransactions = null
-        )
-      )
+      serverDatabase.getTransactionById(manuallyAddedTransaction.id) shouldBe
+        manuallyAddedTransaction.copy(cleared = TransactionDetail.ClearedEnum.CLEARED)
+          .toApiTransaction()
     }
   }
 })

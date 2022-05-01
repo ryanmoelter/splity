@@ -3,12 +3,14 @@ package co.moelten.splity
 import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.CategoryId
+import co.moelten.splity.database.TransactionId
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.Category
 import com.youneedabudget.client.models.CategoryGroupWithCategories
+import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.TransactionDetail
 
 data class FakeYnabServerDatabase(
@@ -22,6 +24,9 @@ data class FakeYnabServerDatabase(
     this.setUp()
   }
 
+  fun getTransactionById(id: TransactionId) =
+    accountToTransactionsMap.values.flatten().find { it.id == id.string }
+
   fun setUpBudgetsAndAccounts(vararg budgetsToAccounts: Pair<BudgetSummary, List<Account>>) {
     budgets = budgetsToAccounts.map { it.first }
     budgetToAccountsMap = budgetsToAccounts.associate { it.first.id.toBudgetId() to it.second }
@@ -34,6 +39,19 @@ data class FakeYnabServerDatabase(
   fun addTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
     accountToTransactionsMap = accountToTransactionsMap
       .mutateValue(accountId) { list -> list + transactions }
+  }
+
+  fun updateTransaction(id: String, transaction: SaveTransaction): TransactionDetail {
+    var result: TransactionDetail? = null
+    accountToTransactionsMap = accountToTransactionsMap
+      .mutateValue(transaction.accountId.toAccountId()) { list ->
+        val originalTransaction = list.find { it.id == id }
+        val newTransaction = transaction.toNewTransactionDetail(id, originalTransaction)
+        result = newTransaction
+        list.filter { it.id != id } + newTransaction
+      }
+
+    return result!!
   }
 
   fun getBudgetedAmountForCategory(categoryId: CategoryId) = findCategory(categoryId).budgeted

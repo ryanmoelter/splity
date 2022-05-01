@@ -48,17 +48,6 @@ FROM storedSubTransaction
 WHERE accountId = ?
 ;
 
-getTransactionFromSubTransactionTransferId:
-WITH targetTransactionId AS (
-  SELECT transactionId
-  FROM storedSubTransaction
-  WHERE transferTransactionId = ?
-)
-SELECT *
-FROM storedTransaction
-WHERE id IN targetTransactionId
-;
-
 replaceSingle:
 REPLACE INTO storedSubTransaction
 VALUES ?
