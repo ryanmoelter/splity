@@ -13,6 +13,7 @@ import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
@@ -204,6 +205,8 @@ internal class MirrorTransactionsTest : FunSpec({
 
           serverDatabase.accountToTransactionsMap
             .getValue(TO_ACCOUNT_ID) shouldContainSingleComplementOf manuallyAddedTransaction
+          serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldContainExactly
+            listOf(manuallyAddedTransaction.toApiTransaction())
         }
       }
     }
@@ -220,6 +223,8 @@ private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
 
     serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
       .shouldNotContainComplementOf(transactionToIgnore)
+    serverDatabase.accountToTransactionsMap
+      .getValue(FROM_ACCOUNT_ID) shouldContainExactly listOf(transactionToIgnore.toApiTransaction())
   }
 }
 
