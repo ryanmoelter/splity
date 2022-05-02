@@ -7,7 +7,6 @@ import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
-import co.moelten.splity.findByName
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.StoredSubTransaction
@@ -15,6 +14,8 @@ import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.YnabClient
+import com.youneedabudget.client.models.Account
+import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.BudgetSummaryResponseData
 import com.youneedabudget.client.models.TransactionDetail
 import kotlinx.coroutines.coroutineScope
@@ -231,3 +232,9 @@ private fun List<StoredTransaction>.toPublicTransactionList(
     )
   }
 }
+
+fun List<BudgetSummary>.findByName(name: String) =
+  find { it.name == name } ?: throw IllegalStateException("Can't find budget: \"$name\"")
+
+fun List<Account>.findByName(name: String) =
+  find { it.name == name } ?: throw IllegalStateException("Can't find account: \"$name\"")

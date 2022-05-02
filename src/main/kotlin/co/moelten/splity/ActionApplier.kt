@@ -1,12 +1,18 @@
 package co.moelten.splity
 
+import co.moelten.splity.TransactionAction.Create
+import co.moelten.splity.TransactionAction.Delete
+import co.moelten.splity.TransactionAction.Update
 import co.moelten.splity.database.Repository
+import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionDetail
 import me.tatarka.inject.annotations.Inject
+import java.util.UUID
+import kotlin.math.absoluteValue
 
 @Inject
 class ActionApplier(
@@ -24,7 +30,7 @@ class ActionApplier(
   }
 
   suspend fun applyUpdate(
-    action: TransactionAction.Update,
+    action: Update,
     toAccountAndBudget: AccountAndBudget
   ) {
     var cleared = action.toTransaction.cleared
@@ -58,7 +64,7 @@ class ActionApplier(
   }
 
   suspend fun applyCreate(
-    action: TransactionAction.Create,
+    action: Create,
     fromAccountAndBudget: AccountAndBudget,
     toAccountAndBudget: AccountAndBudget
   ) {
@@ -106,4 +112,60 @@ class ActionApplier(
       )
     )
   }
+}
+
+data class CompleteTransactionAction(
+  val transactionAction: TransactionAction,
+  val fromAccountAndBudget: AccountAndBudget,
+  val toAccountAndBudget: AccountAndBudget
+) {
+  suspend fun apply(
+    actionApplier: ActionApplier
+  ) = transactionAction.apply(
+    fromAccountAndBudget = fromAccountAndBudget,
+    toAccountAndBudget = toAccountAndBudget,
+    actionApplier = actionApplier
+  )
+}
+
+sealed class TransactionAction {
+  data class Create(val fromTransaction: PublicTransactionDetail) : TransactionAction()
+  data class Update(
+    val fromTransaction: PublicTransactionDetail,
+    val toTransaction: PublicTransactionDetail,
+    val updateFields: Set<UpdateField>
+  ) : TransactionAction()
+
+  data class Delete(val transactionId: UUID) : TransactionAction()
+}
+
+enum class UpdateField {
+  CLEAR, AMOUNT
+}
+
+suspend fun TransactionAction.apply(
+  fromAccountAndBudget: AccountAndBudget,
+  toAccountAndBudget: AccountAndBudget,
+  actionApplier: ActionApplier
+): Unit = when (this) {
+  is Create -> actionApplier.applyCreate(
+    action = this,
+    fromAccountAndBudget = fromAccountAndBudget,
+    toAccountAndBudget = toAccountAndBudget
+  )
+  is Update -> actionApplier.applyUpdate(
+    action = this,
+    toAccountAndBudget = toAccountAndBudget
+  )
+  is Delete -> TODO()
+}
+
+fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boolean): String {
+  return if (isBaseEmpty) {
+    ""
+  } else {
+    " • "
+  } +
+    "Out of ${totalAmount.absoluteValue.toMoneyString()}, " +
+    "you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}"
 }
