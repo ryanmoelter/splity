@@ -5,8 +5,11 @@ import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.CategoryId
 import co.moelten.splity.database.PayeeId
 import co.moelten.splity.database.ProcessedState
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.SubTransactionId
 import co.moelten.splity.database.TransactionId
+import com.ryanmoelter.ynab.ReplacedSubTransaction
+import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.youneedabudget.client.models.TransactionDetail
@@ -87,6 +90,46 @@ fun StoredSubTransaction.toPublicSubTransaction() = PublicSubTransaction(
   transferAccountId = transferAccountId,
   transferTransactionId = transferTransactionId,
   processedState = processedState,
+  accountId = accountId,
+  budgetId = budgetId,
+)
+
+fun ReplacedTransaction.toPublicTransactionDetail(subTransactions: List<ReplacedSubTransaction>) =
+  PublicTransactionDetail(
+    id = id,
+    date = date,
+    amount = amount,
+    cleared = cleared,
+    approved = approved,
+    accountId = accountId,
+    accountName = accountName,
+    memo = memo,
+    flagColor = flagColor,
+    payeeId = payeeId,
+    categoryId = categoryId,
+    transferAccountId = transferAccountId,
+    transferTransactionId = transferTransactionId,
+    matchedTransactionId = matchedTransactionId,
+    importId = importId,
+    payeeName = payeeName,
+    categoryName = categoryName,
+    subTransactions = subTransactions.map { it.toPublicSubTransaction() },
+    processedState = UP_TO_DATE,
+    budgetId = budgetId,
+  )
+
+fun ReplacedSubTransaction.toPublicSubTransaction() = PublicSubTransaction(
+  id = id,
+  transactionId = transactionId,
+  amount = amount,
+  memo = memo,
+  payeeId = payeeId,
+  payeeName = payeeName,
+  categoryId = categoryId,
+  categoryName = categoryName,
+  transferAccountId = transferAccountId,
+  transferTransactionId = transferTransactionId,
+  processedState = UP_TO_DATE,
   accountId = accountId,
   budgetId = budgetId,
 )

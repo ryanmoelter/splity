@@ -1,6 +1,8 @@
 package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState
+import co.moelten.splity.database.ProcessedState.UPDATED
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.injection.createFakeSplityComponent
@@ -44,10 +46,10 @@ class ActionCreatorTest : FunSpec({
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
       actions.shouldContainExactly(
-        CompleteTransactionAction(
-          TransactionAction.Create(manuallyAddedTransaction),
-          FROM_ACCOUNT_AND_BUDGET,
-          TO_ACCOUNT_AND_BUDGET
+        TransactionAction.CreateComplement(
+          fromTransaction = manuallyAddedTransaction,
+          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
     }
@@ -132,21 +134,25 @@ class ActionCreatorTest : FunSpec({
       actions.shouldBeEmpty()
     }
 
-    xtest("clear transaction on complement approved") {
+    test("clear transaction on complement approved") {
       val manuallyAddedTransactionComplementApproved =
-        manuallyAddedTransactionComplement.copy(approved = true)
+        manuallyAddedTransactionComplement.copy(approved = true, processedState = UPDATED)
+      val existingManuallyAddedTransaction =
+        manuallyAddedTransaction.copy(processedState = UP_TO_DATE)
 
       setUpLocalDatabase {
-        addTransactions(manuallyAddedTransactionComplementApproved, manuallyAddedTransaction)
+        addTransactions(manuallyAddedTransactionComplementApproved, existingManuallyAddedTransaction)
       }
 
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
       actions.shouldContainExactly(
-        TransactionAction.Update(
-          manuallyAddedTransactionComplementApproved,
-          manuallyAddedTransaction,
-          setOf(UpdateField.CLEAR)
+        TransactionAction.UpdateComplement(
+          fromTransaction = manuallyAddedTransactionComplementApproved,
+          complement = existingManuallyAddedTransaction,
+          updateFields = setOf(UpdateField.CLEAR),
+          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
     }

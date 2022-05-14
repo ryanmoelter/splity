@@ -35,6 +35,12 @@ FROM replacedSubTransaction
 WHERE id = ?
 ;
 
+getByTransactionId:
+SELECT *
+FROM replacedSubTransaction
+WHERE transactionId = ?
+;
+
 insert:
 INSERT INTO replacedSubTransaction
 VALUES ?

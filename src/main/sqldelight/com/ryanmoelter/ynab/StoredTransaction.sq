@@ -76,6 +76,14 @@ WHERE accountId = ?
 ORDER BY date ASC
 ;
 
+getByComplement:
+SELECT *
+FROM storedTransaction
+WHERE accountId = ?
+  AND date = ?
+  AND amount = ?
+;
+
 replaceSingle:
 REPLACE INTO storedTransaction
 VALUES ?

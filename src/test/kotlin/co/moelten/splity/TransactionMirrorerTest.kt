@@ -5,7 +5,10 @@ import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.test.Setup
+import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.toApiTransaction
+import com.ryanmoelter.ynab.SyncData
+import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
@@ -18,10 +21,13 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNot
 
-internal class MirrorTransactionsTest : FunSpec({
+internal class TransactionMirrorerTest : FunSpec({
   val serverDatabase = FakeYnabServerDatabase()
   val component = createFakeSplityComponent(serverDatabase)
+  val localDatabase = component.database
   val transactionMirrorer = component.transactionMirrorer
+
+  val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
 
   val setUpServerDatabase: Setup<FakeYnabServerDatabase> = { setUp -> serverDatabase.also(setUp) }
 
@@ -209,6 +215,23 @@ internal class MirrorTransactionsTest : FunSpec({
             listOf(manuallyAddedTransaction.toApiTransaction())
         }
       }
+    }
+  }
+
+  context("on later run (with filled SyncData + filled local database)") {
+    setUpLocalDatabase {
+      syncDataQueries.insert(
+        SyncData(
+          10,
+          FROM_BUDGET_ID,
+          FROM_ACCOUNT_ID,
+          10,
+          TO_BUDGET_ID,
+          TO_ACCOUNT_ID,
+          shouldMatchTransactions = false
+        )
+      )
+      addTransactions()
     }
   }
 })

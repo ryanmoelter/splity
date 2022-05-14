@@ -26,12 +26,13 @@ class ActionApplierTest : FunSpec({
   test("create") {
     setUpServerDatabase { }
 
-    CompleteTransactionAction(
-      transactionAction = TransactionAction.Create(manuallyAddedTransaction),
-      fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-      toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+    actionApplier.applyActions(
+      TransactionAction.CreateComplement(
+        manuallyAddedTransaction,
+        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      )
     )
-      .apply(actionApplier)
 
     val transactionList =
       serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
@@ -57,12 +58,13 @@ class ActionApplierTest : FunSpec({
     }
 
     test("create from transfer") {
-      CompleteTransactionAction(
-        transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      actionApplier.applyActions(
+        TransactionAction.CreateComplement(
+          fromTransaction = transactionAddedFromTransfer,
+          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        )
       )
-        .apply(actionApplier)
 
       val transactionList =
         serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
@@ -80,12 +82,13 @@ class ActionApplierTest : FunSpec({
     }
 
     test("create from transfer without duplicating network calls") {
-      CompleteTransactionAction(
-        transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      actionApplier.applyActions(
+        TransactionAction.CreateComplement(
+          transactionAddedFromTransfer,
+          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        )
       )
-        .apply(actionApplier)
 
       val transactionList =
         serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
@@ -108,12 +111,13 @@ class ActionApplierTest : FunSpec({
     setUpLocalDatabase {
       addTransactions(transactionTransferSplitSource)
     }
-    CompleteTransactionAction(
-      transactionAction = TransactionAction.Create(transactionAddedFromTransfer),
-      fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-      toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+    actionApplier.applyActions(
+      TransactionAction.CreateComplement(
+        transactionAddedFromTransfer,
+        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      )
     )
-      .apply(actionApplier)
 
     val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
@@ -150,12 +154,13 @@ class ActionApplierTest : FunSpec({
       )
     }
 
-    CompleteTransactionAction(
-      transactionAction = TransactionAction.Create(transactionAddedFromTransferWithLongId),
-      fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-      toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+    actionApplier.applyActions(
+      TransactionAction.CreateComplement(
+        transactionAddedFromTransferWithLongId,
+        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+      )
     )
-      .apply(actionApplier)
 
     val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
@@ -182,16 +187,15 @@ class ActionApplierTest : FunSpec({
       )
     }
 
-    CompleteTransactionAction(
-      transactionAction = TransactionAction.Update(
-        fromTransaction = manuallyAddedTransactionComplement.copy(approved = true),
-        toTransaction = manuallyAddedTransaction,
-        updateFields = setOf(UpdateField.CLEAR)
-      ),
-      fromAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
-      toAccountAndBudget = FROM_ACCOUNT_AND_BUDGET
+    actionApplier.applyActions(
+      TransactionAction.UpdateComplement(
+        fromTransaction = manuallyAddedTransactionComplement,
+        complement = manuallyAddedTransaction,
+        updateFields = setOf(UpdateField.CLEAR),
+        fromAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
+        toAccountAndBudget = FROM_ACCOUNT_AND_BUDGET
+      )
     )
-      .apply(actionApplier)
 
     serverDatabase.getTransactionById(manuallyAddedTransaction.id) shouldBe
       manuallyAddedTransaction.copy(cleared = TransactionDetail.ClearedEnum.CLEARED)

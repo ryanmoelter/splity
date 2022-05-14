@@ -58,7 +58,7 @@ compileTestKotlin.kotlinOptions {
 sqldelight {
   database("Database") {
     packageName = "com.ryanmoelter.ynab.database"
-    schemaOutputDirectory = file("src/commonMain/sqldelight/databases")
+    schemaOutputDirectory = file("src/main/sqldelight/databases")
     verifyMigrations = true
   }
 }

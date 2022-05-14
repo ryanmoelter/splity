@@ -1,8 +1,11 @@
 package co.moelten.splity
 
-import co.moelten.splity.TransactionAction.Create
-import co.moelten.splity.TransactionAction.Delete
-import co.moelten.splity.TransactionAction.Update
+import co.moelten.splity.TransactionAction.CreateComplement
+import co.moelten.splity.TransactionAction.DeleteComplement
+import co.moelten.splity.TransactionAction.UpdateComplement
+import co.moelten.splity.UpdateField.AMOUNT
+import co.moelten.splity.UpdateField.CLEAR
+import co.moelten.splity.UpdateField.DATE
 import co.moelten.splity.database.Repository
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
@@ -11,7 +14,6 @@ import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionDetail
 import me.tatarka.inject.annotations.Inject
-import java.util.UUID
 import kotlin.math.absoluteValue
 
 @Inject
@@ -21,61 +23,29 @@ class ActionApplier(
 ) {
 
   suspend fun applyActions(
-    actions: List<CompleteTransactionAction>,
-  ) {
+    actions: List<TransactionAction>,
+  ) = applyActions(*actions.toTypedArray())
+
+  suspend fun applyActions(vararg actions: TransactionAction) {
     actions.forEach { action ->
       println("Apply: $action")
-      action.apply(actionApplier = this)
-    }
-  }
-
-  suspend fun applyUpdate(
-    action: Update,
-    toAccountAndBudget: AccountAndBudget
-  ) {
-    var cleared = action.toTransaction.cleared
-    action.updateFields.forEach { updateField ->
-      when (updateField) {
-        UpdateField.CLEAR -> cleared =
-          if (action.fromTransaction.approved) TransactionDetail.ClearedEnum.CLEARED else TransactionDetail.ClearedEnum.UNCLEARED
-        UpdateField.AMOUNT -> TODO()
+      when (action) {
+        is CreateComplement -> applyCreate(action)
+        is UpdateComplement -> applyUpdate(action)
+        is DeleteComplement -> applyDelete(action)
       }
     }
-    ynab.transactions.updateTransaction(
-      toAccountAndBudget.budgetId.toString(),
-      action.toTransaction.id.string,
-      SaveTransactionWrapper(
-        SaveTransaction(
-          accountId = action.toTransaction.accountId.plainUuid,
-          date = action.toTransaction.date,
-          amount = action.toTransaction.amount,
-          payeeId = action.toTransaction.payeeId?.plainUuid,
-          payeeName = null,
-          categoryId = action.toTransaction.categoryId?.plainUuid,
-          memo = action.toTransaction.memo,
-          cleared = cleared.toSaveTransactionClearedEnum(),
-          approved = action.toTransaction.approved,
-          flagColor = action.toTransaction.flagColor?.toSaveTransactionFlagColorEnum(),
-          importId = action.toTransaction.importId,
-          subtransactions = null
-        )
-      )
-    )
   }
 
-  suspend fun applyCreate(
-    action: Create,
-    fromAccountAndBudget: AccountAndBudget,
-    toAccountAndBudget: AccountAndBudget
-  ) {
-    val transactionDescription = if (action.fromTransaction.transferAccountId != null) {
+  private suspend fun applyCreate(action: CreateComplement) = with(action) {
+    val transactionDescription = if (fromTransaction.transferAccountId != null) {
       val parentOfSplitTransaction =
-        repository.getTransactionBySubTransactionTransferId(action.fromTransaction.id)
+        repository.getTransactionBySubTransactionTransferId(fromTransaction.id)
 
       parentOfSplitTransaction
         ?.transactionDescription
         ?: repository.getTransactionByTransferId(
-          action.fromTransaction.id
+          fromTransaction.id
         )!!
           .let { transactionDetail ->
             TransactionDescription(
@@ -85,7 +55,7 @@ class ActionApplier(
             )
           }
     } else {
-      action.fromTransaction.transactionDescription
+      fromTransaction.transactionDescription
     }
 
     ynab.transactions.createTransaction(
@@ -93,71 +63,119 @@ class ActionApplier(
       SaveTransactionsWrapper(
         SaveTransaction(
           accountId = toAccountAndBudget.accountId.plainUuid,
-          date = action.fromTransaction.date,
-          amount = -action.fromTransaction.amount,
+          date = fromTransaction.date,
+          amount = -fromTransaction.amount,
           payeeId = null,
           payeeName = transactionDescription.payeeName,
           categoryId = null,
           memo = (transactionDescription.memo + getExtraDetailsForMemo(
             transactionDescription.totalAmount,
-            action.fromTransaction.amount,
+            fromTransaction.amount,
             transactionDescription.memo.isNullOrEmpty()
           )).trim(),
           cleared = SaveTransaction.ClearedEnum.CLEARED,
           approved = false,
           flagColor = null,
-          importId = "splity:${-action.fromTransaction.amount}:${action.fromTransaction.date}:1",
+          importId = "splity:${-fromTransaction.amount}:${fromTransaction.date}:1",
           subtransactions = null
+        )
+      )
+    )
+  }
+
+  private suspend fun applyUpdate(action: UpdateComplement) = with(action) {
+    var cleared = complement.cleared
+    var amount = complement.amount
+    var date = complement.date
+    val shouldNotify = updateFields.any { it.shouldNotify }
+    updateFields.forEach { updateField ->
+      when (updateField) {
+        CLEAR -> cleared = TransactionDetail.ClearedEnum.CLEARED
+        AMOUNT -> amount = -fromTransaction.amount
+        DATE -> date = fromTransaction.date
+      }
+    }
+    ynab.transactions.updateTransaction(
+      toAccountAndBudget.budgetId.toString(),
+      complement.id.string,
+      SaveTransactionWrapper(
+        SaveTransaction(
+          accountId = complement.accountId.plainUuid,
+          date = date,
+          amount = amount,
+          payeeId = complement.payeeId?.plainUuid,
+          payeeName = complement.payeeName,
+          categoryId = complement.categoryId?.plainUuid,
+          memo = complement.memo,
+          cleared = cleared.toSaveTransactionClearedEnum(),
+          approved = if (shouldNotify) {
+            false
+          } else {
+            complement.approved
+          },
+          flagColor = if (shouldNotify) {
+            SaveTransaction.FlagColorEnum.BLUE
+          } else {
+            complement.flagColor?.toSaveTransactionFlagColorEnum()
+          },
+          importId = complement.importId,
+          subtransactions = null  // TODO: handle subTransactions
+        )
+      )
+    )
+  }
+
+  private suspend fun applyDelete(action: DeleteComplement) = with(action) {
+    ynab.transactions.updateTransaction(
+      fromAccountAndBudget.budgetId.toString(),
+      fromTransaction.id.string,
+      SaveTransactionWrapper(
+        fromTransaction.toSaveTransaction().copy(
+          flagColor = SaveTransaction.FlagColorEnum.RED,
+          approved = false
         )
       )
     )
   }
 }
 
-data class CompleteTransactionAction(
-  val transactionAction: TransactionAction,
-  val fromAccountAndBudget: AccountAndBudget,
-  val toAccountAndBudget: AccountAndBudget
-) {
-  suspend fun apply(
-    actionApplier: ActionApplier
-  ) = transactionAction.apply(
-    fromAccountAndBudget = fromAccountAndBudget,
-    toAccountAndBudget = toAccountAndBudget,
-    actionApplier = actionApplier
-  )
+fun PublicTransactionDetail.toSaveTransaction(): SaveTransaction = SaveTransaction(
+  accountId = accountId.plainUuid,
+  date = date,
+  amount = amount,
+  payeeId = payeeId?.plainUuid,
+  payeeName = payeeName,
+  categoryId = categoryId?.plainUuid,
+  memo = memo,
+  cleared = cleared.toSaveTransactionClearedEnum(),
+  approved = approved,
+  flagColor = flagColor?.toSaveTransactionFlagColorEnum(),
+  importId = importId,
+  subtransactions = null // TODO: Support updating sub-transactions
+)
+
+sealed interface TransactionAction {
+  val fromTransaction: PublicTransactionDetail
+
+  data class CreateComplement(
+    override val fromTransaction: PublicTransactionDetail,
+    val toAccountAndBudget: AccountAndBudget,
+  ) : TransactionAction
+
+  data class UpdateComplement(
+    override val fromTransaction: PublicTransactionDetail,
+    val complement: PublicTransactionDetail,
+    val updateFields: Set<UpdateField>,
+  ) : TransactionAction
+
+  data class DeleteComplement(
+    override val fromTransaction: PublicTransactionDetail,
+    val complement: PublicTransactionDetail,
+  ) : TransactionAction
 }
 
-sealed class TransactionAction {
-  data class Create(val fromTransaction: PublicTransactionDetail) : TransactionAction()
-  data class Update(
-    val fromTransaction: PublicTransactionDetail,
-    val toTransaction: PublicTransactionDetail,
-    val updateFields: Set<UpdateField>
-  ) : TransactionAction()
-
-  data class Delete(val transactionId: UUID) : TransactionAction()
-}
-
-enum class UpdateField {
-  CLEAR, AMOUNT
-}
-
-suspend fun TransactionAction.apply(
-  fromAccountAndBudget: AccountAndBudget,
-  toAccountAndBudget: AccountAndBudget,
-  actionApplier: ActionApplier
-): Unit = when (this) {
-  is Create -> actionApplier.applyCreate(
-    action = this,
-    fromAccountAndBudget = fromAccountAndBudget,
-    toAccountAndBudget = toAccountAndBudget
-  )
-  is Update -> actionApplier.applyUpdate(
-    action = this,
-    toAccountAndBudget = toAccountAndBudget
-  )
-  is Delete -> TODO()
+enum class UpdateField(val shouldNotify: Boolean) {
+  CLEAR(false), AMOUNT(true), DATE(true),
 }
 
 fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boolean): String {

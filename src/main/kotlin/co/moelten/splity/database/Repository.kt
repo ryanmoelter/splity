@@ -9,6 +9,7 @@ import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.models.toPublicTransactionDetail
+import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.SyncData
@@ -39,6 +40,37 @@ class Repository(
       database.storedSubTransactionQueries.getByAccount(accountAndBudget.accountId).executeAsList()
 
     return storedTransactions.toPublicTransactionList(storedSubTransactions)
+  }
+
+  /**
+   * Search for the complement of [originalTransaction] in the replaced transactions of
+   * [inAccountId], finding something only if the complement has been [UPDATED] since the last time
+   * splity ran.
+   */
+  fun findReplacedComplementOf(
+    originalTransaction: PublicTransactionDetail,
+    inAccountId: AccountId
+  ): PublicTransactionDetail? = database.replacedTransactionQueries
+    .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
+    .executeAsOneOrNull()
+    ?.toPublicTransactionDetail()
+
+  /**
+   * Search for the complement of [originalTransaction] in [inAccountId]. Searches replaced
+   * transactions first, since that's the transaction that would have been matched.
+   */
+  fun findComplementOf(
+    originalTransaction: PublicTransactionDetail,
+    inAccountId: AccountId
+  ): PublicTransactionDetail? = database.storedTransactionQueries
+    .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
+    .executeAsOneOrNull()
+    ?.toPublicTransactionDetail()
+
+  fun getReplacedTransactionById(id: TransactionId): PublicTransactionDetail {
+    return database.replacedTransactionQueries.getById(id)
+      .executeAsOne()
+      .toPublicTransactionDetail()
   }
 
   fun getTransactionByTransferId(
@@ -212,6 +244,16 @@ class Repository(
       database.syncDataQueries.insert(syncData)
     }
   }
+
+  private fun StoredTransaction.toPublicTransactionDetail(): PublicTransactionDetail =
+    toPublicTransactionDetail(
+      database.storedSubTransactionQueries.getByTransactionId(this.id).executeAsList()
+    )
+
+  private fun ReplacedTransaction.toPublicTransactionDetail(): PublicTransactionDetail =
+    toPublicTransactionDetail(
+      database.replacedSubTransactionQueries.getByTransactionId(this.id).executeAsList()
+    )
 }
 
 private fun List<StoredTransaction>.toPublicTransactionList(

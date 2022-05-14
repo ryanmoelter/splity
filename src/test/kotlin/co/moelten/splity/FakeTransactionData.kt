@@ -16,6 +16,9 @@ import org.threeten.bp.Month
 import java.util.UUID
 
 val TRANSACTION_ADDED_FROM_TRANSFER_ID = "transactionAddedFromTransferLength36".toTransactionId()
+const val NO_SERVER_KNOWLEDGE = 0
+const val FIRST_SERVER_KNOWLEDGE = 10
+const val SECOND_SERVER_KNOWLEDGE = 20
 
 val manuallyAddedTransaction = PublicTransactionDetail(
   id = "manuallyAddedTransaction".toTransactionId(),

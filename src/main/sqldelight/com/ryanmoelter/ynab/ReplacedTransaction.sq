@@ -43,6 +43,14 @@ FROM replacedTransaction
 WHERE id = ?
 ;
 
+getByComplement:
+SELECT *
+FROM replacedTransaction
+WHERE accountId = ?
+  AND date = ?
+  AND amount = ?
+;
+
 insert:
 INSERT INTO replacedTransaction
 VALUES ?
