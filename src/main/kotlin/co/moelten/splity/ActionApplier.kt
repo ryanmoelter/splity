@@ -2,6 +2,7 @@ package co.moelten.splity
 
 import co.moelten.splity.TransactionAction.CreateComplement
 import co.moelten.splity.TransactionAction.DeleteComplement
+import co.moelten.splity.TransactionAction.MarkError
 import co.moelten.splity.TransactionAction.UpdateComplement
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
@@ -33,6 +34,7 @@ class ActionApplier(
         is CreateComplement -> applyCreate(action)
         is UpdateComplement -> applyUpdate(action)
         is DeleteComplement -> applyDelete(action)
+        is MarkError -> applyError(action)
       }
     }
   }
@@ -96,7 +98,7 @@ class ActionApplier(
       }
     }
     ynab.transactions.updateTransaction(
-      toAccountAndBudget.budgetId.toString(),
+      complement.budgetId.toString(),
       complement.id.string,
       SaveTransactionWrapper(
         SaveTransaction(
@@ -127,7 +129,7 @@ class ActionApplier(
 
   private suspend fun applyDelete(action: DeleteComplement) = with(action) {
     ynab.transactions.updateTransaction(
-      fromAccountAndBudget.budgetId.toString(),
+      fromTransaction.budgetId.toString(),
       fromTransaction.id.string,
       SaveTransactionWrapper(
         fromTransaction.toSaveTransaction().copy(
@@ -136,6 +138,10 @@ class ActionApplier(
         )
       )
     )
+  }
+
+  private suspend fun applyError(action: MarkError): Unit = with(action) {
+    TODO()
   }
 }
 
@@ -172,6 +178,20 @@ sealed interface TransactionAction {
     override val fromTransaction: PublicTransactionDetail,
     val complement: PublicTransactionDetail,
   ) : TransactionAction
+
+  data class MarkError(
+    override val fromTransaction: PublicTransactionDetail,
+    val complement: PublicTransactionDetail? = null,
+    val message: String
+  ) : TransactionAction {
+    companion object ErrorMessages {
+      const val BOTH_UPDATED =
+        "Both this and its complement have been updated; delete one to bring them back in sync."
+      const val UPDATED_WITHOUT_COMPLEMENT =
+        "This updated transaction has no complement; this shouldn't be possible, but manually " +
+          "create a complement transaction in the other account to bring them back in sync."
+    }
+  }
 }
 
 enum class UpdateField(val shouldNotify: Boolean) {

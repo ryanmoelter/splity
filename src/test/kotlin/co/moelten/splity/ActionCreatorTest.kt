@@ -7,6 +7,7 @@ import co.moelten.splity.database.plus
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
+import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
@@ -28,12 +29,12 @@ class ActionCreatorTest : FunSpec({
     setUpLocalDatabase {
       syncDataQueries.insert(
         SyncData(
-          0,
-          FROM_BUDGET_ID,
-          FROM_ACCOUNT_ID,
-          0,
-          TO_BUDGET_ID,
-          TO_ACCOUNT_ID,
+          firstServerKnowledge = 0,
+          firstBudgetId = FROM_BUDGET_ID,
+          firstAccountId = FROM_ACCOUNT_ID,
+          secondServerKnowledge = 0,
+          secondBudgetId = TO_BUDGET_ID,
+          secondAccountId = TO_ACCOUNT_ID,
           shouldMatchTransactions = true
         )
       )
@@ -48,7 +49,6 @@ class ActionCreatorTest : FunSpec({
       actions.shouldContainExactly(
         TransactionAction.CreateComplement(
           fromTransaction = manuallyAddedTransaction,
-          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
@@ -137,11 +137,17 @@ class ActionCreatorTest : FunSpec({
     test("clear transaction on complement approved") {
       val manuallyAddedTransactionComplementApproved =
         manuallyAddedTransactionComplement.copy(approved = true, processedState = UPDATED)
+      val existingManuallyAddedTransactionComplement =
+        manuallyAddedTransactionComplement.copy(processedState = UP_TO_DATE)
       val existingManuallyAddedTransaction =
         manuallyAddedTransaction.copy(processedState = UP_TO_DATE)
 
       setUpLocalDatabase {
-        addTransactions(manuallyAddedTransactionComplementApproved, existingManuallyAddedTransaction)
+        addReplacedTransactions(existingManuallyAddedTransactionComplement)
+        addTransactions(
+          manuallyAddedTransactionComplementApproved,
+          existingManuallyAddedTransaction
+        )
       }
 
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
@@ -151,8 +157,6 @@ class ActionCreatorTest : FunSpec({
           fromTransaction = manuallyAddedTransactionComplementApproved,
           complement = existingManuallyAddedTransaction,
           updateFields = setOf(UpdateField.CLEAR),
-          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
-          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
     }
@@ -172,12 +176,12 @@ class ActionCreatorTest : FunSpec({
     setUpLocalDatabase {
       syncDataQueries.insert(
         SyncData(
-          0,
-          FROM_BUDGET_ID,
-          FROM_ACCOUNT_ID,
-          0,
-          TO_BUDGET_ID,
-          TO_ACCOUNT_ID,
+          firstServerKnowledge = 0,
+          firstBudgetId = FROM_BUDGET_ID,
+          firstAccountId = FROM_ACCOUNT_ID,
+          secondServerKnowledge = 0,
+          secondBudgetId = TO_BUDGET_ID,
+          secondAccountId = TO_ACCOUNT_ID,
           shouldMatchTransactions = true
         )
       )

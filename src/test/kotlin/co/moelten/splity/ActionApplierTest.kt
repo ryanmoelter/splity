@@ -29,7 +29,6 @@ class ActionApplierTest : FunSpec({
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
         manuallyAddedTransaction,
-        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
         toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     )
@@ -61,7 +60,6 @@ class ActionApplierTest : FunSpec({
       actionApplier.applyActions(
         TransactionAction.CreateComplement(
           fromTransaction = transactionAddedFromTransfer,
-          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
@@ -85,7 +83,6 @@ class ActionApplierTest : FunSpec({
       actionApplier.applyActions(
         TransactionAction.CreateComplement(
           transactionAddedFromTransfer,
-          fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
@@ -114,7 +111,6 @@ class ActionApplierTest : FunSpec({
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
         transactionAddedFromTransfer,
-        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
         toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     )
@@ -157,7 +153,6 @@ class ActionApplierTest : FunSpec({
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
         transactionAddedFromTransferWithLongId,
-        fromAccountAndBudget = FROM_ACCOUNT_AND_BUDGET,
         toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     )
@@ -192,8 +187,6 @@ class ActionApplierTest : FunSpec({
         fromTransaction = manuallyAddedTransactionComplement,
         complement = manuallyAddedTransaction,
         updateFields = setOf(UpdateField.CLEAR),
-        fromAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
-        toAccountAndBudget = FROM_ACCOUNT_AND_BUDGET
       )
     )
 

@@ -1,5 +1,7 @@
 package co.moelten.splity
 
+import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.BOTH_UPDATED
+import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.UPDATED_WITHOUT_COMPLEMENT
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
 import co.moelten.splity.UpdateField.DATE
@@ -100,9 +102,9 @@ class ActionCreator(
           fromTransaction = fromTransaction,
           complement = toTransaction,
           toAccountAndBudget = if (fromTransaction.budgetId == firstAccountAndBudget.budgetId) {
-            firstAccountAndBudget
-          } else {
             secondAccountAndBudget
+          } else {
+            firstAccountAndBudget
           }
         )
       }
@@ -130,15 +132,25 @@ class ActionCreator(
       )
     }
     UPDATED -> when (complement?.processedState) {
-      UP_TO_DATE -> TransactionAction.UpdateComplement(
+      UP_TO_DATE, CREATED -> TransactionAction.UpdateComplement(
         fromTransaction = fromTransaction,
         complement = complement,
         updateFields = fromTransaction.compareWithReplaced(),
       )
-      CREATED -> TODO()
-      UPDATED -> TODO()
-      DELETED -> TODO()
-      null -> TODO("Error")
+      UPDATED -> TransactionAction.MarkError(
+        fromTransaction = fromTransaction,
+        complement = complement,
+        message = BOTH_UPDATED
+      )
+      DELETED -> TransactionAction.DeleteComplement(
+        fromTransaction = complement,
+        complement = fromTransaction
+      )
+      // TODO: report soft error
+      null -> TransactionAction.MarkError(
+        fromTransaction = fromTransaction,
+        message = UPDATED_WITHOUT_COMPLEMENT
+      )
     }
     DELETED -> when (complement?.processedState) {
       UP_TO_DATE, CREATED, UPDATED -> TransactionAction.DeleteComplement(
@@ -146,13 +158,14 @@ class ActionCreator(
         complement = complement
       )
       DELETED -> null  // Already deleted
-      null -> TODO("Error")
+      // TODO: report soft error
+      null -> null  // Never existed? Can't throw an error, else we'd never be able to fix it
     }
     UP_TO_DATE -> error("State should never be $state")
   }
 
   private fun PublicTransactionDetail.compareWithReplaced(): Set<UpdateField> {
-    val replaced = repository.getReplacedTransactionById(id)!!
+    val replaced = repository.getReplacedTransactionById(id)
     assert(subTransactions.isEmpty()) { "Cannot update a transaction that has sub-transactions" }
 
     // Loop over values to make sure we don't forget any

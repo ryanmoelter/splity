@@ -10,6 +10,8 @@ import co.moelten.splity.database.toSubTransactionId
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
+import com.ryanmoelter.ynab.ReplacedSubTransaction
+import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.database.Database
@@ -24,6 +26,17 @@ fun Database.addTransactions(vararg transactions: PublicTransactionDetail) {
       storedTransactionQueries.replaceSingle(transaction.toStoredTransaction())
       transaction.subTransactions.forEach { subTransaction ->
         storedSubTransactionQueries.replaceSingle(subTransaction.toStoredSubTransaction())
+      }
+    }
+  }
+}
+
+fun Database.addReplacedTransactions(vararg transactions: PublicTransactionDetail) {
+  replacedTransactionQueries.transaction {
+    transactions.forEach { transaction ->
+      replacedTransactionQueries.insert(transaction.toReplacedTransaction())
+      transaction.subTransactions.forEach { subTransaction ->
+        replacedSubTransactionQueries.insert(subTransaction.toReplacedSubTransaction())
       }
     }
   }
@@ -63,6 +76,42 @@ fun PublicSubTransaction.toStoredSubTransaction(): StoredSubTransaction = Stored
   transferAccountId = transferAccountId,
   transferTransactionId = transferTransactionId,
   processedState = processedState,
+  accountId = accountId,
+  budgetId = budgetId
+)
+
+fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction = ReplacedTransaction(
+  id = id,
+  date = date,
+  amount = amount,
+  cleared = cleared,
+  approved = approved,
+  accountId = accountId,
+  accountName = accountName,
+  memo = memo,
+  flagColor = flagColor,
+  payeeId = payeeId,
+  categoryId = categoryId,
+  transferAccountId = transferAccountId,
+  transferTransactionId = transferTransactionId,
+  matchedTransactionId = matchedTransactionId,
+  importId = importId,
+  payeeName = payeeName,
+  categoryName = categoryName,
+  budgetId = budgetId
+)
+
+fun PublicSubTransaction.toReplacedSubTransaction(): ReplacedSubTransaction = ReplacedSubTransaction(
+  id = id,
+  transactionId = transactionId,
+  amount = amount,
+  memo = memo,
+  payeeId = payeeId,
+  payeeName = payeeName,
+  categoryId = categoryId,
+  categoryName = categoryName,
+  transferAccountId = transferAccountId,
+  transferTransactionId = transferTransactionId,
   accountId = accountId,
   budgetId = budgetId
 )
