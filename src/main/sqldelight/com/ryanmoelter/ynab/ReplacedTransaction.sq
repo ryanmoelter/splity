@@ -51,11 +51,17 @@ WHERE accountId = ?
   AND amount = ?
 ;
 
+getAll:
+SELECT *
+FROM replacedTransaction
+;
+
 insert:
 INSERT INTO replacedTransaction
 VALUES ?
 ;
 
-clear:
+deleteById:
 DELETE FROM replacedTransaction
+WHERE id = ?
 ;

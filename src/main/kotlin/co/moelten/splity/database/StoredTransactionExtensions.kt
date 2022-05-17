@@ -1,5 +1,7 @@
 package co.moelten.splity.database
 
+import co.moelten.splity.models.PublicSubTransaction
+import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.youneedabudget.client.models.SubTransaction
@@ -82,6 +84,44 @@ fun SubTransaction.toStoredSubTransaction(
   categoryName = categoryName,
   transferAccountId = transferAccountId?.toAccountId(),
   transferTransactionId = transferTransactionId?.toTransactionId(),
+  processedState = processedState,
+  accountId = accountId,
+  budgetId = budgetId
+)
+
+fun PublicTransactionDetail.toStoredTransaction(): StoredTransaction = StoredTransaction(
+  id = id,
+  date = date,
+  amount = amount,
+  cleared = cleared,
+  approved = approved,
+  accountId = accountId,
+  accountName = accountName,
+  memo = memo,
+  flagColor = flagColor,
+  payeeId = payeeId,
+  categoryId = categoryId,
+  transferAccountId = transferAccountId,
+  transferTransactionId = transferTransactionId,
+  matchedTransactionId = matchedTransactionId,
+  importId = importId,
+  payeeName = payeeName,
+  categoryName = categoryName,
+  processedState = processedState,
+  budgetId = budgetId
+)
+
+fun PublicSubTransaction.toStoredSubTransaction(): StoredSubTransaction = StoredSubTransaction(
+  id = id,
+  transactionId = transactionId,
+  amount = amount,
+  memo = memo,
+  payeeId = payeeId,
+  payeeName = payeeName,
+  categoryId = categoryId,
+  categoryName = categoryName,
+  transferAccountId = transferAccountId,
+  transferTransactionId = transferTransactionId,
   processedState = processedState,
   accountId = accountId,
   budgetId = budgetId

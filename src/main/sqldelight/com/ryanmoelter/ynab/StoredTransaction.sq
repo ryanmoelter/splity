@@ -76,6 +76,14 @@ WHERE accountId = ?
 ORDER BY date ASC
 ;
 
+getUnprocessedExcept:
+SELECT *
+FROM storedTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+ORDER BY date ASC
+;
+
 getByComplement:
 SELECT *
 FROM storedTransaction
@@ -87,4 +95,9 @@ WHERE accountId = ?
 replaceSingle:
 REPLACE INTO storedTransaction
 VALUES ?
+;
+
+deleteById:
+DELETE FROM storedTransaction
+WHERE id = ?
 ;

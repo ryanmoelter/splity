@@ -6,14 +6,14 @@ import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
+import co.moelten.splity.database.toStoredSubTransaction
+import co.moelten.splity.database.toStoredTransaction
 import co.moelten.splity.database.toSubTransactionId
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
-import com.ryanmoelter.ynab.StoredSubTransaction
-import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.SubTransaction
 import com.youneedabudget.client.models.TransactionDetail
@@ -41,44 +41,6 @@ fun Database.addReplacedTransactions(vararg transactions: PublicTransactionDetai
     }
   }
 }
-
-fun PublicTransactionDetail.toStoredTransaction(): StoredTransaction = StoredTransaction(
-  id = id,
-  date = date,
-  amount = amount,
-  cleared = cleared,
-  approved = approved,
-  accountId = accountId,
-  accountName = accountName,
-  memo = memo,
-  flagColor = flagColor,
-  payeeId = payeeId,
-  categoryId = categoryId,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  matchedTransactionId = matchedTransactionId,
-  importId = importId,
-  payeeName = payeeName,
-  categoryName = categoryName,
-  processedState = processedState,
-  budgetId = budgetId
-)
-
-fun PublicSubTransaction.toStoredSubTransaction(): StoredSubTransaction = StoredSubTransaction(
-  id = id,
-  transactionId = transactionId,
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId,
-  payeeName = payeeName,
-  categoryId = categoryId,
-  categoryName = categoryName,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  processedState = processedState,
-  accountId = accountId,
-  budgetId = budgetId
-)
 
 fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction = ReplacedTransaction(
   id = id,

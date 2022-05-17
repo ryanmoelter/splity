@@ -9,12 +9,15 @@ import co.moelten.splity.FakeYnabServerDatabase
 import co.moelten.splity.TO_ACCOUNT
 import co.moelten.splity.TO_ACCOUNT_ID
 import co.moelten.splity.TO_BUDGET_ID
+import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.fromBudget
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.manuallyAddedTransaction
 import co.moelten.splity.manuallyAddedTransactionComplement
 import co.moelten.splity.publicUnremarkableTransactionInTransferSource
 import co.moelten.splity.test.Setup
+import co.moelten.splity.test.addTransactions
+import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
 import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.toBudget
 import co.moelten.splity.unremarkableTransactionInTransferSource
@@ -57,17 +60,28 @@ class RepositoryTest : FunSpec({
       )
     }
 
-    fetchTransactionsPullsDataProperly(setUpServerDatabase, setUpLocalDatabase, repository)
+    fetchTransactionsPullsDataProperly(
+      setUpServerDatabase,
+      setUpLocalDatabase,
+      localDatabase,
+      repository
+    )
   }
 
   context("with no SyncData") {
-    fetchTransactionsPullsDataProperly(setUpServerDatabase, setUpLocalDatabase, repository)
+    fetchTransactionsPullsDataProperly(
+      setUpServerDatabase,
+      setUpLocalDatabase,
+      localDatabase,
+      repository
+    )
   }
 })
 
 private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
   setUpServerDatabase: Setup<FakeYnabServerDatabase>,
   setUpLocalDatabase: Setup<Database>,
+  localDatabase: Database,
   repository: Repository
 ) = context("fetchNewTransactions pulls data properly") {
   context("with empty server") {
@@ -88,7 +102,9 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     test("fetchNewTransactions finds a new transaction") {
       repository.fetchNewTransactions()
       repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID) shouldHaveSingleElement
-        publicUnremarkableTransactionInTransferSource(ProcessedState.CREATED)
+        publicUnremarkableTransactionInTransferSource(ProcessedState.UP_TO_DATE)
+
+      localDatabase.shouldHaveAllTransactionsProcessed()
     }
 
     context("when that transaction is an update") {
@@ -105,8 +121,10 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         repository.fetchNewTransactions()
         repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID)
           .shouldHaveSingleElement(
-            publicUnremarkableTransactionInTransferSource(ProcessedState.UPDATED)
+            publicUnremarkableTransactionInTransferSource(ProcessedState.UP_TO_DATE)
           )
+
+        localDatabase.shouldHaveAllTransactionsProcessed()
       }
     }
   }
@@ -129,6 +147,23 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         manuallyAddedTransaction
       repository.getTransactionsByAccount(TO_ACCOUNT_ID) shouldHaveSingleElement
         manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+    }
+
+    context("when those transactions are updates") {
+      setUpLocalDatabase {
+        addTransactions(
+          manuallyAddedTransaction.copy(processedState = ProcessedState.UP_TO_DATE),
+          manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+        )
+      }
+
+      test("fetchNewTransactions recognizes an updated transaction") {
+        repository.fetchNewTransactions()
+        repository.getTransactionsByAccount(FROM_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransaction.copy(processedState = UPDATED))
+        repository.getTransactionsByAccount(TO_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransactionComplement.copy(processedState = UPDATED))
+      }
     }
   }
 }

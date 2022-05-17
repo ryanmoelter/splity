@@ -1,9 +1,11 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addTransactions
+import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
 import co.moelten.splity.test.toApiTransaction
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
@@ -49,11 +51,13 @@ class ActionApplierTest : FunSpec({
       deleted.shouldBeFalse()
       accountId shouldBe TO_ACCOUNT_ID.plainUuid
     }
+
+    localDatabase.shouldHaveAllTransactionsProcessed()
   }
 
   context("with non-split transfer") {
     setUpLocalDatabase {
-      addTransactions(transactionTransferNonSplitSource)
+      addTransactions(transactionTransferNonSplitSource(UP_TO_DATE))
     }
 
     test("create from transfer") {
@@ -72,11 +76,13 @@ class ActionApplierTest : FunSpec({
         importId shouldBe "splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1"
         date shouldBe transactionAddedFromTransfer.date
         payeeName shouldBe "Chicken Butt"
-        memo shouldBe transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%"
+        memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         deleted.shouldBeFalse()
         accountId shouldBe TO_ACCOUNT_ID.plainUuid
       }
+
+      localDatabase.shouldHaveAllTransactionsProcessed()
     }
 
     test("create from transfer without duplicating network calls") {
@@ -96,17 +102,19 @@ class ActionApplierTest : FunSpec({
         importId shouldBe "splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1"
         date shouldBe transactionAddedFromTransfer.date
         payeeName shouldBe "Chicken Butt"
-        memo shouldBe transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%"
+        memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         approved.shouldBeFalse()
         accountId shouldBe TO_ACCOUNT_ID.plainUuid
       }
+
+      localDatabase.shouldHaveAllTransactionsProcessed()
     }
   }
 
   test("create from split transfer") {
     setUpLocalDatabase {
-      addTransactions(transactionTransferSplitSource)
+      addTransactions(transactionTransferSplitSource(UP_TO_DATE))
     }
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
@@ -123,13 +131,15 @@ class ActionApplierTest : FunSpec({
       amount shouldBe -transactionAddedFromTransfer.amount
       importId shouldBe "splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1"
       date shouldBe transactionAddedFromTransfer.date
-      payeeName shouldBe transactionTransferSplitSource.payeeName
-      memo shouldBe transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%"
+      payeeName shouldBe transactionTransferSplitSource().payeeName
+      memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
       approved.shouldBeFalse()
       deleted.shouldBeFalse()
       accountId shouldBe TO_ACCOUNT_ID.plainUuid
     }
+
+    localDatabase.shouldHaveAllTransactionsProcessed()
   }
 
   test("create from split transfer: recurring transaction") {
@@ -138,12 +148,12 @@ class ActionApplierTest : FunSpec({
     )
     setUpLocalDatabase {
       addTransactions(
-        transactionTransferSplitSource.copy(
+        transactionTransferSplitSource(UP_TO_DATE).copy(
           subTransactions = listOf(
-            subTransactionNonTransferSplitSource,
-            subTransactionTransferSplitSource.copy(
-              transferTransactionId = subTransactionTransferSplitSource.transferTransactionId!! +
-                "_st_1_2020-06-20"
+            subTransactionNonTransferSplitSource(UP_TO_DATE),
+            subTransactionTransferSplitSource(UP_TO_DATE).copy(
+              transferTransactionId = subTransactionTransferSplitSource(UP_TO_DATE)
+                .transferTransactionId!! + "_st_1_2020-06-20"
             )
           )
         )
@@ -165,8 +175,8 @@ class ActionApplierTest : FunSpec({
       amount shouldBe -transactionAddedFromTransferWithLongId.amount
       importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
       date shouldBe transactionAddedFromTransferWithLongId.date
-      payeeName shouldBe transactionTransferSplitSource.payeeName
-      memo shouldBe transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%"
+      payeeName shouldBe transactionTransferSplitSource().payeeName
+      memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
       approved.shouldBeFalse()
       accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -193,5 +203,6 @@ class ActionApplierTest : FunSpec({
     serverDatabase.getTransactionById(manuallyAddedTransaction.id) shouldBe
       manuallyAddedTransaction.copy(cleared = TransactionDetail.ClearedEnum.CLEARED)
         .toApiTransaction()
+    localDatabase.shouldHaveAllTransactionsProcessed()
   }
 })

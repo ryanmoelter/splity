@@ -41,7 +41,17 @@ FROM replacedSubTransaction
 WHERE transactionId = ?
 ;
 
+getAll:
+SELECT *
+FROM replacedSubTransaction
+;
+
 insert:
 INSERT INTO replacedSubTransaction
 VALUES ?
+;
+
+deleteByTransactionId:
+DELETE FROM replacedSubTransaction
+WHERE transactionId = ?
 ;

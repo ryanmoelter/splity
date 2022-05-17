@@ -89,7 +89,9 @@ val transactionAddedFromTransfer = PublicTransactionDetail(
   processedState = CREATED
 )
 
-val subTransactionNonTransferSplitSource = PublicSubTransaction(
+fun subTransactionNonTransferSplitSource(
+  processedState: ProcessedState = CREATED
+) = PublicSubTransaction(
   id = "splitNonTransferSubTransaction".toSubTransactionId(),
   transactionId = "transactionTransferSplitSource".toTransactionId(),
   amount = -20000,
@@ -102,10 +104,12 @@ val subTransactionNonTransferSplitSource = PublicSubTransaction(
   transferTransactionId = null,
   accountId = FROM_ACCOUNT_ID,
   budgetId = FROM_BUDGET_ID,
-  processedState = CREATED
+  processedState = processedState
 )
 
-val subTransactionTransferSplitSource = PublicSubTransaction(
+fun subTransactionTransferSplitSource(
+  processedState: ProcessedState = CREATED
+) = PublicSubTransaction(
   id = "splitTransferSubTransaction".toSubTransactionId(),
   transactionId = "transactionTransferSplitSource".toTransactionId(),
   amount = -10000,
@@ -118,10 +122,12 @@ val subTransactionTransferSplitSource = PublicSubTransaction(
   transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   accountId = FROM_ACCOUNT_ID,
   budgetId = FROM_BUDGET_ID,
-  processedState = CREATED
+  processedState = processedState
 )
 
-val transactionTransferSplitSource = PublicTransactionDetail(
+fun transactionTransferSplitSource(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
   id = "transactionTransferSplitSource".toTransactionId(),
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
   amount = -30000,
@@ -140,14 +146,16 @@ val transactionTransferSplitSource = PublicTransactionDetail(
   matchedTransactionId = UUID.randomUUID().toTransactionId(),
   importId = null,
   subTransactions = listOf(
-    subTransactionNonTransferSplitSource,
-    subTransactionTransferSplitSource
+    subTransactionNonTransferSplitSource(processedState),
+    subTransactionTransferSplitSource(processedState)
   ),
   budgetId = FROM_BUDGET_ID,
-  processedState = CREATED,
+  processedState = processedState,
 )
 
-val transactionTransferNonSplitSource = PublicTransactionDetail(
+fun transactionTransferNonSplitSource(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
   id = "transactionTransferNonSplitSource".toTransactionId(),
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
   amount = -10000,
@@ -167,7 +175,7 @@ val transactionTransferNonSplitSource = PublicTransactionDetail(
   importId = null,
   budgetId = FROM_BUDGET_ID,
   subTransactions = emptyList(),
-  processedState = CREATED,
+  processedState = processedState,
 )
 
 // -- Normal, non-split transactions ---------------------------------------------------------------

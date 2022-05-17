@@ -94,7 +94,7 @@ class ActionCreatorTest : FunSpec({
         transactionAddedFromTransferWithLongId.copy(
           id = UUID.randomUUID().toTransactionId(),
           amount = -transactionAddedFromTransferWithLongId.amount,
-          importId = subTransactionTransferSplitSource.id.toString(),
+          importId = subTransactionTransferSplitSource().id.toString(),
           cleared = TransactionDetail.ClearedEnum.CLEARED,
           approved = false,
           accountId = TO_ACCOUNT_ID,
@@ -104,11 +104,11 @@ class ActionCreatorTest : FunSpec({
         addTransactions(
           transactionAddedFromTransferWithLongId,
           transactionAddedFromTransferWithLongIdComplement,
-          transactionTransferSplitSource.copy(
+          transactionTransferSplitSource(UP_TO_DATE).copy(
             subTransactions = listOf(
-              subTransactionNonTransferSplitSource,
-              subTransactionTransferSplitSource.copy(
-                transferTransactionId = subTransactionTransferSplitSource
+              subTransactionNonTransferSplitSource(UP_TO_DATE),
+              subTransactionTransferSplitSource(UP_TO_DATE).copy(
+                transferTransactionId = subTransactionTransferSplitSource(UP_TO_DATE)
                   .transferTransactionId!! + "_st_1_2020-06-20"
               )
             )

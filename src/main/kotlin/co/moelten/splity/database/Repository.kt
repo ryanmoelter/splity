@@ -147,6 +147,13 @@ class Repository(
       budgetId = syncData.secondBudgetId
     )
 
+    markAllTransactionsProcessedExceptInAccounts(
+      listOf(
+        syncData.firstAccountId,
+        syncData.secondAccountId
+      )
+    )
+
     replaceSyncData(
       syncData.copy(
         firstServerKnowledge = firstResponse.data.serverKnowledge,
@@ -232,6 +239,44 @@ class Repository(
     val budget = budgetResponse.budgets.findByName(accountConfig.budgetName)
     val splitAccountId = budget.accounts!!.findByName(accountConfig.accountName).id.toAccountId()
     return AccountAndBudget(splitAccountId, budget.id.toBudgetId())
+  }
+
+  fun markProcessed(transaction: PublicTransactionDetail) {
+    when (transaction.processedState) {
+      UP_TO_DATE -> {
+        // Do nothing
+      }
+      CREATED -> database.storedTransactionQueries
+        .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
+      UPDATED -> {
+        database.storedTransactionQueries
+          .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
+        database.replacedTransactionQueries.deleteById(transaction.id)
+        database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)
+      }
+      DELETED -> {
+        database.storedTransactionQueries.deleteById(transaction.id)
+        database.storedSubTransactionQueries.deleteByTransactionId(transaction.id)
+      }
+    }
+  }
+
+  fun markAllTransactionsProcessedExceptInAccounts(
+    accountIds: List<AccountId>
+  ) {
+    val storedTransactions = database.storedTransactionQueries
+      .getUnprocessedExcept(accountsToExclude = accountIds)
+      .executeAsList()
+    // Unprocessed transactions should always have unprocessed subTransactions with them
+    val storedSubTransactions = database.storedSubTransactionQueries
+      .getUnprocessedExcept(accountsToExclude = accountIds)
+      .executeAsList()
+
+    val publicTransactions = storedTransactions.toPublicTransactionList(storedSubTransactions)
+
+    publicTransactions.forEach { transaction ->
+      markProcessed(transaction)
+    }
   }
 
   // -- SyncDataRepository, could be a separate file -----------------------------------------------

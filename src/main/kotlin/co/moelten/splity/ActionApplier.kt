@@ -83,6 +83,8 @@ class ActionApplier(
         )
       )
     )
+
+    repository.markProcessed(fromTransaction)
   }
 
   private suspend fun applyUpdate(action: UpdateComplement) = with(action) {
@@ -125,6 +127,8 @@ class ActionApplier(
         )
       )
     )
+
+    repository.markProcessed(fromTransaction)
   }
 
   private suspend fun applyDelete(action: DeleteComplement) = with(action) {
@@ -138,10 +142,40 @@ class ActionApplier(
         )
       )
     )
+
+    repository.markProcessed(fromTransaction)
   }
 
   private suspend fun applyError(action: MarkError): Unit = with(action) {
-    TODO()
+    ynab.transactions.updateTransaction(
+      fromTransaction.budgetId.toString(),
+      fromTransaction.id.string,
+      SaveTransactionWrapper(
+        fromTransaction.toSaveTransaction().copy(
+          flagColor = SaveTransaction.FlagColorEnum.RED,
+          approved = false,
+          memo = "ERROR: " + message + " • " + fromTransaction.memo
+        )
+      )
+    )
+
+    repository.markProcessed(fromTransaction)
+
+    if (complement != null) {
+      ynab.transactions.updateTransaction(
+        complement.budgetId.toString(),
+        complement.id.string,
+        SaveTransactionWrapper(
+          complement.toSaveTransaction().copy(
+            flagColor = SaveTransaction.FlagColorEnum.RED,
+            approved = false,
+            memo = "ERROR: " + action.message + " • " + complement.memo
+          )
+        )
+      )
+
+      repository.markProcessed(complement)
+    }
   }
 }
 
@@ -157,7 +191,11 @@ fun PublicTransactionDetail.toSaveTransaction(): SaveTransaction = SaveTransacti
   approved = approved,
   flagColor = flagColor?.toSaveTransactionFlagColorEnum(),
   importId = importId,
-  subtransactions = null // TODO: Support updating sub-transactions
+  subtransactions = if (subTransactions.isEmpty()) {
+    null
+  } else {
+    error("Unsupported: subTransactions on a SaveTransaction")
+  }
 )
 
 sealed interface TransactionAction {

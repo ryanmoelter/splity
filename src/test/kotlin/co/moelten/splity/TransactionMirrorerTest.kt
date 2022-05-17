@@ -81,7 +81,7 @@ internal class TransactionMirrorerTest : FunSpec({
         )
         addTransactionsForAccount(
           FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-          listOf(transactionTransferNonSplitSource.toApiTransaction())
+          listOf(transactionTransferNonSplitSource().toApiTransaction())
         )
       }
 
@@ -95,7 +95,7 @@ internal class TransactionMirrorerTest : FunSpec({
         importId shouldBe "splity:10000:2020-02-07:1"
         date shouldBe transactionAddedFromTransfer.date
         payeeName shouldBe "Chicken Butt"
-        memo shouldBe transactionTransferNonSplitSource.memo + " • Out of $10.00, you paid 100.0%"
+        memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         approved.shouldBeFalse()
         deleted.shouldBeFalse()
@@ -111,7 +111,7 @@ internal class TransactionMirrorerTest : FunSpec({
         )
         addTransactionsForAccount(
           FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-          listOf(transactionTransferSplitSource.toApiTransaction())
+          listOf(transactionTransferSplitSource().toApiTransaction())
         )
       }
 
@@ -124,8 +124,8 @@ internal class TransactionMirrorerTest : FunSpec({
         amount shouldBe -transactionAddedFromTransfer.amount
         importId shouldBe "splity:${-transactionAddedFromTransfer.amount}:${transactionAddedFromTransfer.date}:1"
         date shouldBe transactionAddedFromTransfer.date
-        payeeName shouldBe transactionTransferSplitSource.payeeName
-        memo shouldBe transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%"
+        payeeName shouldBe transactionTransferSplitSource().payeeName
+        memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         approved.shouldBeFalse()
         deleted.shouldBeFalse()
@@ -146,11 +146,11 @@ internal class TransactionMirrorerTest : FunSpec({
         addTransactionsForAccount(
           FROM_TRANSFER_SOURCE_ACCOUNT_ID,
           listOf(
-            transactionTransferSplitSource.copy(
+            transactionTransferSplitSource().copy(
               subTransactions = listOf(
-                subTransactionNonTransferSplitSource,
-                subTransactionTransferSplitSource.copy(
-                  transferTransactionId = subTransactionTransferSplitSource
+                subTransactionNonTransferSplitSource(),
+                subTransactionTransferSplitSource().copy(
+                  transferTransactionId = subTransactionTransferSplitSource()
                     .transferTransactionId!! + "_st_1_2020-06-20"
                 )
               )
@@ -168,8 +168,8 @@ internal class TransactionMirrorerTest : FunSpec({
         amount shouldBe -transactionAddedFromTransferWithLongId.amount
         importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
         date shouldBe transactionAddedFromTransferWithLongId.date
-        payeeName shouldBe transactionTransferSplitSource.payeeName
-        memo shouldBe transactionTransferSplitSource.memo + " • Out of $30.00, you paid 33.3%"
+        payeeName shouldBe transactionTransferSplitSource().payeeName
+        memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         approved.shouldBeFalse()
         deleted.shouldBeFalse()

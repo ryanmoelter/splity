@@ -48,7 +48,19 @@ FROM storedSubTransaction
 WHERE accountId = ?
 ;
 
+getUnprocessedExcept:
+SELECT *
+FROM storedSubTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+;
+
 replaceSingle:
 REPLACE INTO storedSubTransaction
 VALUES ?
+;
+
+deleteByTransactionId:
+DELETE FROM storedSubTransaction
+WHERE transactionId = ?
 ;
