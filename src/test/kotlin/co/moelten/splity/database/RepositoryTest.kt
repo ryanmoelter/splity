@@ -9,13 +9,16 @@ import co.moelten.splity.FakeYnabServerDatabase
 import co.moelten.splity.TO_ACCOUNT
 import co.moelten.splity.TO_ACCOUNT_ID
 import co.moelten.splity.TO_BUDGET_ID
+import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.UPDATED
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.fromBudget
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.manuallyAddedTransaction
 import co.moelten.splity.manuallyAddedTransactionComplement
 import co.moelten.splity.publicUnremarkableTransactionInTransferSource
 import co.moelten.splity.test.Setup
+import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
 import co.moelten.splity.test.toApiTransaction
@@ -23,10 +26,12 @@ import co.moelten.splity.toBudget
 import co.moelten.splity.unremarkableTransactionInTransferSource
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
+import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSingleElement
+import io.kotest.matchers.shouldBe
 
 class RepositoryTest : FunSpec({
   val serverDatabase = FakeYnabServerDatabase()
@@ -102,7 +107,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     test("fetchNewTransactions finds a new transaction") {
       repository.fetchNewTransactions()
       repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID) shouldHaveSingleElement
-        publicUnremarkableTransactionInTransferSource(ProcessedState.UP_TO_DATE)
+        publicUnremarkableTransactionInTransferSource(UP_TO_DATE)
 
       localDatabase.shouldHaveAllTransactionsProcessed()
     }
@@ -112,7 +117,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         storedTransactionQueries.replaceSingle(
           unremarkableTransactionInTransferSource.toStoredTransaction(
             FROM_BUDGET_ID,
-            ProcessedState.UP_TO_DATE
+            UP_TO_DATE
           )
         )
       }
@@ -121,7 +126,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         repository.fetchNewTransactions()
         repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID)
           .shouldHaveSingleElement(
-            publicUnremarkableTransactionInTransferSource(ProcessedState.UP_TO_DATE)
+            publicUnremarkableTransactionInTransferSource(UP_TO_DATE)
           )
 
         localDatabase.shouldHaveAllTransactionsProcessed()
@@ -133,36 +138,65 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     setUpServerDatabase {
       addTransactionsForAccount(
         FROM_ACCOUNT_ID,
-        listOf(manuallyAddedTransaction.toApiTransaction())
+        listOf(manuallyAddedTransaction().toApiTransaction())
       )
       addTransactionsForAccount(
         TO_ACCOUNT_ID,
-        listOf(manuallyAddedTransactionComplement.toApiTransaction())
+        listOf(manuallyAddedTransactionComplement().toApiTransaction())
       )
     }
 
     test("fetchNewTransactions finds new transactions") {
       repository.fetchNewTransactions()
       repository.getTransactionsByAccount(FROM_ACCOUNT_ID) shouldHaveSingleElement
-        manuallyAddedTransaction
+        manuallyAddedTransaction(CREATED)
       repository.getTransactionsByAccount(TO_ACCOUNT_ID) shouldHaveSingleElement
-        manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+        manuallyAddedTransactionComplement(CREATED)
     }
 
     context("when those transactions are updates") {
       setUpLocalDatabase {
         addTransactions(
-          manuallyAddedTransaction.copy(processedState = ProcessedState.UP_TO_DATE),
-          manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+          manuallyAddedTransaction(UP_TO_DATE),
+          manuallyAddedTransactionComplement(UP_TO_DATE)
         )
       }
 
-      test("fetchNewTransactions recognizes an updated transaction") {
+      test("fetchNewTransactions recognizes updated transactions") {
         repository.fetchNewTransactions()
         repository.getTransactionsByAccount(FROM_ACCOUNT_ID)
-          .shouldHaveSingleElement(manuallyAddedTransaction.copy(processedState = UPDATED))
+          .shouldHaveSingleElement(manuallyAddedTransaction(UPDATED))
+        repository.getReplacedTransactionById(manuallyAddedTransaction().id) shouldBe
+          manuallyAddedTransaction(UP_TO_DATE)
         repository.getTransactionsByAccount(TO_ACCOUNT_ID)
-          .shouldHaveSingleElement(manuallyAddedTransactionComplement.copy(processedState = UPDATED))
+          .shouldHaveSingleElement(manuallyAddedTransactionComplement(UPDATED))
+        repository.getReplacedTransactionById(manuallyAddedTransactionComplement().id) shouldBe
+          manuallyAddedTransactionComplement(UP_TO_DATE)
+      }
+    }
+
+    context("when those transactions are updates to unprocessed transactions") {
+      setUpLocalDatabase {
+        addTransactions(
+          manuallyAddedTransaction(UPDATED),
+          manuallyAddedTransactionComplement(CREATED)
+        )
+        addReplacedTransactions(manuallyAddedTransaction())
+      }
+
+      test("fetchNewTransactions recognizes updated transactions") {
+        repository.fetchNewTransactions()
+
+        repository.getTransactionsByAccount(FROM_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransaction(UPDATED))
+        repository.getReplacedTransactionById(manuallyAddedTransaction().id) shouldBe
+          manuallyAddedTransaction(UP_TO_DATE)
+
+        repository.getTransactionsByAccount(TO_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransactionComplement(CREATED))
+        shouldThrowAny {
+          repository.getReplacedTransactionById(manuallyAddedTransactionComplement().id)
+        }
       }
     }
   }

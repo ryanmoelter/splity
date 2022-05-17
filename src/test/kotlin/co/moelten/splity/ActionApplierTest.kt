@@ -1,5 +1,6 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
@@ -30,7 +31,7 @@ class ActionApplierTest : FunSpec({
 
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
-        manuallyAddedTransaction,
+        manuallyAddedTransaction(),
         toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     )
@@ -38,14 +39,14 @@ class ActionApplierTest : FunSpec({
     val transactionList =
       serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
-    transactionList shouldContainSingleComplementOf manuallyAddedTransaction
+    transactionList shouldContainSingleComplementOf manuallyAddedTransaction()
 
     assertSoftly(transactionList.first()) {
-      amount shouldBe -manuallyAddedTransaction.amount
+      amount shouldBe -manuallyAddedTransaction().amount
       importId shouldBe "splity:-350000:2020-02-06:1"
-      date shouldBe manuallyAddedTransaction.date
-      payeeName shouldBe manuallyAddedTransaction.payeeName
-      memo shouldBe manuallyAddedTransaction.memo + " • Out of $350.00, you paid 100.0%"
+      date shouldBe manuallyAddedTransaction().date
+      payeeName shouldBe manuallyAddedTransaction().payeeName
+      memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
       approved.shouldBeFalse()
       deleted.shouldBeFalse()
@@ -188,21 +189,29 @@ class ActionApplierTest : FunSpec({
       setUpBudgetsAndAccounts(fromBudget to listOf(FROM_ACCOUNT))
       addTransactionsForAccount(
         FROM_ACCOUNT_ID,
-        listOf(manuallyAddedTransaction.toApiTransaction())
+        listOf(manuallyAddedTransaction().toApiTransaction())
+      )
+    }
+
+    setUpLocalDatabase {
+      addTransactions(
+        manuallyAddedTransaction(UP_TO_DATE),
+        manuallyAddedTransactionComplement(UPDATED)
       )
     }
 
     actionApplier.applyActions(
       TransactionAction.UpdateComplement(
-        fromTransaction = manuallyAddedTransactionComplement,
-        complement = manuallyAddedTransaction,
+        fromTransaction = manuallyAddedTransactionComplement(UPDATED),
+        complement = manuallyAddedTransaction(),
         updateFields = setOf(UpdateField.CLEAR),
       )
     )
 
-    serverDatabase.getTransactionById(manuallyAddedTransaction.id) shouldBe
-      manuallyAddedTransaction.copy(cleared = TransactionDetail.ClearedEnum.CLEARED)
+    serverDatabase.getTransactionById(manuallyAddedTransaction().id) shouldBe
+      manuallyAddedTransaction().copy(cleared = TransactionDetail.ClearedEnum.CLEARED)
         .toApiTransaction()
+
     localDatabase.shouldHaveAllTransactionsProcessed()
   }
 })

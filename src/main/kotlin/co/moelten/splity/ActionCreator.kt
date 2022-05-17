@@ -116,7 +116,7 @@ class ActionCreator(
     toAccountAndBudget: AccountAndBudget
   ) = when (val state = fromTransaction.processedState) {
     CREATED -> when (complement?.processedState) {
-      UP_TO_DATE, CREATED -> null  // Already exists
+      UP_TO_DATE, CREATED -> TransactionAction.MarkProcessed(fromTransaction, complement)
       UPDATED -> TransactionAction.UpdateComplement(
         fromTransaction = complement,
         complement = fromTransaction,

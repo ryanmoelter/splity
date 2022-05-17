@@ -2,7 +2,6 @@ package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.ProcessedState.CREATED
-import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
 import co.moelten.splity.database.toSubTransactionId
@@ -20,7 +19,7 @@ const val NO_SERVER_KNOWLEDGE = 0
 const val FIRST_SERVER_KNOWLEDGE = 10
 const val SECOND_SERVER_KNOWLEDGE = 20
 
-val manuallyAddedTransaction = PublicTransactionDetail(
+fun manuallyAddedTransaction(processedState: ProcessedState = CREATED) = PublicTransactionDetail(
   id = "manuallyAddedTransaction".toTransactionId(),
   date = LocalDate.of(2020, Month.FEBRUARY, 6),
   amount = 350000,
@@ -30,9 +29,9 @@ val manuallyAddedTransaction = PublicTransactionDetail(
   accountName = FROM_ACCOUNT_NAME,
   memo = "Manually added transaction",
   flagColor = null,
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "0ec9431c-29cd-45cc-982b-5755e148b4ee".toPayeeId(),
   payeeName = "Target",
-  categoryId = UUID.randomUUID().toCategoryId(),
+  categoryId = "12ecf80a-a918-45c1-9c08-e4217da4bebc".toCategoryId(),
   categoryName = "Household goods",
   transferAccountId = null,
   transferTransactionId = null,
@@ -40,10 +39,12 @@ val manuallyAddedTransaction = PublicTransactionDetail(
   importId = null,
   subTransactions = emptyList(),
   budgetId = FROM_BUDGET_ID,
-  processedState = CREATED,
+  processedState = processedState,
 )
 
-val manuallyAddedTransactionComplement = PublicTransactionDetail(
+fun manuallyAddedTransactionComplement(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
   id = "manuallyAddedTransactionComplement".toTransactionId(),
   date = LocalDate.of(2020, Month.FEBRUARY, 6),
   amount = -350000,
@@ -53,9 +54,9 @@ val manuallyAddedTransactionComplement = PublicTransactionDetail(
   accountName = TO_ACCOUNT_NAME,
   memo = "Manually added transaction",
   flagColor = null,
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "8b539d7c-54c4-46a7-a855-0f359bd768b3".toPayeeId(),
   payeeName = "Target",
-  categoryId = UUID.randomUUID().toCategoryId(),
+  categoryId = "bf85d191-a91d-4bf6-b9b5-ab8b702eb67b".toCategoryId(),
   categoryName = "Household goods",
   transferAccountId = null,
   transferTransactionId = null,
@@ -63,7 +64,7 @@ val manuallyAddedTransactionComplement = PublicTransactionDetail(
   importId = "manuallyAddedTransaction",
   subTransactions = emptyList(),
   budgetId = TO_BUDGET_ID,
-  processedState = UP_TO_DATE
+  processedState = processedState
 )
 
 val transactionAddedFromTransfer = PublicTransactionDetail(
@@ -76,7 +77,7 @@ val transactionAddedFromTransfer = PublicTransactionDetail(
   accountName = FROM_ACCOUNT_NAME,
   memo = "Transaction added by split",
   flagColor = null,
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "a2de57ec-be16-4e49-9556-349721381d06".toPayeeId(),
   payeeName = "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
@@ -96,9 +97,9 @@ fun subTransactionNonTransferSplitSource(
   transactionId = "transactionTransferSplitSource".toTransactionId(),
   amount = -20000,
   memo = "I'm not the split you're looking for",
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "0ff89c33-a650-4769-91c9-b24090487b31".toPayeeId(),
   payeeName = null,
-  categoryId = UUID.randomUUID().toCategoryId(),
+  categoryId = "a1bdc1de-a4bf-4f05-89e4-b178131060f8".toCategoryId(),
   categoryName = "Household Goods",
   transferAccountId = null,
   transferTransactionId = null,
@@ -114,7 +115,7 @@ fun subTransactionTransferSplitSource(
   transactionId = "transactionTransferSplitSource".toTransactionId(),
   amount = -10000,
   memo = "I'm the split you're looking for",
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "09c22438-de08-43b2-a9cc-08c7fc6f6e10".toPayeeId(),
   payeeName = "Transfer : $FROM_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
@@ -137,13 +138,13 @@ fun transactionTransferSplitSource(
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Split transaction source",
   flagColor = null,
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "7b3df9bf-0cb8-4317-8527-9d73fa968e5b".toPayeeId(),
   payeeName = "Hello Alfred",
-  categoryId = UUID.randomUUID().toCategoryId(),
+  categoryId = "249a671c-5c7b-4abf-b355-8b4a72012091".toCategoryId(),
   categoryName = "Split SubCategory",
   transferAccountId = null,
   transferTransactionId = null,
-  matchedTransactionId = UUID.randomUUID().toTransactionId(),
+  matchedTransactionId = "5cbadc12-9b06-4c4a-8c7c-d739842059e4".toTransactionId(),
   importId = null,
   subTransactions = listOf(
     subTransactionNonTransferSplitSource(processedState),
@@ -165,13 +166,13 @@ fun transactionTransferNonSplitSource(
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Transfer transaction source",
   flagColor = null,
-  payeeId = UUID.randomUUID().toPayeeId(),
+  payeeId = "9f7f45ae-d75d-4a72-a312-9a6afec5e3c0".toPayeeId(),
   payeeName = "Transfer : $FROM_ACCOUNT_NAME",
   categoryId = null,
   categoryName = null,
   transferAccountId = FROM_ACCOUNT_ID,
   transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID,
-  matchedTransactionId = UUID.randomUUID().toTransactionId(),
+  matchedTransactionId = "89987609-d7ca-4698-a4f2-a830b80873ec".toTransactionId(),
   importId = null,
   budgetId = FROM_BUDGET_ID,
   subTransactions = emptyList(),
@@ -192,9 +193,9 @@ val unremarkableTransactionInTransferSource = TransactionDetail(
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
   memo = "Unremarkable transaction",
   flagColor = null,
-  payeeId = UUID.randomUUID(),
+  payeeId = "249a671c-5c7b-4abf-b355-8b4a72012091".toUUID(),
   payeeName = "Trader Joe's",
-  categoryId = UUID.randomUUID(),
+  categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toUUID(),
   categoryName = "Household Stuff",
   transferAccountId = null,
   transferTransactionId = null,
@@ -208,3 +209,5 @@ fun publicUnremarkableTransactionInTransferSource(processedState: ProcessedState
     processedState,
     FROM_BUDGET_ID
   )
+
+fun String.toUUID() = UUID.fromString(this)

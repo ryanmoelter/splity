@@ -3,6 +3,7 @@ package co.moelten.splity
 import co.moelten.splity.TransactionAction.CreateComplement
 import co.moelten.splity.TransactionAction.DeleteComplement
 import co.moelten.splity.TransactionAction.MarkError
+import co.moelten.splity.TransactionAction.MarkProcessed
 import co.moelten.splity.TransactionAction.UpdateComplement
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
@@ -35,6 +36,7 @@ class ActionApplier(
         is UpdateComplement -> applyUpdate(action)
         is DeleteComplement -> applyDelete(action)
         is MarkError -> applyError(action)
+        is MarkProcessed -> applyProcessed(action)
       }
     }
   }
@@ -123,12 +125,17 @@ class ActionApplier(
             complement.flagColor?.toSaveTransactionFlagColorEnum()
           },
           importId = complement.importId,
-          subtransactions = null  // TODO: handle subTransactions
+          subtransactions = if (action.complement.subTransactions.isEmpty()) {
+            null
+          } else {
+            TODO("Handle subTransactions")
+          }
         )
       )
     )
 
     repository.markProcessed(fromTransaction)
+    repository.markProcessed(complement)
   }
 
   private suspend fun applyDelete(action: DeleteComplement) = with(action) {
@@ -175,6 +182,13 @@ class ActionApplier(
       )
 
       repository.markProcessed(complement)
+    }
+  }
+
+  private fun applyProcessed(action: MarkProcessed) {
+    repository.markProcessed(action.fromTransaction)
+    if (action.complement != null) {
+      repository.markProcessed(action.complement)
     }
   }
 }
@@ -230,6 +244,11 @@ sealed interface TransactionAction {
           "create a complement transaction in the other account to bring them back in sync."
     }
   }
+
+  data class MarkProcessed(
+    override val fromTransaction: PublicTransactionDetail,
+    val complement: PublicTransactionDetail?
+  ) : TransactionAction
 }
 
 enum class UpdateField(val shouldNotify: Boolean) {

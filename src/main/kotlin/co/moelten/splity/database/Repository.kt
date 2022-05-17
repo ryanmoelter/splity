@@ -187,12 +187,22 @@ class Repository(
           val existingTransaction =
             database.storedTransactionQueries.getById(storedTransaction.id).executeAsOneOrNull()
           if (existingTransaction != null) {
-            database.replacedTransactionQueries.insert(existingTransaction.toReplacedTransaction())
+            when (existingTransaction.processedState) {
+              UP_TO_DATE -> {
+                database.replacedTransactionQueries
+                  .insert(existingTransaction.toReplacedTransaction())
 
-            when (val state = storedTransaction.processedState) {
-              CREATED -> storedTransaction.copy(processedState = UPDATED)
-              DELETED -> storedTransaction
-              UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
+                when (val state = storedTransaction.processedState) {
+                  CREATED -> storedTransaction.copy(processedState = UPDATED)
+                  DELETED -> storedTransaction
+                  UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
+                }
+              }
+              // Treat as CREATED if the old transaction hasn't been processed yet
+              CREATED -> storedTransaction
+              // Don't overwrite a pending update
+              UPDATED -> storedTransaction.copy(processedState = UPDATED)
+              DELETED -> error("Trying to update an unprocessed DELETED transaction")
             }
           } else {
             storedTransaction

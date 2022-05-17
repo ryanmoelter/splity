@@ -1,6 +1,6 @@
 package co.moelten.splity
 
-import co.moelten.splity.database.ProcessedState
+import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
@@ -42,20 +42,20 @@ class ActionCreatorTest : FunSpec({
 
     test("add") {
       setUpLocalDatabase {
-        addTransactions(manuallyAddedTransaction)
+        addTransactions(manuallyAddedTransaction(CREATED))
       }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
       actions.shouldContainExactly(
         TransactionAction.CreateComplement(
-          fromTransaction = manuallyAddedTransaction,
+          fromTransaction = manuallyAddedTransaction(CREATED),
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
     }
 
     test("ignore unapproved") {
-      val unapprovedTransaction = manuallyAddedTransaction.copy(approved = false)
+      val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
       setUpLocalDatabase { addTransactions(unapprovedTransaction) }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
@@ -65,25 +65,35 @@ class ActionCreatorTest : FunSpec({
     test("ignore already added") {
       setUpLocalDatabase {
         addTransactions(
-          manuallyAddedTransaction.copy(processedState = ProcessedState.CREATED),
-          manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+          manuallyAddedTransaction(CREATED),
+          manuallyAddedTransactionComplement(CREATED)
         )
       }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
-      actions.shouldBeEmpty()
+      actions.shouldContainExactly(
+        TransactionAction.MarkProcessed(
+          manuallyAddedTransaction(CREATED),
+          manuallyAddedTransactionComplement(CREATED)
+        )
+      )
     }
 
     test("ignore complement") {
       setUpLocalDatabase {
         addTransactions(
-          manuallyAddedTransaction.copy(processedState = ProcessedState.CREATED),
-          manuallyAddedTransactionComplement.copy(processedState = ProcessedState.CREATED)
+          manuallyAddedTransaction(CREATED),
+          manuallyAddedTransactionComplement(CREATED)
         )
       }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
-      actions.shouldBeEmpty()
+      actions.shouldContainExactly(
+        TransactionAction.MarkProcessed(
+          manuallyAddedTransaction(CREATED),
+          manuallyAddedTransactionComplement(CREATED)
+        )
+      )
     }
 
     test("ignore complement with recurring split") {
@@ -117,30 +127,43 @@ class ActionCreatorTest : FunSpec({
       }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
-      actions.shouldBeEmpty()
+      actions.shouldContainExactly(
+        TransactionAction.MarkProcessed(
+          transactionAddedFromTransferWithLongId,
+          transactionAddedFromTransferWithLongIdComplement
+        )
+      )
     }
 
     test("ignore already added with no importId") {
       val manuallyAddedTransactionComplementWithoutImportId =
-        manuallyAddedTransactionComplement.copy(
+        manuallyAddedTransactionComplement(UP_TO_DATE).copy(
           importId = null,
           memo = "I'm a different memo"
         )
       setUpLocalDatabase {
-        addTransactions(manuallyAddedTransaction, manuallyAddedTransactionComplementWithoutImportId)
+        addTransactions(
+          manuallyAddedTransaction(),
+          manuallyAddedTransactionComplementWithoutImportId
+        )
       }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
-      actions.shouldBeEmpty()
+      actions.shouldContainExactly(
+        TransactionAction.MarkProcessed(
+          manuallyAddedTransaction(CREATED),
+          manuallyAddedTransactionComplementWithoutImportId
+        )
+      )
     }
 
     test("clear transaction on complement approved") {
       val manuallyAddedTransactionComplementApproved =
-        manuallyAddedTransactionComplement.copy(approved = true, processedState = UPDATED)
+        manuallyAddedTransactionComplement(UPDATED).copy(approved = true)
       val existingManuallyAddedTransactionComplement =
-        manuallyAddedTransactionComplement.copy(processedState = UP_TO_DATE)
+        manuallyAddedTransactionComplement(UP_TO_DATE)
       val existingManuallyAddedTransaction =
-        manuallyAddedTransaction.copy(processedState = UP_TO_DATE)
+        manuallyAddedTransaction(UP_TO_DATE)
 
       setUpLocalDatabase {
         addReplacedTransactions(existingManuallyAddedTransactionComplement)
@@ -166,7 +189,7 @@ class ActionCreatorTest : FunSpec({
     val serverDatabase = FakeYnabServerDatabase()
     val component = createFakeSplityComponent(
       serverDatabase,
-      fakeConfig.copy(startDate = manuallyAddedTransaction.date.plusDays(1))
+      fakeConfig.copy(startDate = manuallyAddedTransaction().date.plusDays(1))
     )
     val localDatabase = component.database
     val actionCreater = component.actionCreator
@@ -188,7 +211,7 @@ class ActionCreatorTest : FunSpec({
     }
 
     test("ignore before start date") {
-      setUpLocalDatabase { addTransactions(manuallyAddedTransaction) }
+      setUpLocalDatabase { addTransactions(manuallyAddedTransaction()) }
       val actions = actionCreater.createDifferentialActionsForBothAccounts()
 
       actions.shouldBeEmpty()

@@ -51,21 +51,21 @@ internal class TransactionMirrorerTest : FunSpec({
       setUpServerDatabase {
         addTransactionsForAccount(
           FROM_ACCOUNT_ID,
-          listOf(manuallyAddedTransaction.toApiTransaction())
+          listOf(manuallyAddedTransaction().toApiTransaction())
         )
       }
 
       mirrorTransactionMirrorsTransaction(
-        transactionToMirror = manuallyAddedTransaction,
+        transactionToMirror = manuallyAddedTransaction(),
         transactionMirrorer = transactionMirrorer,
         serverDatabase = serverDatabase,
         toAccountId = TO_ACCOUNT_ID
       ) {
-        amount shouldBe -manuallyAddedTransaction.amount
+        amount shouldBe -manuallyAddedTransaction().amount
         importId shouldBe "splity:-350000:2020-02-06:1"
-        date shouldBe manuallyAddedTransaction.date
-        payeeName shouldBe manuallyAddedTransaction.payeeName
-        memo shouldBe manuallyAddedTransaction.memo + " • Out of $350.00, you paid 100.0%"
+        date shouldBe manuallyAddedTransaction().date
+        payeeName shouldBe manuallyAddedTransaction().payeeName
+        memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
         approved.shouldBeFalse()
         deleted.shouldBeFalse()
@@ -179,7 +179,7 @@ internal class TransactionMirrorerTest : FunSpec({
 
     context("ignored transactions") {
       context("with an unapproved transaction") {
-        val unapprovedTransaction = manuallyAddedTransaction.copy(approved = false)
+        val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
         setUpServerDatabase {
           addTransactionsForAccount(
             FROM_ACCOUNT_ID,
@@ -198,11 +198,11 @@ internal class TransactionMirrorerTest : FunSpec({
         setUpServerDatabase {
           addTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(manuallyAddedTransaction.toApiTransaction())
+            listOf(manuallyAddedTransaction().toApiTransaction())
           )
           addTransactionsForAccount(
             TO_ACCOUNT_ID,
-            listOf(manuallyAddedTransactionComplement.toApiTransaction())
+            listOf(manuallyAddedTransactionComplement().toApiTransaction())
           )
         }
 
@@ -210,9 +210,9 @@ internal class TransactionMirrorerTest : FunSpec({
           transactionMirrorer.mirrorTransactions()
 
           serverDatabase.accountToTransactionsMap
-            .getValue(TO_ACCOUNT_ID) shouldContainSingleComplementOf manuallyAddedTransaction
+            .getValue(TO_ACCOUNT_ID) shouldContainSingleComplementOf manuallyAddedTransaction()
           serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldContainExactly
-            listOf(manuallyAddedTransaction.toApiTransaction())
+            listOf(manuallyAddedTransaction().toApiTransaction())
         }
       }
     }
