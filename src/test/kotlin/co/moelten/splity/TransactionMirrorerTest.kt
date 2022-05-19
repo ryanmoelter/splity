@@ -5,6 +5,7 @@ import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
+import co.moelten.splity.database.replaceOnly
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.test.Setup
@@ -16,6 +17,7 @@ import co.moelten.splity.test.shouldContainSingleComplementOf
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
 import co.moelten.splity.test.shouldHaveNoReplacedTransactions
 import co.moelten.splity.test.shouldNotContainComplementOf
+import co.moelten.splity.test.syncServerKnowledge
 import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.test.toPublicTransactionDetail
 import co.moelten.splity.test.toPublicTransactionDetailList
@@ -29,7 +31,6 @@ import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.shouldBe
 
 internal class TransactionMirrorerTest : FunSpec({
@@ -61,12 +62,12 @@ internal class TransactionMirrorerTest : FunSpec({
 
   context("on later run (with filled SyncData + filled local database)") {
     setUpLocalDatabase {
-      syncDataQueries.insert(
+      syncDataQueries.replaceOnly(
         SyncData(
-          FIRST_SYNC_SERVER_KNOWLEDGE,
+          NO_SERVER_KNOWLEDGE,
           FROM_BUDGET_ID,
           FROM_ACCOUNT_ID,
-          FIRST_SYNC_SERVER_KNOWLEDGE,
+          NO_SERVER_KNOWLEDGE,
           TO_BUDGET_ID,
           TO_ACCOUNT_ID,
           shouldMatchTransactions = false
@@ -79,6 +80,15 @@ internal class TransactionMirrorerTest : FunSpec({
         unremarkableTransactionInTransferSource(UP_TO_DATE)
       )
     }
+    setUpServerDatabase {
+      addTransactions(
+        existingMirroredTransaction(UP_TO_DATE),
+        existingMirroredTransactionComplement(UP_TO_DATE),
+        existingMirroredTransactionSourceParent(UP_TO_DATE),
+        unremarkableTransactionInTransferSource(UP_TO_DATE)
+      )
+      syncServerKnowledge(localDatabase)
+    }
 
     simpleCreatedTransactionsShouldMirrorProperly(
       transactionMirrorer,
@@ -87,6 +97,12 @@ internal class TransactionMirrorerTest : FunSpec({
       setUpServerDatabase,
       setUpLocalDatabase
     )
+
+    context("with updated transactions in other accounts") {
+      setUpServerDatabase {
+
+      }
+    }
 
     context("with an UPDATED transaction") {
       context("with no complement") {
@@ -365,11 +381,12 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       test("mirrorTransactions doesn't duplicate the transaction") {
         transactionMirrorer.mirrorTransactions()
 
-        serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
           .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
           .shouldContainSingleComplementOf(manuallyAddedTransaction())
-        serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldContainExactly
-          listOf(manuallyAddedTransaction().toApiTransaction())
+        serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+          .toPublicTransactionDetailList(FROM_BUDGET_ID, UP_TO_DATE)
+          .shouldContainSingleComplementOf(manuallyAddedTransactionComplement())
       }
     }
 
@@ -385,8 +402,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       test("mirrorTransactions doesn't duplicate the transaction") {
         transactionMirrorer.mirrorTransactions()
 
-        serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldHaveSingleElement
-          redFlaggedTransaction.toApiTransaction()
+        serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+          .shouldContain(redFlaggedTransaction.toApiTransaction())
+        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+          .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+          .shouldNotContainComplementOf(redFlaggedTransaction)
         localDatabase.shouldHaveNoReplacedTransactions()
         localDatabase.getAllTransactions()
           .shouldContain(redFlaggedTransaction.copy(processedState = CREATED))
@@ -405,9 +425,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         test("mirrorTransactions doesn't duplicate the transaction") {
           transactionMirrorer.mirrorTransactions()
 
-          serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID).shouldContainExactly(
-            redFlaggedTransaction.toApiTransaction()
-          )
+          serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+            .shouldContain(redFlaggedTransaction.toApiTransaction())
+          serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+            .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+            .shouldNotContainComplementOf(redFlaggedTransaction)
           localDatabase.getAllReplacedTransactions().shouldContainExactly(oldManualTransaction)
           localDatabase.getAllTransactions()
             .shouldContain(redFlaggedTransaction.copy(processedState = UPDATED))
@@ -427,10 +449,10 @@ private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
   test("mirrorTransactions ignores the transaction") {
     transactionMirrorer.mirrorTransactions()
 
-    serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
       .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldNotContainComplementOf(transactionToIgnore)
-    serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID)
+    serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
       .shouldContain(transactionToIgnore.toApiTransaction())
   }
 }
@@ -446,7 +468,7 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
     transactionMirrorer.mirrorTransactions()
 
     val transactionsInToAccount =
-      serverDatabase.accountToTransactionsMap.getValue(toAccountId)
+      serverDatabase.getTransactionsForAccount(toAccountId)
 
     transactionsInToAccount.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldContainSingleComplementOf(transactionToMirror)

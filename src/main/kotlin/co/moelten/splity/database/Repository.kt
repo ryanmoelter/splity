@@ -294,10 +294,7 @@ class Repository(
   fun getSyncData(): SyncData? = database.syncDataQueries.getOnly().executeAsOneOrNull()
 
   private fun replaceSyncData(syncData: SyncData) {
-    database.syncDataQueries.transaction {
-      database.syncDataQueries.clear()
-      database.syncDataQueries.insert(syncData)
-    }
+    database.syncDataQueries.replaceOnly(syncData)
   }
 
   private fun StoredTransaction.toPublicTransactionDetail(): PublicTransactionDetail =

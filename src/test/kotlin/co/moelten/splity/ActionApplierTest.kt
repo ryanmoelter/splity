@@ -39,7 +39,7 @@ class ActionApplierTest : FunSpec({
     )
 
     val transactionList =
-      serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+      serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
 
     transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldContainSingleComplementOf(manuallyAddedTransaction())
@@ -73,7 +73,7 @@ class ActionApplierTest : FunSpec({
       )
 
       val transactionList =
-        serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
       transactionList shouldHaveSize 1
       assertSoftly(transactionList.first()) {
         amount shouldBe -transactionAddedFromTransfer.amount
@@ -98,7 +98,7 @@ class ActionApplierTest : FunSpec({
       )
 
       val transactionList =
-        serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
       transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
         .shouldContainSingleComplementOf(transactionAddedFromTransfer)
 
@@ -128,7 +128,7 @@ class ActionApplierTest : FunSpec({
       )
     )
 
-    val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
 
     transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldContainSingleComplementOf(transactionAddedFromTransfer)
@@ -173,7 +173,7 @@ class ActionApplierTest : FunSpec({
       )
     )
 
-    val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+    val transactionList = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
 
     transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldContainSingleComplementOf(transactionAddedFromTransfer)

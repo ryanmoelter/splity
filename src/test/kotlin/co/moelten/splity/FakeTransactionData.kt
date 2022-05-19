@@ -16,8 +16,6 @@ import java.util.UUID
 
 val TRANSACTION_ADDED_FROM_TRANSFER_ID = "transactionAddedFromTransferLength36".toTransactionId()
 const val NO_SERVER_KNOWLEDGE = 0L
-const val FIRST_SYNC_SERVER_KNOWLEDGE = 10L
-const val SECOND_SYNC_SERVER_KNOWLEDGE = 20L
 
 fun manuallyAddedTransaction(processedState: ProcessedState = CREATED) = PublicTransactionDetail(
   id = "manuallyAddedTransaction".toTransactionId(),
@@ -301,7 +299,7 @@ fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CRE
   PublicTransactionDetail(
     id = "unremarkableTransactionInTransferSource".toTransactionId(),
     date = LocalDate.of(2020, Month.FEBRUARY, 7),
-    amount = -10100,
+    amount = -101_000,
     cleared = TransactionDetail.ClearedEnum.CLEARED,
     approved = true,
     accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
@@ -310,6 +308,30 @@ fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CRE
     flagColor = null,
     payeeId = "249a671c-5c7b-4abf-b355-8b4a72012091".toPayeeId(),
     payeeName = "Trader Joe's",
+    categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toCategoryId(),
+    categoryName = "Household Stuff",
+    transferAccountId = null,
+    transferTransactionId = null,
+    matchedTransactionId = null,
+    importId = null,
+    subTransactions = emptyList(),
+    budgetId = FROM_BUDGET_ID,
+    processedState = processedState,
+  )
+
+fun anotherUnremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
+  PublicTransactionDetail(
+    id = "anotherUnremarkableTransactionInTransferSource".toTransactionId(),
+    date = LocalDate.of(2020, Month.FEBRUARY, 8),
+    amount = -21_000,
+    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    approved = true,
+    accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+    accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
+    memo = "Another unremarkable transaction",
+    flagColor = null,
+    payeeId = "b10f8d52-d56c-4263-8313-f1fbb8fc7177".toPayeeId(),
+    payeeName = "Target",
     categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toCategoryId(),
     categoryName = "Household Stuff",
     transferAccountId = null,

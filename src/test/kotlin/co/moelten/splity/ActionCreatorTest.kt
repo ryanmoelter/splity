@@ -4,6 +4,7 @@ import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
+import co.moelten.splity.database.replaceOnly
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
@@ -27,7 +28,7 @@ class ActionCreatorTest : FunSpec({
     val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
 
     setUpLocalDatabase {
-      syncDataQueries.insert(
+      syncDataQueries.replaceOnly(
         SyncData(
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,
@@ -197,7 +198,7 @@ class ActionCreatorTest : FunSpec({
     val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
 
     setUpLocalDatabase {
-      syncDataQueries.insert(
+      syncDataQueries.replaceOnly(
         SyncData(
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,

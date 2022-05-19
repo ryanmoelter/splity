@@ -51,7 +51,7 @@ class RepositoryTest : FunSpec({
 
   context("with filled SyncData") {
     setUpLocalDatabase {
-      syncDataQueries.insert(
+      syncDataQueries.replaceOnly(
         SyncData(
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,

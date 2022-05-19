@@ -88,7 +88,7 @@ class FakeAccounts(
     return AccountsResponse(
       AccountsResponseData(
         accounts = fakeYnabServerDatabase.budgetToAccountsMap.getValue(budgetId.toBudgetId()),
-        serverKnowledge = 0
+        serverKnowledge = fakeYnabServerDatabase.currentServerKnowledge
       )
     )
   }
@@ -106,16 +106,12 @@ class FakeTransactions(
     }
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
     val accountId = data.transaction!!.accountId.toAccountId()
-    val accountToTransactionsMap = fakeYnabServerDatabase.accountToTransactionsMap.toMutableMap()
-    val transactions = accountToTransactionsMap[accountId]?.toMutableList() ?: mutableListOf()
-    transactions.add(newTransactionDetail)
-    accountToTransactionsMap[accountId] = transactions
-    fakeYnabServerDatabase.accountToTransactionsMap = accountToTransactionsMap.toMap()
+    fakeYnabServerDatabase.addTransactionsForAccount(accountId, listOf(newTransactionDetail))
 
     return SaveTransactionsResponse(
       SaveTransactionsResponseData(
         listOf(newTransactionDetail.id),
-        0,
+        fakeYnabServerDatabase.currentServerKnowledge,
         newTransactionDetail,
         null,
         null  // TODO: Fail on duplicate import ids
@@ -141,9 +137,12 @@ class FakeTransactions(
         fakeYnabServerDatabase
           .budgetToAccountsMap.getValue(budgetId.toBudgetId())
           .flatMap { account ->
-            fakeYnabServerDatabase.accountToTransactionsMap.getValue(account.id.toAccountId())
+            fakeYnabServerDatabase.getTransactionsForAccount(
+              account.id.toAccountId(),
+              lastKnowledgeOfServer ?: NO_SERVER_KNOWLEDGE
+            )
           },
-        0
+        fakeYnabServerDatabase.currentServerKnowledge
       )
     )
   }
@@ -157,8 +156,11 @@ class FakeTransactions(
   ): TransactionsResponse {
     return TransactionsResponse(
       TransactionsResponseData(
-        fakeYnabServerDatabase.accountToTransactionsMap.getValue(accountId.toAccountId()),
-        0
+        fakeYnabServerDatabase.getTransactionsForAccount(
+          accountId.toAccountId(),
+          lastKnowledgeOfServer ?: NO_SERVER_KNOWLEDGE
+        ),
+        fakeYnabServerDatabase.currentServerKnowledge
       )
     )
   }
@@ -219,7 +221,7 @@ class FakeCategories(private val fakeYnabServerDatabase: FakeYnabServerDatabase)
       CategoriesResponseData(
         fakeYnabServerDatabase.budgetToCategoryGroupsMap.getValue(
           budgetId.toBudgetId()
-        ), 0
+        ), fakeYnabServerDatabase.currentServerKnowledge
       )
     )
   }
@@ -247,7 +249,12 @@ class FakeCategories(private val fakeYnabServerDatabase: FakeYnabServerDatabase)
       .flatMap { it.categories }
       .find { it.id == categoryId.toCategoryId().plainUuid }!!
     category.budgeted = data.category.budgeted
-    return SaveCategoryResponse(SaveCategoryResponseData(category, 0))
+    return SaveCategoryResponse(
+      SaveCategoryResponseData(
+        category,
+        fakeYnabServerDatabase.currentServerKnowledge
+      )
+    )
   }
 
 }

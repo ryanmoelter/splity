@@ -6,6 +6,8 @@ import co.moelten.splity.database.CategoryId
 import co.moelten.splity.database.TransactionId
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
+import co.moelten.splity.models.PublicTransactionDetail
+import co.moelten.splity.test.toApiTransaction
 import com.youneedabudget.client.models.Account
 import com.youneedabudget.client.models.BudgetSummary
 import com.youneedabudget.client.models.Category
@@ -18,15 +20,28 @@ data class FakeYnabServerDatabase(
   var budgetToAccountsMap: Map<BudgetId, List<Account>> = mapOf(),
   var budgetToCategoryGroupsMap: Map<BudgetId, List<CategoryGroupWithCategories>> = mapOf(),
   var budgets: List<BudgetSummary> = emptyList(),
-  var accountToTransactionsMap: Map<AccountId, List<TransactionDetail>> = mapOf(),
-  val setUp: FakeYnabServerDatabase.() -> Unit = { }
+  private var accountToTransactionsMap: Map<AccountId, List<TransactionDetailWithServerKnowledge>> = mapOf(),
+  var currentServerKnowledge: Long = 0,
+  private val setUp: FakeYnabServerDatabase.() -> Unit = { }
 ) {
   init {
     this.setUp()
   }
 
-  fun getTransactionById(id: TransactionId) =
-    accountToTransactionsMap.values.flatten().find { it.id == id.string }
+  fun getTransactionById(id: TransactionId) = accountToTransactionsMap.values.flatten()
+    .map { it.transactionDetail }
+    .find { it.id == id.string }
+
+  fun getAllTransactions(
+    lastSyncedAt: Long = NO_SERVER_KNOWLEDGE
+  ) = accountToTransactionsMap.values.flatten()
+    .filterBefore(lastSyncedAt)
+
+  fun getTransactionsForAccount(
+    accountId: AccountId,
+    lastSyncedAt: Long = NO_SERVER_KNOWLEDGE
+  ) = accountToTransactionsMap.getValue(accountId)
+    .filterBefore(lastSyncedAt)
 
   fun setUpBudgetsAndAccounts(vararg budgetsToAccounts: Pair<BudgetSummary, List<Account>>) {
     budgets = budgetsToAccounts.map { it.first }
@@ -37,21 +52,36 @@ data class FakeYnabServerDatabase(
       .associateWith { emptyList() }
   }
 
-  fun addTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
-    accountToTransactionsMap = accountToTransactionsMap
-      .mutateValue(accountId) { list -> list + transactions }
+  fun addTransactions(vararg transactions: PublicTransactionDetail) {
+    val groupedTransactions = transactions.groupBy { it.accountId }
+      .mapValues { (_, transactions) ->
+        transactions.map { it.toApiTransaction() }
+      }
+    groupedTransactions.forEach(::addTransactionsForAccount)
   }
 
-  fun updateTransaction(id: String, transaction: SaveTransaction): TransactionDetail {
+  fun addTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
+    accountToTransactionsMap = accountToTransactionsMap
+      .mutateOrCreateValue(accountId) { list ->
+        list + transactions.map { it.withServerKnowledge(currentServerKnowledge) }
+      }
+    currentServerKnowledge++
+  }
+
+  fun updateTransaction(transactionId: String, transaction: SaveTransaction): TransactionDetail {
     var result: TransactionDetail? = null
     accountToTransactionsMap = accountToTransactionsMap
-      .mutateValue(transaction.accountId.toAccountId()) { list ->
-        val originalTransaction = list.find { it.id == id }
-        val newTransaction = transaction.toNewTransactionDetail(id, originalTransaction)
+      .mutateOrCreateValue(transaction.accountId.toAccountId()) { list ->
+        val originalTransaction = list.find { it.transactionDetail.id == transactionId }
+        val newTransaction =
+          transaction.toNewTransactionDetail(transactionId, originalTransaction?.transactionDetail)
         result = newTransaction
-        list.filter { it.id != id } + newTransaction
+
+        list.filter { it.transactionDetail.id != transactionId } +
+          newTransaction.withServerKnowledge(currentServerKnowledge)
       }
 
+    currentServerKnowledge++
     return result!!
   }
 
@@ -67,6 +97,7 @@ data class FakeYnabServerDatabase(
         balance = balanceAmount
         budgeted = budgetedAmount
       }
+    currentServerKnowledge++
   }
 
   private fun findCategory(categoryId: CategoryId): Category {
@@ -84,18 +115,38 @@ data class FakeYnabServerDatabase(
       .flatMap { (_, accounts) -> accounts }
       .find { it.id == accountId.plainUuid }!!
       .balance = balanceAmount
+
+    currentServerKnowledge++
   }
+
+  private fun List<TransactionDetailWithServerKnowledge>.filterBefore(lastSyncedAt: Long) =
+    filter { it.updatedAt isAfter lastSyncedAt }
+      .map { it.transactionDetail }
+
+  private infix fun Long.isAfter(lastSyncedAt: Long) =
+    this >= lastSyncedAt
 }
 
+data class TransactionDetailWithServerKnowledge(
+  val transactionDetail: TransactionDetail,
+  val updatedAt: Long
+)
+
+private fun TransactionDetail.withServerKnowledge(updatedAt: Long) =
+  TransactionDetailWithServerKnowledge(
+    transactionDetail = this,
+    updatedAt = updatedAt
+  )
+
 fun FakeYnabServerDatabase.shouldHaveNoTransactions() {
-  accountToTransactionsMap.values.flatten().shouldBeEmpty()
+  getAllTransactions().shouldBeEmpty()
 }
 
 private fun <Key, Value> Map<Key, Value>.mutate(
   action: MutableMap<Key, Value>.() -> Unit
 ): Map<Key, Value> = this.toMutableMap().apply(action).toMap()
 
-private fun <Key, Value> Map<Key, Value>.mutateValue(
+private fun <Key, Value> Map<Key, List<Value>>.mutateOrCreateValue(
   key: Key,
-  action: (Value) -> Value
-): Map<Key, Value> = mutate { put(key, action(getValue(key))) }
+  action: (List<Value>) -> List<Value>
+): Map<Key, List<Value>> = mutate { put(key, action(get(key) ?: emptyList())) }

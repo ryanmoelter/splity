@@ -1,9 +1,11 @@
 package co.moelten.splity.test
 
+import co.moelten.splity.FakeYnabServerDatabase
 import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.TransactionId
+import co.moelten.splity.database.replaceOnly
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
@@ -54,6 +56,22 @@ fun Database.getAllReplacedTransactions(): List<PublicTransactionDetail> =
   replacedTransactionQueries.getAll().executeAsList().toPublicTransactionList(
     replacedSubTransactionQueries.getAll().executeAsList()
   )
+
+fun FakeYnabServerDatabase.syncServerKnowledge(localDatabase: Database) {
+  syncServerKnowledge(localDatabase::also)
+}
+
+fun FakeYnabServerDatabase.syncServerKnowledge(setUpLocalDatabase: (Database.() -> Unit) -> Unit) {
+  setUpLocalDatabase {
+    syncDataQueries.replaceOnly(
+      syncDataQueries.getOnly().executeAsOne()
+        .copy(
+          firstServerKnowledge = currentServerKnowledge,
+          secondServerKnowledge = currentServerKnowledge
+        )
+    )
+  }
+}
 
 fun List<ReplacedTransaction>.toPublicTransactionList(
   replacedSubTransactions: List<ReplacedSubTransaction>
