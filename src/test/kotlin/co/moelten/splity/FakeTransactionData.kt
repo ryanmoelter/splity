@@ -2,22 +2,22 @@ package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.ProcessedState.CREATED
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
 import co.moelten.splity.database.toSubTransactionId
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
-import co.moelten.splity.test.toPublicTransactionDetail
 import com.youneedabudget.client.models.TransactionDetail
 import org.threeten.bp.LocalDate
 import org.threeten.bp.Month
 import java.util.UUID
 
 val TRANSACTION_ADDED_FROM_TRANSFER_ID = "transactionAddedFromTransferLength36".toTransactionId()
-const val NO_SERVER_KNOWLEDGE = 0
-const val FIRST_SERVER_KNOWLEDGE = 10
-const val SECOND_SERVER_KNOWLEDGE = 20
+const val NO_SERVER_KNOWLEDGE = 0L
+const val FIRST_SYNC_SERVER_KNOWLEDGE = 10L
+const val SECOND_SYNC_SERVER_KNOWLEDGE = 20L
 
 fun manuallyAddedTransaction(processedState: ProcessedState = CREATED) = PublicTransactionDetail(
   id = "manuallyAddedTransaction".toTransactionId(),
@@ -103,7 +103,7 @@ fun subTransactionNonTransferSplitSource(
   categoryName = "Household Goods",
   transferAccountId = null,
   transferTransactionId = null,
-  accountId = FROM_ACCOUNT_ID,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
   budgetId = FROM_BUDGET_ID,
   processedState = processedState
 )
@@ -121,7 +121,7 @@ fun subTransactionTransferSplitSource(
   categoryName = null,
   transferAccountId = FROM_ACCOUNT_ID,
   transferTransactionId = TRANSACTION_ADDED_FROM_TRANSFER_ID,
-  accountId = FROM_ACCOUNT_ID,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
   budgetId = FROM_BUDGET_ID,
   processedState = processedState
 )
@@ -179,35 +179,146 @@ fun transactionTransferNonSplitSource(
   processedState = processedState,
 )
 
-// -- Normal, non-split transactions ---------------------------------------------------------------
-// These should be ignored by splity in most cases
+val EXISTING_MIRRORED_TRANSACTION_ID = "existingMirroredTransaction".toTransactionId()
+val EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID = "existingMirroredTransactionSource".toTransactionId()
+val EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID =
+  "existingMirroredTransactionSourceSplitTransfer".toSubTransactionId()
 
-val unremarkableTransactionInTransferSource = TransactionDetail(
-  id = "unremarkableTransactionInTransferSource",
+fun existingMirroredTransaction(processedState: ProcessedState = UP_TO_DATE) = PublicTransactionDetail(
+  id = EXISTING_MIRRORED_TRANSACTION_ID,
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
-  amount = -10100,
+  amount = 25_000,
   cleared = TransactionDetail.ClearedEnum.CLEARED,
   approved = true,
-  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid,
-  deleted = false,
-  accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
-  memo = "Unremarkable transaction",
+  accountId = FROM_ACCOUNT_ID,
+  accountName = FROM_ACCOUNT_NAME,
+  memo = "Existing mirrored transaction",
   flagColor = null,
-  payeeId = "249a671c-5c7b-4abf-b355-8b4a72012091".toUUID(),
-  payeeName = "Trader Joe's",
-  categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toUUID(),
-  categoryName = "Household Stuff",
+  payeeId = "7e599e78-94e7-4d63-a195-b0dd47ad1060".toPayeeId(),
+  payeeName = "Original Pattern Brewery",
+  categoryId = "45762a3f-b105-4441-a1ed-32b4897412d3".toCategoryId(),
+  categoryName = "Outings",
+  transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  transferTransactionId = EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID.string.toTransactionId(),
+  matchedTransactionId = null,
+  importId = null,
+  subTransactions = emptyList(),
+  budgetId = FROM_BUDGET_ID,
+  processedState = processedState,
+)
+
+fun existingMirroredTransactionComplement(processedState: ProcessedState = UP_TO_DATE) = PublicTransactionDetail(
+  id = "existingMirroredTransactionComplement".toTransactionId(),
+  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  amount = -25_000,
+  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  approved = true,
+  accountId = TO_ACCOUNT_ID,
+  accountName = TO_ACCOUNT_NAME,
+  memo = "Existing mirrored transaction • Out of $55.00, you paid $25.00 (something%)",
+  flagColor = null,
+  payeeId = "781c0469-3f01-4192-a82a-cc3bb1a52240".toPayeeId(),
+  payeeName = "Original Pattern Brewery",
+  categoryId = "809741f3-b85d-46ca-8abf-5fc613fb4c53".toCategoryId(),
+  categoryName = "Dining out",
   transferAccountId = null,
   transferTransactionId = null,
   matchedTransactionId = null,
   importId = null,
-  subtransactions = emptyList()
+  subTransactions = emptyList(),
+  budgetId = TO_BUDGET_ID,
+  processedState = processedState,
 )
 
-fun publicUnremarkableTransactionInTransferSource(processedState: ProcessedState) =
-  unremarkableTransactionInTransferSource.toPublicTransactionDetail(
-    processedState,
-    FROM_BUDGET_ID
+fun existingMirroredTransactionSourceParent(
+  processedState: ProcessedState = UP_TO_DATE
+) = PublicTransactionDetail(
+  id = EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID,
+  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  amount = -55_000,
+  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  approved = true,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
+  memo = "Existing mirrored transaction source",
+  flagColor = null,
+  payeeId = "7e599e78-94e7-4d63-a195-b0dd47ad1060".toPayeeId(),
+  payeeName = "Original Pattern Brewery",
+  categoryId = "45762a3f-b105-4441-a1ed-32b4897412d3".toCategoryId(),
+  categoryName = "Outings",
+  transferAccountId = null,
+  transferTransactionId = null,
+  matchedTransactionId = null,
+  importId = null,
+  subTransactions = listOf(
+    existingMirroredTransactionSourceSplitTransfer(processedState),
+    existingMirroredTransactionSourceSplitCategory(processedState)
+  ),
+  budgetId = FROM_BUDGET_ID,
+  processedState = processedState,
+)
+
+fun existingMirroredTransactionSourceSplitTransfer(
+  processedState: ProcessedState = UP_TO_DATE
+) = PublicSubTransaction(
+  id = EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID,
+  transactionId = EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID,
+  amount = -25_000,
+  memo = "I'm the existing split you're looking for",
+  payeeId = "eb226794-2bb1-409f-9fd6-a08bfcd5a164".toPayeeId(),
+  payeeName = "Transfer : $FROM_ACCOUNT_NAME",
+  categoryId = null,
+  categoryName = null,
+  transferAccountId = FROM_ACCOUNT_ID,
+  transferTransactionId = EXISTING_MIRRORED_TRANSACTION_ID,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  budgetId = FROM_BUDGET_ID,
+  processedState = processedState
+)
+
+fun existingMirroredTransactionSourceSplitCategory(
+  processedState: ProcessedState = UP_TO_DATE
+) = PublicSubTransaction(
+  id = "existingMirroredTransactionSourceSplitCategory".toSubTransactionId(),
+  transactionId = EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID,
+  amount = -30_000,
+  memo = "I'm NOT the existing split you're looking for",
+  payeeId = null,
+  payeeName = null,
+  categoryId = "c956fdc6-0760-4714-b708-896424cd8216".toCategoryId(),
+  categoryName = "Outings",
+  transferAccountId = null,
+  transferTransactionId = null,
+  accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  budgetId = FROM_BUDGET_ID,
+  processedState = processedState
+)
+
+// -- Normal, non-split transactions ---------------------------------------------------------------
+// These should be ignored by splity in most cases
+
+fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
+  PublicTransactionDetail(
+    id = "unremarkableTransactionInTransferSource".toTransactionId(),
+    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    amount = -10100,
+    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    approved = true,
+    accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+    accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
+    memo = "Unremarkable transaction",
+    flagColor = null,
+    payeeId = "249a671c-5c7b-4abf-b355-8b4a72012091".toPayeeId(),
+    payeeName = "Trader Joe's",
+    categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toCategoryId(),
+    categoryName = "Household Stuff",
+    transferAccountId = null,
+    transferTransactionId = null,
+    matchedTransactionId = null,
+    importId = null,
+    subTransactions = emptyList(),
+    budgetId = FROM_BUDGET_ID,
+    processedState = processedState,
   )
 
 fun String.toUUID() = UUID.fromString(this)

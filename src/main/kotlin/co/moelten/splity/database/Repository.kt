@@ -311,7 +311,7 @@ class Repository(
     )
 }
 
-private fun List<StoredTransaction>.toPublicTransactionList(
+fun List<StoredTransaction>.toPublicTransactionList(
   storedSubTransactions: List<StoredSubTransaction>
 ): List<PublicTransactionDetail> {
   val subTransactionMap = buildMap<TransactionId, List<StoredSubTransaction>> {

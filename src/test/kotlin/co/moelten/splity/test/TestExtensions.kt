@@ -3,15 +3,18 @@ package co.moelten.splity.test
 import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.ProcessedState
+import co.moelten.splity.database.TransactionId
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
+import co.moelten.splity.database.toPublicTransactionList
 import co.moelten.splity.database.toStoredSubTransaction
 import co.moelten.splity.database.toStoredTransaction
 import co.moelten.splity.database.toSubTransactionId
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
+import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.database.Database
@@ -42,6 +45,35 @@ fun Database.addReplacedTransactions(vararg transactions: PublicTransactionDetai
   }
 }
 
+fun Database.getAllTransactions(): List<PublicTransactionDetail> =
+  storedTransactionQueries.getAll().executeAsList().toPublicTransactionList(
+    storedSubTransactionQueries.getAll().executeAsList()
+  )
+
+fun Database.getAllReplacedTransactions(): List<PublicTransactionDetail> =
+  replacedTransactionQueries.getAll().executeAsList().toPublicTransactionList(
+    replacedSubTransactionQueries.getAll().executeAsList()
+  )
+
+fun List<ReplacedTransaction>.toPublicTransactionList(
+  replacedSubTransactions: List<ReplacedSubTransaction>
+): List<PublicTransactionDetail> {
+  val subTransactionMap = buildMap<TransactionId, List<ReplacedSubTransaction>> {
+    replacedSubTransactions.forEach { replacedSubTransaction ->
+      put(
+        replacedSubTransaction.transactionId,
+        (get(replacedSubTransaction.transactionId) ?: emptyList()) + replacedSubTransaction
+      )
+    }
+  }
+
+  return map { replacedTransaction ->
+    replacedTransaction.toPublicTransactionDetail(
+      subTransactionMap[replacedTransaction.id] ?: emptyList()
+    )
+  }
+}
+
 fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction = ReplacedTransaction(
   id = id,
   date = date,
@@ -63,20 +95,21 @@ fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction = Repla
   budgetId = budgetId
 )
 
-fun PublicSubTransaction.toReplacedSubTransaction(): ReplacedSubTransaction = ReplacedSubTransaction(
-  id = id,
-  transactionId = transactionId,
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId,
-  payeeName = payeeName,
-  categoryId = categoryId,
-  categoryName = categoryName,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  accountId = accountId,
-  budgetId = budgetId
-)
+fun PublicSubTransaction.toReplacedSubTransaction(): ReplacedSubTransaction =
+  ReplacedSubTransaction(
+    id = id,
+    transactionId = transactionId,
+    amount = amount,
+    memo = memo,
+    payeeId = payeeId,
+    payeeName = payeeName,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    transferAccountId = transferAccountId,
+    transferTransactionId = transferTransactionId,
+    accountId = accountId,
+    budgetId = budgetId
+  )
 
 fun PublicTransactionDetail.toApiTransaction(): TransactionDetail = TransactionDetail(
   id = id.string,
@@ -114,9 +147,14 @@ fun PublicSubTransaction.toApiSubTransaction(): SubTransaction = SubTransaction(
   transferTransactionId = transferTransactionId?.string
 )
 
+fun List<TransactionDetail>.toPublicTransactionDetailList(
+  budgetId: BudgetId,
+  processedState: ProcessedState = ProcessedState.CREATED
+) = this.map { it.toPublicTransactionDetail(budgetId, processedState) }
+
 fun TransactionDetail.toPublicTransactionDetail(
-  processedState: ProcessedState,
-  budgetId: BudgetId
+  budgetId: BudgetId,
+  processedState: ProcessedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED
 ) =
   PublicTransactionDetail(
     id = id.toTransactionId(),
@@ -136,21 +174,17 @@ fun TransactionDetail.toPublicTransactionDetail(
     importId = importId,
     payeeName = payeeName,
     categoryName = categoryName,
-    subTransactions = subtransactions.map {
-      it.toPublicSubTransaction(
-        processedState,
-        budgetId,
-        accountId.toAccountId()
-      )
-    },
     processedState = processedState,
     budgetId = budgetId,
+    subTransactions = this.subtransactions.map {
+      it.toPublicSubTransaction(accountId.toAccountId(), budgetId, processedState)
+    }
   )
 
 fun SubTransaction.toPublicSubTransaction(
-  processedState: ProcessedState,
+  accountId: AccountId,
   budgetId: BudgetId,
-  accountId: AccountId
+  processedState: ProcessedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED
 ) = PublicSubTransaction(
   id = id.toSubTransactionId(),
   transactionId = transactionId.toTransactionId(),
@@ -164,5 +198,5 @@ fun SubTransaction.toPublicSubTransaction(
   transferTransactionId = transferTransactionId?.toTransactionId(),
   processedState = processedState,
   accountId = accountId,
-  budgetId = budgetId,
+  budgetId = budgetId
 )

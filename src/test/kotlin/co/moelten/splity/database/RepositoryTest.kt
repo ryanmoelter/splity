@@ -16,7 +16,6 @@ import co.moelten.splity.fromBudget
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.manuallyAddedTransaction
 import co.moelten.splity.manuallyAddedTransactionComplement
-import co.moelten.splity.publicUnremarkableTransactionInTransferSource
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
@@ -100,14 +99,14 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     setUpServerDatabase {
       addTransactionsForAccount(
         FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-        listOf(unremarkableTransactionInTransferSource)
+        listOf(unremarkableTransactionInTransferSource().toApiTransaction())
       )
     }
 
     test("fetchNewTransactions finds a new transaction") {
       repository.fetchNewTransactions()
       repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID) shouldHaveSingleElement
-        publicUnremarkableTransactionInTransferSource(UP_TO_DATE)
+        unremarkableTransactionInTransferSource(UP_TO_DATE)
 
       localDatabase.shouldHaveAllTransactionsProcessed()
     }
@@ -115,10 +114,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     context("when that transaction is an update") {
       setUpLocalDatabase {
         storedTransactionQueries.replaceSingle(
-          unremarkableTransactionInTransferSource.toStoredTransaction(
-            FROM_BUDGET_ID,
-            UP_TO_DATE
-          )
+          unremarkableTransactionInTransferSource(UP_TO_DATE).toStoredTransaction()
         )
       }
 
@@ -126,7 +122,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         repository.fetchNewTransactions()
         repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID)
           .shouldHaveSingleElement(
-            publicUnremarkableTransactionInTransferSource(UP_TO_DATE)
+            unremarkableTransactionInTransferSource(UP_TO_DATE)
           )
 
         localDatabase.shouldHaveAllTransactionsProcessed()

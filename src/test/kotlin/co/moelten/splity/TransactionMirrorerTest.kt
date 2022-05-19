@@ -1,25 +1,36 @@
 package co.moelten.splity
 
 import co.moelten.splity.database.AccountId
+import co.moelten.splity.database.ProcessedState.CREATED
+import co.moelten.splity.database.ProcessedState.UPDATED
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addTransactions
+import co.moelten.splity.test.getAllReplacedTransactions
+import co.moelten.splity.test.getAllTransactions
+import co.moelten.splity.test.isComplementOf
+import co.moelten.splity.test.shouldContainSingleComplementOf
+import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
+import co.moelten.splity.test.shouldHaveNoReplacedTransactions
+import co.moelten.splity.test.shouldNotContainComplementOf
 import co.moelten.splity.test.toApiTransaction
+import co.moelten.splity.test.toPublicTransactionDetail
+import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import io.kotest.assertions.assertSoftly
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
-import io.kotest.matchers.Matcher
-import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.should
+import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
 
 internal class TransactionMirrorerTest : FunSpec({
   val serverDatabase = FakeYnabServerDatabase()
@@ -39,14 +50,158 @@ internal class TransactionMirrorerTest : FunSpec({
   }
 
   context("on first run (unfilled SyncData + no local database)") {
-    context("with no new transactions") {
-      test("mirrorTransactions does nothing") {
-        transactionMirrorer.mirrorTransactions()
+    simpleCreatedTransactionsShouldMirrorProperly(
+      transactionMirrorer,
+      serverDatabase,
+      localDatabase,
+      setUpServerDatabase,
+      setUpLocalDatabase
+    )
+  }
 
-        serverDatabase.shouldHaveNoTransactions()
+  context("on later run (with filled SyncData + filled local database)") {
+    setUpLocalDatabase {
+      syncDataQueries.insert(
+        SyncData(
+          FIRST_SYNC_SERVER_KNOWLEDGE,
+          FROM_BUDGET_ID,
+          FROM_ACCOUNT_ID,
+          FIRST_SYNC_SERVER_KNOWLEDGE,
+          TO_BUDGET_ID,
+          TO_ACCOUNT_ID,
+          shouldMatchTransactions = false
+        )
+      )
+      addTransactions(
+        existingMirroredTransaction(UP_TO_DATE),
+        existingMirroredTransactionComplement(UP_TO_DATE),
+        existingMirroredTransactionSourceParent(UP_TO_DATE),
+        unremarkableTransactionInTransferSource(UP_TO_DATE)
+      )
+    }
+
+    simpleCreatedTransactionsShouldMirrorProperly(
+      transactionMirrorer,
+      serverDatabase,
+      localDatabase,
+      setUpServerDatabase,
+      setUpLocalDatabase
+    )
+
+    context("with an UPDATED transaction") {
+      context("with no complement") {
+        test("this transaction is flagged as an error") {
+          TODO()
+        }
+      }
+
+      context("with an UP_TO_DATE complement") {
+        test("complement is updated") {
+          TODO()
+        }
+      }
+
+      context("with a CREATED complement") {
+        test("complement is updated") {
+          TODO()
+        }
+      }
+
+      context("with an UPDATED complement") {
+        test("both are flagged as errors") {
+          TODO()
+        }
+      }
+
+      context("with a DELETED complement") {
+        test("this transaction is marked as deleted") {
+          TODO()
+        }
       }
     }
 
+    context("with a CREATED transaction") {
+      context("with no complement") {
+        test("complement is created") {
+          TODO()
+        }
+      }
+
+      context("with an UP_TO_DATE complement") {
+        test("nothing happens") {
+          TODO()
+        }
+      }
+
+      context("with a CREATED complement") {
+        test("nothing happens") {
+          TODO()
+        }
+      }
+
+      context("with an UPDATED complement") {
+        test("this transaction is updated") {
+          TODO()
+        }
+      }
+
+      context("with a DELETED complement") {
+        test("this transaction is marked as deleted") {
+          TODO()
+        }
+      }
+    }
+
+    context("with a DELETED transaction") {
+      context("with no complement") {
+        test("this transaction is flagged as an error") {
+          TODO()
+        }
+      }
+
+      context("with an UP_TO_DATE complement") {
+        test("complement is marked as deleted") {
+          TODO()
+        }
+      }
+
+      context("with a CREATED complement") {
+        test("complement is marked as deleted") {
+          TODO()
+        }
+      }
+
+      context("with an UPDATED complement") {
+        test("complement is marked as deleted") {
+          TODO()
+        }
+      }
+
+      context("with a DELETED complement") {
+        test("nothing happens") {
+          TODO()
+        }
+      }
+    }
+  }
+})
+
+private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorProperly(
+  transactionMirrorer: TransactionMirrorer,
+  serverDatabase: FakeYnabServerDatabase,
+  localDatabase: Database,
+  setUpServerDatabase: (FakeYnabServerDatabase.() -> Unit) -> Unit,
+  setUpLocalDatabase: (Database.() -> Unit) -> Unit
+) {
+  context("with no new transactions") {
+    test("mirrorTransactions does nothing") {
+      transactionMirrorer.mirrorTransactions()
+
+      localDatabase.shouldHaveAllTransactionsProcessed()
+    }
+  }
+
+  context("created transactions with no complement") {
     context("with a manually added transaction") {
       setUpServerDatabase {
         addTransactionsForAccount(
@@ -176,65 +331,93 @@ internal class TransactionMirrorerTest : FunSpec({
         accountId shouldBe TO_ACCOUNT_ID.plainUuid
       }
     }
+  }
 
-    context("ignored transactions") {
-      context("with an unapproved transaction") {
-        val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
-        setUpServerDatabase {
-          addTransactionsForAccount(
-            FROM_ACCOUNT_ID,
-            listOf(unapprovedTransaction.toApiTransaction())
-          )
-        }
-
-        mirrorTransactionsIgnoresTransaction(
-          unapprovedTransaction,
-          transactionMirrorer,
-          serverDatabase
+  context("created transactions to ignore") {
+    context("with an unapproved transaction") {
+      val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
+      setUpServerDatabase {
+        addTransactionsForAccount(
+          FROM_ACCOUNT_ID,
+          listOf(unapprovedTransaction.toApiTransaction())
         )
       }
 
-      context("with an already-added transaction") {
-        setUpServerDatabase {
-          addTransactionsForAccount(
-            FROM_ACCOUNT_ID,
-            listOf(manuallyAddedTransaction().toApiTransaction())
-          )
-          addTransactionsForAccount(
-            TO_ACCOUNT_ID,
-            listOf(manuallyAddedTransactionComplement().toApiTransaction())
-          )
+      mirrorTransactionsIgnoresTransaction(
+        unapprovedTransaction,
+        transactionMirrorer,
+        serverDatabase
+      )
+    }
+
+    context("with an already-added transaction") {
+      setUpServerDatabase {
+        addTransactionsForAccount(
+          FROM_ACCOUNT_ID,
+          listOf(manuallyAddedTransaction().toApiTransaction())
+        )
+        addTransactionsForAccount(
+          TO_ACCOUNT_ID,
+          listOf(manuallyAddedTransactionComplement().toApiTransaction())
+        )
+      }
+
+      test("mirrorTransactions doesn't duplicate the transaction") {
+        transactionMirrorer.mirrorTransactions()
+
+        serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+          .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+          .shouldContainSingleComplementOf(manuallyAddedTransaction())
+        serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldContainExactly
+          listOf(manuallyAddedTransaction().toApiTransaction())
+      }
+    }
+
+    context("with a red-flagged transaction") {
+      val redFlaggedTransaction = manuallyAddedTransaction().copy(flagColor = RED)
+      setUpServerDatabase {
+        addTransactionsForAccount(
+          FROM_ACCOUNT_ID,
+          listOf(redFlaggedTransaction.toApiTransaction())
+        )
+      }
+
+      test("mirrorTransactions doesn't duplicate the transaction") {
+        transactionMirrorer.mirrorTransactions()
+
+        serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldHaveSingleElement
+          redFlaggedTransaction.toApiTransaction()
+        localDatabase.shouldHaveNoReplacedTransactions()
+        localDatabase.getAllTransactions()
+          .shouldContain(redFlaggedTransaction.copy(processedState = CREATED))
+        localDatabase.getAllTransactions()
+          .shouldNotContainComplementOf(redFlaggedTransaction)
+      }
+
+      context("with a red-flagged update") {
+        val oldManualTransaction = manuallyAddedTransaction(UP_TO_DATE)
+          .copy(approved = false)
+
+        setUpLocalDatabase {
+          addTransactions(oldManualTransaction)
         }
 
         test("mirrorTransactions doesn't duplicate the transaction") {
           transactionMirrorer.mirrorTransactions()
 
-          serverDatabase.accountToTransactionsMap
-            .getValue(TO_ACCOUNT_ID) shouldContainSingleComplementOf manuallyAddedTransaction()
-          serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID) shouldContainExactly
-            listOf(manuallyAddedTransaction().toApiTransaction())
+          serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID).shouldContainExactly(
+            redFlaggedTransaction.toApiTransaction()
+          )
+          localDatabase.getAllReplacedTransactions().shouldContainExactly(oldManualTransaction)
+          localDatabase.getAllTransactions()
+            .shouldContain(redFlaggedTransaction.copy(processedState = UPDATED))
+          localDatabase.getAllTransactions()
+            .shouldNotContainComplementOf(redFlaggedTransaction)
         }
       }
     }
   }
-
-  context("on later run (with filled SyncData + filled local database)") {
-    setUpLocalDatabase {
-      syncDataQueries.insert(
-        SyncData(
-          10,
-          FROM_BUDGET_ID,
-          FROM_ACCOUNT_ID,
-          10,
-          TO_BUDGET_ID,
-          TO_ACCOUNT_ID,
-          shouldMatchTransactions = false
-        )
-      )
-      addTransactions()
-    }
-  }
-})
+}
 
 private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
   transactionToIgnore: PublicTransactionDetail,
@@ -245,9 +428,10 @@ private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
     transactionMirrorer.mirrorTransactions()
 
     serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
+      .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldNotContainComplementOf(transactionToIgnore)
-    serverDatabase.accountToTransactionsMap
-      .getValue(FROM_ACCOUNT_ID) shouldContainExactly listOf(transactionToIgnore.toApiTransaction())
+    serverDatabase.accountToTransactionsMap.getValue(FROM_ACCOUNT_ID)
+      .shouldContain(transactionToIgnore.toApiTransaction())
   }
 }
 
@@ -264,64 +448,13 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
     val transactionsInToAccount =
       serverDatabase.accountToTransactionsMap.getValue(toAccountId)
 
-    transactionsInToAccount shouldContainSingleComplementOf transactionToMirror
+    transactionsInToAccount.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+      .shouldContainSingleComplementOf(transactionToMirror)
 
     val complement = transactionsInToAccount.find { transaction ->
-      transaction isComplementOf transactionToMirror
+      transaction.toPublicTransactionDetail(TO_BUDGET_ID) isComplementOf transactionToMirror
     }!!
 
     assertSoftly(complement, assertSoftly)
   }
 }
-
-infix fun List<TransactionDetail>.shouldContainSingleComplementOf(
-  transactionToMirror: PublicTransactionDetail
-) {
-  this should containComplementOf(transactionToMirror)
-  this should containNoDuplicateComplementsOf(transactionToMirror)
-}
-
-infix fun List<TransactionDetail>.shouldNotContainComplementOf(
-  transactionToMirror: PublicTransactionDetail
-) = this shouldNot containComplementOf(transactionToMirror)
-
-fun containNoDuplicateComplementsOf(
-  transactionToMirror: PublicTransactionDetail
-) = Matcher<List<TransactionDetail>> { transactionList ->
-  MatcherResult(
-    passed = transactionList
-      .filter { transaction -> transaction isComplementOf transactionToMirror }
-      .size <= 1,
-    failureMessageFn = {
-      "expected to find one or no transactions with date ${transactionToMirror.date} and amount " +
-        "${-transactionToMirror.amount} but found 2+ in $transactionList"
-    },
-    negatedFailureMessageFn = {
-      "list should contain 2+ complements with date ${transactionToMirror.date} and amount " +
-        "${-transactionToMirror.amount} but it did not: $transactionList"
-    }
-  )
-}
-
-fun containComplementOf(
-  transactionToMirror: PublicTransactionDetail
-) = Matcher<List<TransactionDetail>> { transactionList ->
-  MatcherResult(
-    passed = transactionList.find { transaction ->
-      transaction isComplementOf transactionToMirror
-    } != null,
-    failureMessageFn = {
-      "expected to find a transaction with date ${transactionToMirror.date} and amount " +
-        "${-transactionToMirror.amount} but found nothing in $transactionList"
-    },
-    negatedFailureMessageFn = {
-      "list should not contain a complement with date ${transactionToMirror.date} and amount " +
-        "${-transactionToMirror.amount} but it did: $transactionList"
-    }
-  )
-}
-
-infix fun TransactionDetail.isComplementOf(
-  transactionToMirror: PublicTransactionDetail
-) = date == transactionToMirror.date &&
-  amount == -transactionToMirror.amount

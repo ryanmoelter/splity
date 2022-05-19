@@ -55,6 +55,11 @@ WHERE accountId NOT IN :accountsToExclude
   AND processedState != "UP_TO_DATE"
 ;
 
+getAll:
+SELECT *
+FROM storedSubTransaction
+;
+
 replaceSingle:
 REPLACE INTO storedSubTransaction
 VALUES ?

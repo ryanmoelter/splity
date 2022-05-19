@@ -6,8 +6,10 @@ import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addTransactions
+import co.moelten.splity.test.shouldContainSingleComplementOf
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
 import co.moelten.splity.test.toApiTransaction
+import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
 import io.kotest.assertions.assertSoftly
@@ -39,7 +41,8 @@ class ActionApplierTest : FunSpec({
     val transactionList =
       serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
-    transactionList shouldContainSingleComplementOf manuallyAddedTransaction()
+    transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+      .shouldContainSingleComplementOf(manuallyAddedTransaction())
 
     assertSoftly(transactionList.first()) {
       amount shouldBe -manuallyAddedTransaction().amount
@@ -96,7 +99,8 @@ class ActionApplierTest : FunSpec({
 
       val transactionList =
         serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
-      transactionList shouldContainSingleComplementOf transactionAddedFromTransfer
+      transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+        .shouldContainSingleComplementOf(transactionAddedFromTransfer)
 
       assertSoftly(transactionList.first()) {
         amount shouldBe -transactionAddedFromTransfer.amount
@@ -126,7 +130,8 @@ class ActionApplierTest : FunSpec({
 
     val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
-    transactionList shouldContainSingleComplementOf transactionAddedFromTransfer
+    transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+      .shouldContainSingleComplementOf(transactionAddedFromTransfer)
 
     assertSoftly(transactionList.first()) {
       amount shouldBe -transactionAddedFromTransfer.amount
@@ -170,7 +175,8 @@ class ActionApplierTest : FunSpec({
 
     val transactionList = serverDatabase.accountToTransactionsMap.getValue(TO_ACCOUNT_ID)
 
-    transactionList shouldContainSingleComplementOf transactionAddedFromTransfer
+    transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+      .shouldContainSingleComplementOf(transactionAddedFromTransfer)
 
     assertSoftly(transactionList.first()) {
       amount shouldBe -transactionAddedFromTransferWithLongId.amount

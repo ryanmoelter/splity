@@ -92,6 +92,11 @@ WHERE accountId = ?
   AND amount = ?
 ;
 
+getAll:
+SELECT *
+FROM storedTransaction
+;
+
 replaceSingle:
 REPLACE INTO storedTransaction
 VALUES ?
