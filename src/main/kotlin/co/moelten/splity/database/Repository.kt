@@ -162,6 +162,15 @@ class Repository(
     )
   }
 
+  fun addOrUpdateTransaction(
+    transactionDetail: TransactionDetail,
+    budgetId: BudgetId,
+    processedState: ProcessedState
+  ) {
+    val storedTransaction = transactionDetail.toStoredTransaction(budgetId, processedState)
+    database.storedTransactionQueries.replaceSingle(storedTransaction)
+  }
+
   /**
    * Take the new transactions and save them into the database. Mark each transaction with the
    * appropriate [ProcessedState]:
@@ -256,17 +265,29 @@ class Repository(
       UP_TO_DATE -> {
         // Do nothing
       }
-      CREATED -> database.storedTransactionQueries
-        .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
+      CREATED -> {
+        database.storedTransactionQueries
+          .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
+        transaction.subTransactions.forEach { subTransaction ->
+          database.storedSubTransactionQueries
+            .replaceSingle(subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE))
+        }
+      }
       UPDATED -> {
         database.storedTransactionQueries
           .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
+        transaction.subTransactions.forEach { subTransaction ->
+          database.storedSubTransactionQueries
+            .replaceSingle(subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE))
+        }
         database.replacedTransactionQueries.deleteById(transaction.id)
         database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)
       }
       DELETED -> {
         database.storedTransactionQueries.deleteById(transaction.id)
         database.storedSubTransactionQueries.deleteByTransactionId(transaction.id)
+        database.replacedTransactionQueries.deleteById(transaction.id)
+        database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)
       }
     }
   }

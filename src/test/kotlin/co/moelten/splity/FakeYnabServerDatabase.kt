@@ -14,7 +14,6 @@ import com.youneedabudget.client.models.Category
 import com.youneedabudget.client.models.CategoryGroupWithCategories
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.TransactionDetail
-import io.kotest.matchers.collections.shouldBeEmpty
 
 data class FakeYnabServerDatabase(
   var budgetToAccountsMap: Map<BudgetId, List<Account>> = mapOf(),
@@ -32,10 +31,9 @@ data class FakeYnabServerDatabase(
     .map { it.transactionDetail }
     .find { it.id == id.string }
 
-  fun getAllTransactions(
-    lastSyncedAt: Long = NO_SERVER_KNOWLEDGE
-  ) = accountToTransactionsMap.values.flatten()
-    .filterBefore(lastSyncedAt)
+  fun getAllTransactionsByAccount() = accountToTransactionsMap
+    .mapValues { (_, transactionList) -> transactionList.filterBefore(NO_SERVER_KNOWLEDGE) }
+    .filterValues { it.isNotEmpty() }
 
   fun getTransactionsForAccount(
     accountId: AccountId,
@@ -137,10 +135,6 @@ private fun TransactionDetail.withServerKnowledge(updatedAt: Long) =
     transactionDetail = this,
     updatedAt = updatedAt
   )
-
-fun FakeYnabServerDatabase.shouldHaveNoTransactions() {
-  getAllTransactions().shouldBeEmpty()
-}
 
 private fun <Key, Value> Map<Key, Value>.mutate(
   action: MutableMap<Key, Value>.() -> Unit

@@ -8,6 +8,7 @@ import co.moelten.splity.TransactionAction.UpdateComplement
 import co.moelten.splity.UpdateField.AMOUNT
 import co.moelten.splity.UpdateField.CLEAR
 import co.moelten.splity.UpdateField.DATE
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.Repository
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
@@ -62,7 +63,7 @@ class ActionApplier(
       fromTransaction.transactionDescription
     }
 
-    ynab.transactions.createTransaction(
+    val response = ynab.transactions.createTransaction(
       toAccountAndBudget.budgetId.toString(),
       SaveTransactionsWrapper(
         SaveTransaction(
@@ -85,61 +86,77 @@ class ActionApplier(
         )
       )
     )
-
+    repository.addOrUpdateTransaction(
+      response.data.transaction!!,
+      toAccountAndBudget.budgetId,
+      UP_TO_DATE
+    )
     repository.markProcessed(fromTransaction)
   }
 
-  private suspend fun applyUpdate(action: UpdateComplement) = with(action) {
-    var cleared = complement.cleared
-    var amount = complement.amount
-    var date = complement.date
-    val shouldNotify = updateFields.any { it.shouldNotify }
-    updateFields.forEach { updateField ->
-      when (updateField) {
-        CLEAR -> cleared = TransactionDetail.ClearedEnum.CLEARED
-        AMOUNT -> amount = -fromTransaction.amount
-        DATE -> date = fromTransaction.date
+  private suspend fun applyUpdate(action: UpdateComplement): Unit = with(action) {
+    if (updateFields.isNotEmpty()) {
+      var cleared = complement.cleared
+      var amount = complement.amount
+      var date = complement.date
+      val shouldNotify = updateFields.any { it.shouldNotify }
+      updateFields.forEach { updateField ->
+        when (updateField) {
+          CLEAR -> cleared = TransactionDetail.ClearedEnum.CLEARED
+          AMOUNT -> amount = -fromTransaction.amount
+          DATE -> date = fromTransaction.date
+        }
       }
-    }
-    ynab.transactions.updateTransaction(
-      complement.budgetId.toString(),
-      complement.id.string,
-      SaveTransactionWrapper(
-        SaveTransaction(
-          accountId = complement.accountId.plainUuid,
-          date = date,
-          amount = amount,
-          payeeId = complement.payeeId?.plainUuid,
-          payeeName = complement.payeeName,
-          categoryId = complement.categoryId?.plainUuid,
-          memo = complement.memo,
-          cleared = cleared.toSaveTransactionClearedEnum(),
-          approved = if (shouldNotify) {
-            false
-          } else {
-            complement.approved
-          },
-          flagColor = if (shouldNotify) {
-            SaveTransaction.FlagColorEnum.BLUE
-          } else {
-            complement.flagColor?.toSaveTransactionFlagColorEnum()
-          },
-          importId = complement.importId,
-          subtransactions = if (action.complement.subTransactions.isEmpty()) {
-            null
-          } else {
-            TODO("Handle subTransactions")
-          }
+
+      val response = ynab.transactions.updateTransaction(
+        complement.budgetId.toString(),
+        complement.id.string,
+        SaveTransactionWrapper(
+          SaveTransaction(
+            accountId = complement.accountId.plainUuid,
+            date = date,
+            amount = amount,
+            payeeId = complement.payeeId?.plainUuid,
+            payeeName = complement.payeeName,
+            categoryId = complement.categoryId?.plainUuid,
+            memo = complement.memo,
+            cleared = cleared.toSaveTransactionClearedEnum(),
+            approved = if (shouldNotify) {
+              false
+            } else {
+              complement.approved
+            },
+            flagColor = if (shouldNotify) {
+              SaveTransaction.FlagColorEnum.BLUE
+            } else {
+              complement.flagColor?.toSaveTransactionFlagColorEnum()
+            },
+            importId = complement.importId,
+            subtransactions = if (action.complement.subTransactions.isEmpty()) {
+              null
+            } else {
+              TODO("Handle subTransactions")
+            }
+          )
         )
       )
-    )
 
-    repository.markProcessed(fromTransaction)
-    repository.markProcessed(complement)
+      repository.addOrUpdateTransaction(
+        response.data.transaction,
+        complement.budgetId,
+        UP_TO_DATE
+      )
+
+      repository.markProcessed(fromTransaction)
+      repository.markProcessed(complement)
+    } else {
+      repository.markProcessed(fromTransaction)
+      repository.markProcessed(complement)
+    }
   }
 
   private suspend fun applyDelete(action: DeleteComplement) = with(action) {
-    ynab.transactions.updateTransaction(
+    val response = ynab.transactions.updateTransaction(
       fromTransaction.budgetId.toString(),
       fromTransaction.id.string,
       SaveTransactionWrapper(
@@ -150,11 +167,17 @@ class ActionApplier(
       )
     )
 
+    repository.addOrUpdateTransaction(
+      response.data.transaction,
+      complement.budgetId,
+      UP_TO_DATE
+    )
+
     repository.markProcessed(fromTransaction)
   }
 
   private suspend fun applyError(action: MarkError): Unit = with(action) {
-    ynab.transactions.updateTransaction(
+    val firstResponse = ynab.transactions.updateTransaction(
       fromTransaction.budgetId.toString(),
       fromTransaction.id.string,
       SaveTransactionWrapper(
@@ -166,10 +189,16 @@ class ActionApplier(
       )
     )
 
+    repository.addOrUpdateTransaction(
+      firstResponse.data.transaction,
+      fromTransaction.budgetId,
+      UP_TO_DATE
+    )
+
     repository.markProcessed(fromTransaction)
 
     if (complement != null) {
-      ynab.transactions.updateTransaction(
+      val complementResponse = ynab.transactions.updateTransaction(
         complement.budgetId.toString(),
         complement.id.string,
         SaveTransactionWrapper(
@@ -181,14 +210,20 @@ class ActionApplier(
         )
       )
 
+      repository.addOrUpdateTransaction(
+        complementResponse.data.transaction,
+        complement.budgetId,
+        UP_TO_DATE
+      )
+
       repository.markProcessed(complement)
     }
   }
 
-  private fun applyProcessed(action: MarkProcessed) {
-    repository.markProcessed(action.fromTransaction)
-    if (action.complement != null) {
-      repository.markProcessed(action.complement)
+  private fun applyProcessed(action: MarkProcessed) = with(action) {
+    repository.markProcessed(fromTransaction)
+    if (complement != null) {
+      repository.markProcessed(complement)
     }
   }
 }
@@ -237,11 +272,11 @@ sealed interface TransactionAction {
     val message: String
   ) : TransactionAction {
     companion object ErrorMessages {
-      const val BOTH_UPDATED =
-        "Both this and its complement have been updated; delete one to bring them back in sync."
-      const val UPDATED_WITHOUT_COMPLEMENT =
-        "This updated transaction has no complement; this shouldn't be possible, but manually " +
-          "create a complement transaction in the other account to bring them back in sync."
+      const val BOTH_UPDATED = "Both this and its complement have been updated; delete one and " +
+        "un-flag the other to bring them back in sync."
+      const val UPDATED_WITHOUT_COMPLEMENT = "This updated transaction has no complement; this " +
+        "shouldn't be possible, but manually create a complement transaction in the other " +
+        "account to bring them back in sync."
     }
   }
 

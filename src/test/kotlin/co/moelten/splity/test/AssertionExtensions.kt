@@ -1,11 +1,15 @@
 package co.moelten.splity.test
 
+import co.moelten.splity.FakeYnabServerDatabase
 import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.database.Database
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldNot
 
@@ -24,11 +28,20 @@ fun Database.shouldHaveNoReplacedTransactions() {
   }
 }
 
-fun Database.shouldHaveNoTransactions() {
-  withClue("Database should have no transactions") {
-    storedTransactionQueries.getAll().executeAsList().shouldBeEmpty()
-    storedSubTransactionQueries.getAll().executeAsList().shouldBeEmpty()
-    shouldHaveNoReplacedTransactions()
+fun Database.shouldMatchServer(serverDatabase: FakeYnabServerDatabase) {
+  withClue("Local database should match server") {
+    val serverTransactionsByAccount = serverDatabase.getAllTransactionsByAccount()
+    val localTransactionsByAccount = getAllTransactions()
+      .groupBy { transaction -> transaction.accountId }
+      .mapValues { (_, list) -> list.map { it.toApiTransaction() } }
+    assertSoftly {
+      localTransactionsByAccount.keys shouldContainExactly serverTransactionsByAccount.keys
+      localTransactionsByAccount.forEach { (accountId, transactionList) ->
+        transactionList.shouldContainExactlyInAnyOrder(
+          serverTransactionsByAccount.getValue(accountId)
+        )
+      }
+    }
   }
 }
 

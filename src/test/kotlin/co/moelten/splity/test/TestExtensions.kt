@@ -61,7 +61,7 @@ fun FakeYnabServerDatabase.syncServerKnowledge(localDatabase: Database) {
   syncServerKnowledge(localDatabase::also)
 }
 
-fun FakeYnabServerDatabase.syncServerKnowledge(setUpLocalDatabase: (Database.() -> Unit) -> Unit) {
+fun FakeYnabServerDatabase.syncServerKnowledge(setUpLocalDatabase: Setup<Database>) {
   setUpLocalDatabase {
     syncDataQueries.replaceOnly(
       syncDataQueries.getOnly().executeAsOne()

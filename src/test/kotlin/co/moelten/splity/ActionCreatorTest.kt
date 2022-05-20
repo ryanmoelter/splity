@@ -16,7 +16,6 @@ import com.youneedabudget.client.models.TransactionDetail
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
-import java.util.UUID
 
 class ActionCreatorTest : FunSpec({
   context("with normal config") {
@@ -98,12 +97,12 @@ class ActionCreatorTest : FunSpec({
     }
 
     test("ignore complement with recurring split") {
-      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer.copy(
-        id = transactionAddedFromTransfer.id + "_st_1_2020-06-20"
+      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
+        id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
       )
       val transactionAddedFromTransferWithLongIdComplement =
         transactionAddedFromTransferWithLongId.copy(
-          id = UUID.randomUUID().toTransactionId(),
+          id = "085a3584-2cc0-4570-b0f2-087eb61c3944".toTransactionId(),
           amount = -transactionAddedFromTransferWithLongId.amount,
           importId = subTransactionTransferSplitSource().id.toString(),
           cleared = TransactionDetail.ClearedEnum.CLEARED,

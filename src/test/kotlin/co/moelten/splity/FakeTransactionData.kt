@@ -50,7 +50,7 @@ fun manuallyAddedTransactionComplement(
   approved = false,
   accountId = TO_ACCOUNT_ID,
   accountName = TO_ACCOUNT_NAME,
-  memo = "Manually added transaction",
+  memo = "Manually added transaction • Out of $350.00, you paid 100.0%",
   flagColor = null,
   payeeId = "8b539d7c-54c4-46a7-a855-0f359bd768b3".toPayeeId(),
   payeeName = "Target",
@@ -65,7 +65,9 @@ fun manuallyAddedTransactionComplement(
   processedState = processedState
 )
 
-val transactionAddedFromTransfer = PublicTransactionDetail(
+fun transactionAddedFromTransfer(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
   id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
   amount = -10000,
@@ -85,7 +87,7 @@ val transactionAddedFromTransfer = PublicTransactionDetail(
   importId = null,
   subTransactions = emptyList(),
   budgetId = FROM_BUDGET_ID,
-  processedState = CREATED
+  processedState = processedState
 )
 
 fun subTransactionNonTransferSplitSource(
@@ -178,55 +180,58 @@ fun transactionTransferNonSplitSource(
 )
 
 val EXISTING_MIRRORED_TRANSACTION_ID = "existingMirroredTransaction".toTransactionId()
-val EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID = "existingMirroredTransactionSource".toTransactionId()
+val EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID =
+  "existingMirroredTransactionSource".toTransactionId()
 val EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID =
   "existingMirroredTransactionSourceSplitTransfer".toSubTransactionId()
 
-fun existingMirroredTransaction(processedState: ProcessedState = UP_TO_DATE) = PublicTransactionDetail(
-  id = EXISTING_MIRRORED_TRANSACTION_ID,
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
-  amount = 25_000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
-  approved = true,
-  accountId = FROM_ACCOUNT_ID,
-  accountName = FROM_ACCOUNT_NAME,
-  memo = "Existing mirrored transaction",
-  flagColor = null,
-  payeeId = "7e599e78-94e7-4d63-a195-b0dd47ad1060".toPayeeId(),
-  payeeName = "Original Pattern Brewery",
-  categoryId = "45762a3f-b105-4441-a1ed-32b4897412d3".toCategoryId(),
-  categoryName = "Outings",
-  transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-  transferTransactionId = EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID.string.toTransactionId(),
-  matchedTransactionId = null,
-  importId = null,
-  subTransactions = emptyList(),
-  budgetId = FROM_BUDGET_ID,
-  processedState = processedState,
-)
+fun existingMirroredTransaction(processedState: ProcessedState = UP_TO_DATE) =
+  PublicTransactionDetail(
+    id = EXISTING_MIRRORED_TRANSACTION_ID,
+    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    amount = 25_000,
+    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    approved = true,
+    accountId = FROM_ACCOUNT_ID,
+    accountName = FROM_ACCOUNT_NAME,
+    memo = "Existing mirrored transaction",
+    flagColor = null,
+    payeeId = "7e599e78-94e7-4d63-a195-b0dd47ad1060".toPayeeId(),
+    payeeName = "Original Pattern Brewery",
+    categoryId = "45762a3f-b105-4441-a1ed-32b4897412d3".toCategoryId(),
+    categoryName = "Outings",
+    transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+    transferTransactionId = EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID.string.toTransactionId(),
+    matchedTransactionId = null,
+    importId = null,
+    subTransactions = emptyList(),
+    budgetId = FROM_BUDGET_ID,
+    processedState = processedState,
+  )
 
-fun existingMirroredTransactionComplement(processedState: ProcessedState = UP_TO_DATE) = PublicTransactionDetail(
-  id = "existingMirroredTransactionComplement".toTransactionId(),
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
-  amount = -25_000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
-  approved = true,
-  accountId = TO_ACCOUNT_ID,
-  accountName = TO_ACCOUNT_NAME,
-  memo = "Existing mirrored transaction • Out of $55.00, you paid $25.00 (something%)",
-  flagColor = null,
-  payeeId = "781c0469-3f01-4192-a82a-cc3bb1a52240".toPayeeId(),
-  payeeName = "Original Pattern Brewery",
-  categoryId = "809741f3-b85d-46ca-8abf-5fc613fb4c53".toCategoryId(),
-  categoryName = "Dining out",
-  transferAccountId = null,
-  transferTransactionId = null,
-  matchedTransactionId = null,
-  importId = null,
-  subTransactions = emptyList(),
-  budgetId = TO_BUDGET_ID,
-  processedState = processedState,
-)
+fun existingMirroredTransactionComplement(processedState: ProcessedState = UP_TO_DATE) =
+  PublicTransactionDetail(
+    id = "existingMirroredTransactionComplement".toTransactionId(),
+    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    amount = -25_000,
+    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    approved = true,
+    accountId = TO_ACCOUNT_ID,
+    accountName = TO_ACCOUNT_NAME,
+    memo = "Existing mirrored transaction • Out of $55.00, you paid $25.00 (something%)",
+    flagColor = null,
+    payeeId = "781c0469-3f01-4192-a82a-cc3bb1a52240".toPayeeId(),
+    payeeName = "Original Pattern Brewery",
+    categoryId = "809741f3-b85d-46ca-8abf-5fc613fb4c53".toCategoryId(),
+    categoryName = "Dining out",
+    transferAccountId = null,
+    transferTransactionId = null,
+    matchedTransactionId = null,
+    importId = null,
+    subTransactions = emptyList(),
+    budgetId = TO_BUDGET_ID,
+    processedState = processedState,
+  )
 
 fun existingMirroredTransactionSourceParent(
   processedState: ProcessedState = UP_TO_DATE
