@@ -2,15 +2,13 @@ package co.moelten.splity
 
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.BOTH_UPDATED
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.UPDATED_WITHOUT_COMPLEMENT
-import co.moelten.splity.UpdateField.AMOUNT
-import co.moelten.splity.UpdateField.CLEAR
-import co.moelten.splity.UpdateField.DATE
-import co.moelten.splity.UpdateField.values
 import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.Repository
+import co.moelten.splity.database.UpdateField
+import co.moelten.splity.database.calculateUpdatedFieldsFrom
 import co.moelten.splity.database.firstAccountAndBudget
 import co.moelten.splity.database.secondAccountAndBudget
 import co.moelten.splity.models.PublicTransactionDetail
@@ -120,7 +118,7 @@ class ActionCreator(
       UPDATED -> TransactionAction.UpdateComplement(
         fromTransaction = complement,
         complement = fromTransaction,
-        updateFields = complement.compareWithReplaced()
+        updateFields = complement.getUpdatedFields()
       )
       DELETED -> TransactionAction.DeleteComplement(
         fromTransaction = complement,
@@ -135,7 +133,7 @@ class ActionCreator(
       UP_TO_DATE, CREATED -> TransactionAction.UpdateComplement(
         fromTransaction = fromTransaction,
         complement = complement,
-        updateFields = fromTransaction.compareWithReplaced(),
+        updateFields = fromTransaction.getUpdatedFields(),
       )
       UPDATED -> TransactionAction.MarkError(
         fromTransaction = fromTransaction,
@@ -164,19 +162,8 @@ class ActionCreator(
     UP_TO_DATE -> error("State should never be $state")
   }
 
-  private fun PublicTransactionDetail.compareWithReplaced(): Set<UpdateField> {
+  private fun PublicTransactionDetail.getUpdatedFields(): Set<UpdateField> {
     val replaced = repository.getReplacedTransactionById(id)
-    assert(subTransactions.isEmpty()) { "Cannot update a transaction that has sub-transactions" }
-
-    // Loop over values to make sure we don't forget any
-    return values()
-      .filter { updateField ->
-        when (updateField) {
-          CLEAR -> approved && !replaced.approved // Newly approved -> clear complement
-          AMOUNT -> amount != replaced.amount
-          DATE -> date != replaced.date
-        }
-      }
-      .toSet()
+    return calculateUpdatedFieldsFrom(replaced)
   }
 }

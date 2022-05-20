@@ -20,6 +20,7 @@ import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
+import co.moelten.splity.test.shouldHaveNoReplacedTransactions
 import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.toBudget
 import co.moelten.splity.unremarkableTransactionInTransferSource
@@ -151,10 +152,13 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
     }
 
     context("when those transactions are updates") {
+      val replacedTransaction = manuallyAddedTransaction(UP_TO_DATE).copy(amount = 100_000)
+      val replacedTransactionComplement =
+        manuallyAddedTransactionComplement(UP_TO_DATE).copy(amount = 100_000)
       setUpLocalDatabase {
         addTransactions(
-          manuallyAddedTransaction(UP_TO_DATE),
-          manuallyAddedTransactionComplement(UP_TO_DATE)
+          replacedTransaction,
+          replacedTransactionComplement
         )
       }
 
@@ -163,11 +167,29 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
         repository.getTransactionsByAccount(FROM_ACCOUNT_ID)
           .shouldHaveSingleElement(manuallyAddedTransaction(UPDATED))
         repository.getReplacedTransactionById(manuallyAddedTransaction().id) shouldBe
-          manuallyAddedTransaction(UP_TO_DATE)
+          replacedTransaction
         repository.getTransactionsByAccount(TO_ACCOUNT_ID)
           .shouldHaveSingleElement(manuallyAddedTransactionComplement(UPDATED))
         repository.getReplacedTransactionById(manuallyAddedTransactionComplement().id) shouldBe
+          replacedTransactionComplement
+      }
+    }
+
+    context("when those transactions are updates to identical transactions") {
+      setUpLocalDatabase {
+        addTransactions(
+          manuallyAddedTransaction(UP_TO_DATE),
           manuallyAddedTransactionComplement(UP_TO_DATE)
+        )
+      }
+
+      test("fetchNewTransactions ignores the updated transactions") {
+        repository.fetchNewTransactions()
+        repository.getTransactionsByAccount(FROM_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransaction(UP_TO_DATE))
+        repository.getTransactionsByAccount(TO_ACCOUNT_ID)
+          .shouldHaveSingleElement(manuallyAddedTransactionComplement(UP_TO_DATE))
+        localDatabase.shouldHaveNoReplacedTransactions()
       }
     }
 

@@ -2,6 +2,7 @@ package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
+import co.moelten.splity.database.UpdateField
 import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup

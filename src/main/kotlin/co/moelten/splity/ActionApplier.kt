@@ -5,11 +5,12 @@ import co.moelten.splity.TransactionAction.DeleteComplement
 import co.moelten.splity.TransactionAction.MarkError
 import co.moelten.splity.TransactionAction.MarkProcessed
 import co.moelten.splity.TransactionAction.UpdateComplement
-import co.moelten.splity.UpdateField.AMOUNT
-import co.moelten.splity.UpdateField.CLEAR
-import co.moelten.splity.UpdateField.DATE
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.Repository
+import co.moelten.splity.database.UpdateField
+import co.moelten.splity.database.UpdateField.AMOUNT
+import co.moelten.splity.database.UpdateField.CLEAR
+import co.moelten.splity.database.UpdateField.DATE
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.SaveTransaction
@@ -279,10 +280,6 @@ sealed interface TransactionAction {
     override val fromTransaction: PublicTransactionDetail,
     val complement: PublicTransactionDetail?
   ) : TransactionAction
-}
-
-enum class UpdateField(val shouldNotify: Boolean) {
-  CLEAR(false), AMOUNT(true), DATE(true),
 }
 
 fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boolean): String {

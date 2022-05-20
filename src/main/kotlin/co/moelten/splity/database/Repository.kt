@@ -198,19 +198,33 @@ class Repository(
           if (existingTransaction != null) {
             when (existingTransaction.processedState) {
               UP_TO_DATE -> {
-                database.replacedTransactionQueries
-                  .insert(existingTransaction.toReplacedTransaction())
+                // Only update if there's a change we care about
+                if (
+                  storedTransaction.calculateUpdatedFieldsFrom(existingTransaction).isNotEmpty() ||
+                  storedTransaction.processedState == DELETED
+                ) {
+                  database.replacedTransactionQueries
+                    .insert(existingTransaction.toReplacedTransaction())
 
-                when (val state = storedTransaction.processedState) {
-                  CREATED -> storedTransaction.copy(processedState = UPDATED)
-                  DELETED -> storedTransaction
-                  UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
+                  when (val state = storedTransaction.processedState) {
+                    CREATED -> storedTransaction.copy(processedState = UPDATED)
+                    DELETED -> storedTransaction
+                    UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
+                  }
+                } else {
+                  storedTransaction.copy(processedState = UP_TO_DATE)
                 }
               }
-              // Treat as CREATED if the old transaction hasn't been processed yet
+              // Treat as CREATED (or DELETED) if the old transaction hasn't been processed yet
               CREATED -> storedTransaction
-              // Don't overwrite a pending update
-              UPDATED -> storedTransaction.copy(processedState = UPDATED)
+              // Don't overwrite a pending UPDATE, unless DELETED
+              UPDATED -> storedTransaction.copy(
+                processedState = if (storedTransaction.processedState == DELETED) {
+                  DELETED
+                } else {
+                  UPDATED
+                }
+              )
               DELETED -> error("Trying to update an unprocessed DELETED transaction")
             }
           } else {
@@ -270,7 +284,9 @@ class Repository(
           .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
         transaction.subTransactions.forEach { subTransaction ->
           database.storedSubTransactionQueries
-            .replaceSingle(subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE))
+            .replaceSingle(
+              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE)
+            )
         }
       }
       UPDATED -> {
@@ -278,7 +294,9 @@ class Repository(
           .replaceSingle(transaction.toStoredTransaction().copy(processedState = UP_TO_DATE))
         transaction.subTransactions.forEach { subTransaction ->
           database.storedSubTransactionQueries
-            .replaceSingle(subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE))
+            .replaceSingle(
+              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE)
+            )
         }
         database.replacedTransactionQueries.deleteById(transaction.id)
         database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)

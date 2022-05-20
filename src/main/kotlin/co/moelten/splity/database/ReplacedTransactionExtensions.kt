@@ -1,5 +1,7 @@
 package co.moelten.splity.database
 
+import co.moelten.splity.models.PublicTransactionDetail
+import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
@@ -40,3 +42,26 @@ fun StoredSubTransaction.toReplacedSubTransaction() = ReplacedSubTransaction(
   accountId = accountId,
   budgetId = budgetId
 )
+
+fun StoredTransaction.calculateUpdatedFieldsFrom(replacedTransaction: StoredTransaction): Set<UpdateField> =
+  this.toPublicTransactionDetail(emptyList())
+    .calculateUpdatedFieldsFrom(replacedTransaction.toPublicTransactionDetail(emptyList()))
+
+fun PublicTransactionDetail.calculateUpdatedFieldsFrom(replaced: PublicTransactionDetail): Set<UpdateField> {
+  assert(subTransactions.isEmpty()) { "Cannot update a transaction that has sub-transactions" }
+
+  // Loop over values to make sure we don't forget any
+  return UpdateField.values()
+    .filter { updateField ->
+      when (updateField) {
+        UpdateField.CLEAR -> approved && !replaced.approved // Newly approved -> clear complement
+        UpdateField.AMOUNT -> amount != replaced.amount
+        UpdateField.DATE -> date != replaced.date
+      }
+    }
+    .toSet()
+}
+
+enum class UpdateField(val shouldNotify: Boolean) {
+  CLEAR(false), AMOUNT(true), DATE(true),
+}

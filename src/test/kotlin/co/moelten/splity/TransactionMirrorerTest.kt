@@ -15,6 +15,7 @@ import co.moelten.splity.test.getAllTransactions
 import co.moelten.splity.test.isComplementOf
 import co.moelten.splity.test.shouldContainSingleComplementOf
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
+import co.moelten.splity.test.shouldHaveAllTransactionsProcessedExcept
 import co.moelten.splity.test.shouldHaveNoReplacedTransactions
 import co.moelten.splity.test.shouldMatchServer
 import co.moelten.splity.test.shouldNotContainComplementOf
@@ -32,6 +33,7 @@ import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.core.test.AssertionMode
+import io.kotest.inspectors.shouldForOne
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
@@ -253,15 +255,65 @@ internal class TransactionMirrorerTest : FunSpec({
     }
 
     context("with an UPDATED transaction") {
+      val updatedTransaction = manuallyAddedTransaction(UP_TO_DATE).copy(
+        amount = -300_000,
+        date = manuallyAddedTransaction().date.plusDays(1)
+      )
+      setUpServerDatabase {
+        addTransactions(updatedTransaction)
+      }
+      setUpLocalDatabase {
+        addTransactions(manuallyAddedTransaction(UP_TO_DATE))
+      }
+
       context("with no complement") {
         test("this transaction is flagged as an error") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          updatedTransaction.thisOnServerShould(serverDatabase) {
+            flagColor shouldBe RED
+            approved.shouldBeFalse()
+            memo shouldBe "ERROR: This updated transaction has no complement; this shouldn't be " +
+              "possible, but manually create a complement transaction in the other account to " +
+              "bring them back in sync. • " + updatedTransaction.memo
+
+            amount shouldBe updatedTransaction.amount
+            date shouldBe updatedTransaction.date
+            payeeName shouldBe updatedTransaction.payeeName
+            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+            deleted.shouldBeFalse()
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessedExcept(
+            transactions = setOf(manuallyAddedTransaction().id)
+          )
         }
       }
 
       context("with an UP_TO_DATE complement") {
+        setUpServerDatabase {
+          addTransactions(manuallyAddedTransactionComplement())
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+        }
+
         test("complement is updated") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          updatedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+            amount shouldBe -updatedTransaction.amount
+            date shouldBe updatedTransaction.date
+            flagColor shouldBe BLUE
+            approved.shouldBeFalse()
+
+            payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+            memo shouldBe manuallyAddedTransactionComplement().memo
+            deleted.shouldBeFalse()
+            accountId shouldBe TO_ACCOUNT_ID.plainUuid
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessed()
         }
       }
 
@@ -589,6 +641,21 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
     localDatabase.shouldMatchServer(serverDatabase)
     localDatabase.shouldHaveAllTransactionsProcessed()
   }
+}
+
+private fun PublicTransactionDetail.thisOnServerShould(
+  serverDatabase: FakeYnabServerDatabase,
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+) {
+  val transactionsInToAccount =
+    serverDatabase.getTransactionsForAccount(accountId)
+
+  transactionsInToAccount.shouldForOne { it.id shouldBe this.id.string }
+
+  val complement = transactionsInToAccount
+    .find { transaction -> transaction.id == this.id.string }!!
+
+  assertSoftly(complement, assertSoftly)
 }
 
 private fun PublicTransactionDetail.complementOnServerShould(

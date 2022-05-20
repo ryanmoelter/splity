@@ -1,6 +1,8 @@
 package co.moelten.splity.test
 
 import co.moelten.splity.FakeYnabServerDatabase
+import co.moelten.splity.database.SubTransactionId
+import co.moelten.splity.database.TransactionId
 import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.database.Database
 import io.kotest.assertions.assertSoftly
@@ -25,6 +27,35 @@ fun Database.shouldHaveNoReplacedTransactions() {
   withClue("Database should have no replaced transactions left") {
     replacedTransactionQueries.getAll().executeAsList().shouldBeEmpty()
     replacedSubTransactionQueries.getAll().executeAsList().shouldBeEmpty()
+  }
+}
+
+fun Database.shouldHaveAllTransactionsProcessedExcept(
+  transactions: Set<TransactionId> = emptySet(),
+  subTransactions: Set<SubTransactionId> = emptySet()
+) {
+  withClue("Database should have transactions processed") {
+    storedTransactionQueries.getUnprocessedExcept(emptyList()).executeAsList()
+      .filter { !transactions.contains(it.id) }
+      .shouldBeEmpty()
+    storedSubTransactionQueries.getUnprocessedExcept(emptyList()).executeAsList()
+      .filter { !subTransactions.contains(it.id) }
+      .shouldBeEmpty()
+    shouldHaveNoReplacedTransactionsExcept(transactions, subTransactions)
+  }
+}
+
+fun Database.shouldHaveNoReplacedTransactionsExcept(
+  transactions: Set<TransactionId> = emptySet(),
+  subTransactions: Set<SubTransactionId> = emptySet()
+) {
+  withClue("Database should have no replaced transactions left") {
+    replacedTransactionQueries.getAll().executeAsList()
+      .filter { !transactions.contains(it.id) }
+      .shouldBeEmpty()
+    replacedSubTransactionQueries.getAll().executeAsList()
+      .filter { !subTransactions.contains(it.id) }
+      .shouldBeEmpty()
   }
 }
 
