@@ -292,6 +292,18 @@ internal class TransactionMirrorerTest : FunSpec({
             transactions = setOf(manuallyAddedTransaction().id)
           )
         }
+
+        context("once a complement is created") {
+          test("nothing happens") {
+            TODO()
+          }
+
+          context("once the transaction is unflagged") {
+            test("the conflict is resolved") {
+              TODO()
+            }
+          }
+        }
       }
 
       context("with an UP_TO_DATE complement") {
