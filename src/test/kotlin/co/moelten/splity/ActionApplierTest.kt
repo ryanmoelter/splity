@@ -201,10 +201,7 @@ class ActionApplierTest : FunSpec({
   test("update approved") {
     setUpServerDatabase {
       setUpBudgetsAndAccounts(fromBudget to listOf(FROM_ACCOUNT))
-      addTransactionsForAccount(
-        FROM_ACCOUNT_ID,
-        listOf(manuallyAddedTransaction().toApiTransaction())
-      )
+      addTransactions(manuallyAddedTransaction())
     }
 
     setUpLocalDatabase {

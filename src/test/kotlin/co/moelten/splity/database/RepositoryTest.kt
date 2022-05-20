@@ -98,7 +98,7 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
 
   context("with one unremarkable transaction on the server") {
     setUpServerDatabase {
-      addTransactionsForAccount(
+      addOrUpdateTransactionsForAccount(
         FROM_TRANSFER_SOURCE_ACCOUNT_ID,
         listOf(unremarkableTransactionInTransferSource().toApiTransaction())
       )
@@ -133,11 +133,11 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
 
   context("with manually added complement transactions") {
     setUpServerDatabase {
-      addTransactionsForAccount(
+      addOrUpdateTransactionsForAccount(
         FROM_ACCOUNT_ID,
         listOf(manuallyAddedTransaction().toApiTransaction())
       )
-      addTransactionsForAccount(
+      addOrUpdateTransactionsForAccount(
         TO_ACCOUNT_ID,
         listOf(manuallyAddedTransactionComplement().toApiTransaction())
       )

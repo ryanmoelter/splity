@@ -59,13 +59,17 @@ data class FakeYnabServerDatabase(
       .mapValues { (_, transactions) ->
         transactions.map { it.toApiTransaction() }
       }
-    groupedTransactions.forEach(::addTransactionsForAccount)
+    groupedTransactions.forEach(::addOrUpdateTransactionsForAccount)
   }
 
-  fun addTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
+  fun addOrUpdateTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
+    val updatedTransactionIds = transactions.map { it.id }.toHashSet()
+
     accountToTransactionsMap = accountToTransactionsMap
       .mutateOrCreateValue(accountId) { list ->
-        list + transactions.map { it.withServerKnowledge(currentServerKnowledge) }
+        list.filter { transaction ->
+          !updatedTransactionIds.contains(transaction.transactionDetail.id)
+        } + transactions.map { it.withServerKnowledge(currentServerKnowledge) }
       }
     currentServerKnowledge++
   }

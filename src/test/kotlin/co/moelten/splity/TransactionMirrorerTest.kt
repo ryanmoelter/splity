@@ -35,6 +35,7 @@ import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.core.test.AssertionMode
 import io.kotest.inspectors.shouldForOne
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -175,6 +176,7 @@ internal class TransactionMirrorerTest : FunSpec({
             serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
           }
           localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessed()
         }
       }
 
@@ -574,18 +576,83 @@ internal class TransactionMirrorerTest : FunSpec({
     }
 
     context("with a recurring (unapproved) split into an account") {
+      setUpServerDatabase {
+        addTransactions(
+          transactionTransferSplitSource(),
+          transactionAddedFromTransfer().copy(approved = false)
+        )
+      }
+      val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
       test("the unapproved transaction is ignored") {
-        TODO()
+        transactionMirrorer.mirrorTransactions()
+
+        withClue("Server knowledge should not change") {
+          serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+        }
+        localDatabase.shouldMatchServer(serverDatabase)
+        localDatabase.shouldHaveAllTransactionsProcessedExcept(
+          setOf(transactionAddedFromTransfer().id)
+        )
       }
 
       context("once approved") {
+        transactionMirrorer.mirrorTransactions()
+        setUpServerDatabase {
+          addTransactions(transactionAddedFromTransfer())
+        }
+
         test("the approved transaction is mirrored") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          transactionAddedFromTransfer().complementOnServerShould(
+            serverDatabase,
+            TO_ACCOUNT_AND_BUDGET
+          ) {
+            approved.shouldBeFalse()
+
+            amount shouldBe -transactionAddedFromTransfer().amount
+            importId shouldBe "splity:-10000:2020-02-07:1"
+            date shouldBe transactionAddedFromTransfer().date
+            payeeName shouldBe transactionTransferSplitSource().payeeName
+            memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+            cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+            deleted.shouldBeFalse()
+            accountId shouldBe TO_ACCOUNT_ID.plainUuid
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessed()
         }
 
         context("once the complement is approved") {
+          transactionMirrorer.mirrorTransactions()
+          setUpServerDatabase {
+            addOrUpdateTransactionsForAccount(
+              TO_ACCOUNT_ID,
+              listOf(
+                serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+                  .find { it isComplementOf transactionAddedFromTransfer().toApiTransaction() }!!
+                  .copy(approved = true)
+              )
+            )
+          }
+
           test("the original transaction is cleared") {
-            TODO()
+            transactionMirrorer.mirrorTransactions()
+
+            transactionAddedFromTransfer().thisOnServerShould(serverDatabase) {
+              cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+
+              amount shouldBe transactionAddedFromTransfer().amount
+              date shouldBe transactionAddedFromTransfer().date
+              payeeName shouldBe transactionAddedFromTransfer().payeeName
+              memo shouldBe transactionAddedFromTransfer().memo
+              approved.shouldBeTrue()
+              deleted.shouldBeFalse()
+              accountId shouldBe transactionAddedFromTransfer().accountId.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
           }
         }
       }
@@ -636,11 +703,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
 
       context("with a non-split transfer") {
         setUpServerDatabase {
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
             listOf(transactionAddedFromTransfer().toApiTransaction())
           )
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_TRANSFER_SOURCE_ACCOUNT_ID,
             listOf(transactionTransferNonSplitSource().toApiTransaction())
           )
@@ -654,7 +721,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         ) {
           amount shouldBe -transactionAddedFromTransfer().amount
-          importId shouldBe "splity:10000:2020-02-07:1"
+          importId shouldBe "splity:-10000:2020-02-07:1"
           date shouldBe transactionAddedFromTransfer().date
           payeeName shouldBe "Chicken Butt"
           memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
@@ -698,11 +765,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         )
 
         setUpServerDatabase {
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
             listOf(transactionAddedFromTransferWithLongId.toApiTransaction())
           )
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_TRANSFER_SOURCE_ACCOUNT_ID,
             listOf(
               transactionTransferSplitSource().copy(
@@ -742,7 +809,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       context("with an unapproved transaction") {
         val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
         setUpServerDatabase {
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
             listOf(unapprovedTransaction.toApiTransaction())
           )
@@ -757,11 +824,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
 
       context("with an already-added transaction") {
         setUpServerDatabase {
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
             listOf(manuallyAddedTransaction().toApiTransaction())
           )
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             TO_ACCOUNT_ID,
             listOf(manuallyAddedTransactionComplement().toApiTransaction())
           )
@@ -782,7 +849,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       context("with a red-flagged transaction") {
         val redFlaggedTransaction = manuallyAddedTransaction().copy(flagColor = RED)
         setUpServerDatabase {
-          addTransactionsForAccount(
+          addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
             listOf(redFlaggedTransaction.toApiTransaction())
           )

@@ -1,10 +1,13 @@
 package co.moelten.splity.test
 
 import co.moelten.splity.FakeYnabServerDatabase
+import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.SubTransactionId
 import co.moelten.splity.database.TransactionId
+import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.database.Database
+import com.youneedabudget.client.models.TransactionDetail
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.Matcher
@@ -124,6 +127,15 @@ fun containComplementOf(
     }
   )
 }
+
+infix fun TransactionDetail.isComplementOf(source: TransactionDetail) =
+  this.toPublicTransactionDetail("64b6edc5-6c38-43e1-8922-a2b06eeb47a6".toBudgetId(), UP_TO_DATE)
+    .isComplementOf(
+      source.toPublicTransactionDetail(
+        "64b6edc5-6c38-43e1-8922-a2b06eeb47a6".toBudgetId(),
+        UP_TO_DATE
+      )
+    )
 
 infix fun PublicTransactionDetail.isComplementOf(
   transactionToMirror: PublicTransactionDetail

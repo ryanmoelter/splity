@@ -106,7 +106,7 @@ class FakeTransactions(
     }
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
     val accountId = data.transaction!!.accountId.toAccountId()
-    fakeYnabServerDatabase.addTransactionsForAccount(accountId, listOf(newTransactionDetail))
+    fakeYnabServerDatabase.addOrUpdateTransactionsForAccount(accountId, listOf(newTransactionDetail))
 
     return SaveTransactionsResponse(
       SaveTransactionsResponseData(

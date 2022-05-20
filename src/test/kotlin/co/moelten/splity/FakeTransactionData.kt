@@ -70,7 +70,7 @@ fun transactionAddedFromTransfer(
 ) = PublicTransactionDetail(
   id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
-  amount = -10000,
+  amount = 10000,
   cleared = TransactionDetail.ClearedEnum.UNCLEARED,
   approved = true,
   accountId = FROM_ACCOUNT_ID,
@@ -87,6 +87,31 @@ fun transactionAddedFromTransfer(
   importId = null,
   subTransactions = emptyList(),
   budgetId = FROM_BUDGET_ID,
+  processedState = processedState
+)
+
+fun transactionAddedFromTransferComplement(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
+  id = "transactionAddedFromTransferComplement".toTransactionId(),
+  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  amount = -10000,
+  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  approved = true,
+  accountId = TO_ACCOUNT_ID,
+  accountName = TO_ACCOUNT_NAME,
+  memo = "Split transaction source • Out of $30.00, you paid 33.3%",
+  flagColor = null,
+  payeeId = "28a92143-b997-45c4-adba-41deee3110b1".toPayeeId(),
+  payeeName = "Hello Alfred",
+  categoryId = null,
+  categoryName = null,
+  transferAccountId = null,
+  transferTransactionId = null,
+  matchedTransactionId = null,
+  importId = "splity:-10000:2020-02-07:1",
+  subTransactions = emptyList(),
+  budgetId = TO_BUDGET_ID,
   processedState = processedState
 )
 
