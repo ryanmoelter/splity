@@ -95,10 +95,10 @@ class ActionCreator(
           else -> true
         }
       }
-      .mapNotNull { (fromTransaction, toTransaction) ->
+      .map { (fromTransaction, complement) ->
         createAction(
           fromTransaction = fromTransaction,
-          complement = toTransaction,
+          complement = complement,
           toAccountAndBudget = if (fromTransaction.budgetId == firstAccountAndBudget.budgetId) {
             secondAccountAndBudget
           } else {
@@ -155,9 +155,11 @@ class ActionCreator(
         fromTransaction = fromTransaction,
         complement = complement
       )
-      DELETED -> null  // Already deleted
+      // Already deleted
+      DELETED -> TransactionAction.MarkProcessed(fromTransaction, complement)
+      // Never existed? Can't throw an error, else we'd never be able to fix it
       // TODO: report soft error
-      null -> null  // Never existed? Can't throw an error, else we'd never be able to fix it
+      null -> TransactionAction.MarkProcessed(fromTransaction)
     }
     UP_TO_DATE -> error("State should never be $state")
   }

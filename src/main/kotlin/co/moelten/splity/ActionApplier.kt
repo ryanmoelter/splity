@@ -278,7 +278,7 @@ sealed interface TransactionAction {
 
   data class MarkProcessed(
     override val fromTransaction: PublicTransactionDetail,
-    val complement: PublicTransactionDetail?
+    val complement: PublicTransactionDetail? = null
   ) : TransactionAction
 }
 
