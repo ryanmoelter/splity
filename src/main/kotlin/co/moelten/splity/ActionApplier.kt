@@ -148,7 +148,6 @@ class ActionApplier(
       )
 
       repository.markProcessed(fromTransaction)
-      repository.markProcessed(complement)
     } else {
       repository.markProcessed(fromTransaction)
       repository.markProcessed(complement)
@@ -157,10 +156,10 @@ class ActionApplier(
 
   private suspend fun applyDelete(action: DeleteComplement) = with(action) {
     val response = ynab.transactions.updateTransaction(
-      fromTransaction.budgetId.toString(),
-      fromTransaction.id.string,
+      complement.budgetId.toString(),
+      complement.id.string,
       SaveTransactionWrapper(
-        fromTransaction.toSaveTransaction().copy(
+        complement.toSaveTransaction().copy(
           flagColor = SaveTransaction.FlagColorEnum.RED,
           approved = false
         )
@@ -195,8 +194,6 @@ class ActionApplier(
       UP_TO_DATE
     )
 
-    repository.markProcessed(fromTransaction)
-
     if (complement != null) {
       val complementResponse = ynab.transactions.updateTransaction(
         complement.budgetId.toString(),
@@ -215,8 +212,6 @@ class ActionApplier(
         complement.budgetId,
         UP_TO_DATE
       )
-
-      repository.markProcessed(complement)
     }
   }
 

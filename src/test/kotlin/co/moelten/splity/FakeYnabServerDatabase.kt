@@ -32,7 +32,11 @@ data class FakeYnabServerDatabase(
     .find { it.id == id.string }
 
   fun getAllTransactionsByAccount() = accountToTransactionsMap
-    .mapValues { (_, transactionList) -> transactionList.filterBefore(NO_SERVER_KNOWLEDGE) }
+    .mapValues { (_, transactionList) ->
+      transactionList
+        .filterBefore(NO_SERVER_KNOWLEDGE)
+        .filter { !it.deleted }
+    }
     .filterValues { it.isNotEmpty() }
 
   fun getTransactionsForAccount(

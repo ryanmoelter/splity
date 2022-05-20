@@ -1,7 +1,7 @@
 package co.moelten.splity
 
-import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.ProcessedState.CREATED
+import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
@@ -25,6 +25,7 @@ import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.BLUE
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -135,7 +136,10 @@ internal class TransactionMirrorerTest : FunSpec({
         test("complement is created") {
           transactionMirrorer.mirrorTransactions()
 
-          manuallyAddedTransaction().complementOnServerShould(serverDatabase, TO_ACCOUNT_ID) {
+          manuallyAddedTransaction().complementOnServerShould(
+            serverDatabase,
+            TO_ACCOUNT_AND_BUDGET
+          ) {
             amount shouldBe -manuallyAddedTransaction().amount
             importId shouldBe "splity:-350000:2020-02-06:1"
             date shouldBe manuallyAddedTransaction().date
@@ -152,8 +156,21 @@ internal class TransactionMirrorerTest : FunSpec({
       }
 
       context("with an UP_TO_DATE complement") {
+        setUpServerDatabase {
+          addTransactions(manuallyAddedTransactionComplement())
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+        }
+        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
         test("nothing happens") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          withClue("Server knowledge should not change") {
+            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
         }
       }
 
@@ -174,14 +191,63 @@ internal class TransactionMirrorerTest : FunSpec({
       }
 
       context("with an UPDATED complement") {
+        val updatedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+          amount = -300_000,
+          date = manuallyAddedTransactionComplement().date.plusDays(1)
+        )
+        setUpServerDatabase {
+          addTransactions(updatedComplement)
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+        }
+
         test("this transaction is updated") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          updatedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
+            amount shouldBe -updatedComplement.amount
+            date shouldBe updatedComplement.date
+            flagColor shouldBe BLUE
+            approved.shouldBeFalse()
+
+            payeeName shouldBe manuallyAddedTransaction().payeeName
+            memo shouldBe manuallyAddedTransaction().memo
+            deleted.shouldBeFalse()
+            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessed()
         }
       }
 
       context("with a DELETED complement") {
+        val updatedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+          processedState = DELETED
+        )
+        setUpServerDatabase {
+          addTransactions(updatedComplement)
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+        }
+
         test("this transaction is marked as deleted") {
-          TODO()
+          transactionMirrorer.mirrorTransactions()
+
+          updatedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
+            flagColor shouldBe RED
+            approved.shouldBeFalse()
+            deleted.shouldBeFalse()
+
+            amount shouldBe -updatedComplement.amount
+            date shouldBe updatedComplement.date
+            payeeName shouldBe manuallyAddedTransaction().payeeName
+            memo shouldBe manuallyAddedTransaction().memo
+            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessed()
         }
       }
     }
@@ -278,7 +344,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         transactionMirrorer = transactionMirrorer,
         localDatabase = localDatabase,
         serverDatabase = serverDatabase,
-        toAccountId = TO_ACCOUNT_ID
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       ) {
         amount shouldBe -manuallyAddedTransaction().amount
         importId shouldBe "splity:-350000:2020-02-06:1"
@@ -309,7 +375,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         transactionMirrorer = transactionMirrorer,
         localDatabase = localDatabase,
         serverDatabase = serverDatabase,
-        toAccountId = TO_ACCOUNT_ID
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       ) {
         amount shouldBe -transactionAddedFromTransfer().amount
         importId shouldBe "splity:10000:2020-02-07:1"
@@ -336,7 +402,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         transactionMirrorer = transactionMirrorer,
         localDatabase = localDatabase,
         serverDatabase = serverDatabase,
-        toAccountId = TO_ACCOUNT_ID
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       ) {
         amount shouldBe -transactionAddedFromTransfer().amount
         importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
@@ -381,7 +447,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         transactionMirrorer = transactionMirrorer,
         localDatabase = localDatabase,
         serverDatabase = serverDatabase,
-        toAccountId = TO_ACCOUNT_ID
+        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       ) {
         amount shouldBe -transactionAddedFromTransferWithLongId.amount
         importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
@@ -509,7 +575,7 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
   transactionMirrorer: TransactionMirrorer,
   localDatabase: Database,
   serverDatabase: FakeYnabServerDatabase,
-  toAccountId: AccountId,
+  toAccountAndBudget: AccountAndBudget,
   assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
 ) {
   test("mirrorTransactions mirrors the transaction") {
@@ -517,7 +583,7 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
 
     transactionToMirror.complementOnServerShould(
       serverDatabase,
-      toAccountId,
+      toAccountAndBudget,
       assertSoftly
     )
     localDatabase.shouldMatchServer(serverDatabase)
@@ -527,18 +593,18 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
 
 private fun PublicTransactionDetail.complementOnServerShould(
   serverDatabase: FakeYnabServerDatabase,
-  complementAccountId: AccountId,
+  complementAccountAndBudget: AccountAndBudget,
   assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
 ) {
   val transactionsInToAccount =
-    serverDatabase.getTransactionsForAccount(complementAccountId)
+    serverDatabase.getTransactionsForAccount(complementAccountAndBudget.accountId)
 
   transactionsInToAccount
-    .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+    .toPublicTransactionDetailList(complementAccountAndBudget.budgetId, UP_TO_DATE)
     .shouldContainSingleComplementOf(this)
 
   val complement = transactionsInToAccount.find { transaction ->
-    transaction.toPublicTransactionDetail(TO_BUDGET_ID) isComplementOf this
+    transaction.toPublicTransactionDetail(complementAccountAndBudget.budgetId) isComplementOf this
   }!!
 
   assertSoftly(complement, assertSoftly)

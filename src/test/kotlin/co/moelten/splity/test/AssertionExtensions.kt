@@ -37,9 +37,11 @@ fun Database.shouldMatchServer(serverDatabase: FakeYnabServerDatabase) {
     assertSoftly {
       localTransactionsByAccount.keys shouldContainExactly serverTransactionsByAccount.keys
       localTransactionsByAccount.forEach { (accountId, transactionList) ->
-        transactionList.shouldContainExactlyInAnyOrder(
-          serverTransactionsByAccount.getValue(accountId)
-        )
+        withClue("For account $accountId") {
+          transactionList.shouldContainExactlyInAnyOrder(
+            serverTransactionsByAccount.getValue(accountId)
+          )
+        }
       }
     }
   }
