@@ -39,6 +39,8 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 
+// This file is a bit long, cmd+shift+- (Collapse all) is your friend
+
 internal class TransactionMirrorerTest : FunSpec({
   assertions = AssertionMode.Error
 
@@ -387,6 +389,18 @@ internal class TransactionMirrorerTest : FunSpec({
             )
           )
         }
+
+        context("once one side updates") {
+          test("nothing happens") {
+            TODO()
+          }
+
+          context("once the other side updates") {
+            test("conflict is resolved") {
+              TODO()
+            }
+          }
+        }
       }
 
       context("with a DELETED complement") {
@@ -467,6 +481,18 @@ internal class TransactionMirrorerTest : FunSpec({
           localDatabase.shouldMatchServer(serverDatabase)
           localDatabase.shouldHaveAllTransactionsProcessed()
         }
+
+        context("once the complement is also deleted") {
+          test("both transactions are fully deleted") {
+            TODO()
+          }
+        }
+
+        context("once the complement is un-flagged (un-deleted)") {
+          test("this transaction is recreated") {
+            TODO()
+          }
+        }
       }
 
       context("with a CREATED complement") {
@@ -546,6 +572,24 @@ internal class TransactionMirrorerTest : FunSpec({
         }
       }
     }
+
+    context("with a recurring (unapproved) split into an account") {
+      test("the unapproved transaction is ignored") {
+        TODO()
+      }
+
+      context("once approved") {
+        test("the approved transaction is mirrored") {
+          TODO()
+        }
+
+        context("once the complement is approved") {
+          test("the original transaction is cleared") {
+            TODO()
+          }
+        }
+      }
+    }
   }
 })
 
@@ -556,214 +600,192 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
   setUpServerDatabase: (FakeYnabServerDatabase.() -> Unit) -> Unit,
   setUpLocalDatabase: (Database.() -> Unit) -> Unit
 ) {
-  context("with no new transactions") {
-    test("mirrorTransactions does nothing") {
-      transactionMirrorer.mirrorTransactions()
+  context("with simple CREATED transactions") {
+    context("with no new transactions") {
+      test("mirrorTransactions does nothing") {
+        transactionMirrorer.mirrorTransactions()
 
-      localDatabase.shouldHaveAllTransactionsProcessed()
-    }
-  }
-
-  context("created transactions with no complement") {
-    context("with a manually added transaction") {
-      setUpServerDatabase {
-        addTransactions(manuallyAddedTransaction())
-      }
-
-      mirrorTransactionMirrorsTransaction(
-        transactionToMirror = manuallyAddedTransaction(),
-        transactionMirrorer = transactionMirrorer,
-        localDatabase = localDatabase,
-        serverDatabase = serverDatabase,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
-      ) {
-        amount shouldBe -manuallyAddedTransaction().amount
-        importId shouldBe "splity:-350000:2020-02-06:1"
-        date shouldBe manuallyAddedTransaction().date
-        payeeName shouldBe manuallyAddedTransaction().payeeName
-        memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
-        cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
-        approved.shouldBeFalse()
-        deleted.shouldBeFalse()
-        accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        localDatabase.shouldHaveAllTransactionsProcessed()
       }
     }
 
-    context("with a non-split transfer") {
-      setUpServerDatabase {
-        addTransactionsForAccount(
-          FROM_ACCOUNT_ID,
-          listOf(transactionAddedFromTransfer().toApiTransaction())
-        )
-        addTransactionsForAccount(
-          FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-          listOf(transactionTransferNonSplitSource().toApiTransaction())
-        )
+    context("created transactions with no complement") {
+      context("with a manually added transaction") {
+        setUpServerDatabase {
+          addTransactions(manuallyAddedTransaction())
+        }
+
+        mirrorTransactionMirrorsTransaction(
+          transactionToMirror = manuallyAddedTransaction(),
+          transactionMirrorer = transactionMirrorer,
+          localDatabase = localDatabase,
+          serverDatabase = serverDatabase,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        ) {
+          amount shouldBe -manuallyAddedTransaction().amount
+          importId shouldBe "splity:-350000:2020-02-06:1"
+          date shouldBe manuallyAddedTransaction().date
+          payeeName shouldBe manuallyAddedTransaction().payeeName
+          memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
+          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          approved.shouldBeFalse()
+          deleted.shouldBeFalse()
+          accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        }
       }
 
-      mirrorTransactionMirrorsTransaction(
-        transactionToMirror = transactionAddedFromTransfer(),
-        transactionMirrorer = transactionMirrorer,
-        localDatabase = localDatabase,
-        serverDatabase = serverDatabase,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
-      ) {
-        amount shouldBe -transactionAddedFromTransfer().amount
-        importId shouldBe "splity:10000:2020-02-07:1"
-        date shouldBe transactionAddedFromTransfer().date
-        payeeName shouldBe "Chicken Butt"
-        memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
-        cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
-        approved.shouldBeFalse()
-        deleted.shouldBeFalse()
-        accountId shouldBe TO_ACCOUNT_ID.plainUuid
-      }
-    }
-
-    context("with a split transfer") {
-      setUpServerDatabase {
-        addTransactions(
-          transactionAddedFromTransfer(),
-          transactionTransferSplitSource()
-        )
-      }
-
-      mirrorTransactionMirrorsTransaction(
-        transactionToMirror = transactionAddedFromTransfer(),
-        transactionMirrorer = transactionMirrorer,
-        localDatabase = localDatabase,
-        serverDatabase = serverDatabase,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
-      ) {
-        amount shouldBe -transactionAddedFromTransfer().amount
-        importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
-        date shouldBe transactionAddedFromTransfer().date
-        payeeName shouldBe transactionTransferSplitSource().payeeName
-        memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-        cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
-        approved.shouldBeFalse()
-        deleted.shouldBeFalse()
-        accountId shouldBe TO_ACCOUNT_ID.plainUuid
-      }
-    }
-
-    context("with a recurring split transaction") {
-      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
-        id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
-      )
-
-      setUpServerDatabase {
-        addTransactionsForAccount(
-          FROM_ACCOUNT_ID,
-          listOf(transactionAddedFromTransferWithLongId.toApiTransaction())
-        )
-        addTransactionsForAccount(
-          FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-          listOf(
-            transactionTransferSplitSource().copy(
-              subTransactions = listOf(
-                subTransactionNonTransferSplitSource(),
-                subTransactionTransferSplitSource().copy(
-                  transferTransactionId = subTransactionTransferSplitSource()
-                    .transferTransactionId!! + "_st_1_2020-06-20"
-                )
-              )
-            ).toApiTransaction()
+      context("with a non-split transfer") {
+        setUpServerDatabase {
+          addTransactionsForAccount(
+            FROM_ACCOUNT_ID,
+            listOf(transactionAddedFromTransfer().toApiTransaction())
           )
-        )
+          addTransactionsForAccount(
+            FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+            listOf(transactionTransferNonSplitSource().toApiTransaction())
+          )
+        }
+
+        mirrorTransactionMirrorsTransaction(
+          transactionToMirror = transactionAddedFromTransfer(),
+          transactionMirrorer = transactionMirrorer,
+          localDatabase = localDatabase,
+          serverDatabase = serverDatabase,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        ) {
+          amount shouldBe -transactionAddedFromTransfer().amount
+          importId shouldBe "splity:10000:2020-02-07:1"
+          date shouldBe transactionAddedFromTransfer().date
+          payeeName shouldBe "Chicken Butt"
+          memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
+          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          approved.shouldBeFalse()
+          deleted.shouldBeFalse()
+          accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        }
       }
 
-      mirrorTransactionMirrorsTransaction(
-        transactionToMirror = transactionAddedFromTransferWithLongId,
-        transactionMirrorer = transactionMirrorer,
-        localDatabase = localDatabase,
-        serverDatabase = serverDatabase,
-        toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
-      ) {
-        amount shouldBe -transactionAddedFromTransferWithLongId.amount
-        importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
-        date shouldBe transactionAddedFromTransferWithLongId.date
-        payeeName shouldBe transactionTransferSplitSource().payeeName
-        memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-        cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
-        approved.shouldBeFalse()
-        deleted.shouldBeFalse()
-        accountId shouldBe TO_ACCOUNT_ID.plainUuid
+      context("with a split transfer") {
+        setUpServerDatabase {
+          addTransactions(
+            transactionAddedFromTransfer(),
+            transactionTransferSplitSource()
+          )
+        }
+
+        mirrorTransactionMirrorsTransaction(
+          transactionToMirror = transactionAddedFromTransfer(),
+          transactionMirrorer = transactionMirrorer,
+          localDatabase = localDatabase,
+          serverDatabase = serverDatabase,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        ) {
+          amount shouldBe -transactionAddedFromTransfer().amount
+          importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
+          date shouldBe transactionAddedFromTransfer().date
+          payeeName shouldBe transactionTransferSplitSource().payeeName
+          memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          approved.shouldBeFalse()
+          deleted.shouldBeFalse()
+          accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        }
+      }
+
+      context("with a recurring split transaction") {
+        val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
+          id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
+        )
+
+        setUpServerDatabase {
+          addTransactionsForAccount(
+            FROM_ACCOUNT_ID,
+            listOf(transactionAddedFromTransferWithLongId.toApiTransaction())
+          )
+          addTransactionsForAccount(
+            FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+            listOf(
+              transactionTransferSplitSource().copy(
+                subTransactions = listOf(
+                  subTransactionNonTransferSplitSource(),
+                  subTransactionTransferSplitSource().copy(
+                    transferTransactionId = subTransactionTransferSplitSource()
+                      .transferTransactionId!! + "_st_1_2020-06-20"
+                  )
+                )
+              ).toApiTransaction()
+            )
+          )
+        }
+
+        mirrorTransactionMirrorsTransaction(
+          transactionToMirror = transactionAddedFromTransferWithLongId,
+          transactionMirrorer = transactionMirrorer,
+          localDatabase = localDatabase,
+          serverDatabase = serverDatabase,
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+        ) {
+          amount shouldBe -transactionAddedFromTransferWithLongId.amount
+          importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
+          date shouldBe transactionAddedFromTransferWithLongId.date
+          payeeName shouldBe transactionTransferSplitSource().payeeName
+          memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          approved.shouldBeFalse()
+          deleted.shouldBeFalse()
+          accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        }
       }
     }
-  }
 
-  context("created transactions to ignore") {
-    context("with an unapproved transaction") {
-      val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
-      setUpServerDatabase {
-        addTransactionsForAccount(
-          FROM_ACCOUNT_ID,
-          listOf(unapprovedTransaction.toApiTransaction())
+    context("created transactions to ignore") {
+      context("with an unapproved transaction") {
+        val unapprovedTransaction = manuallyAddedTransaction().copy(approved = false)
+        setUpServerDatabase {
+          addTransactionsForAccount(
+            FROM_ACCOUNT_ID,
+            listOf(unapprovedTransaction.toApiTransaction())
+          )
+        }
+
+        mirrorTransactionsIgnoresTransaction(
+          unapprovedTransaction,
+          transactionMirrorer,
+          serverDatabase
         )
       }
 
-      mirrorTransactionsIgnoresTransaction(
-        unapprovedTransaction,
-        transactionMirrorer,
-        serverDatabase
-      )
-    }
+      context("with an already-added transaction") {
+        setUpServerDatabase {
+          addTransactionsForAccount(
+            FROM_ACCOUNT_ID,
+            listOf(manuallyAddedTransaction().toApiTransaction())
+          )
+          addTransactionsForAccount(
+            TO_ACCOUNT_ID,
+            listOf(manuallyAddedTransactionComplement().toApiTransaction())
+          )
+        }
 
-    context("with an already-added transaction") {
-      setUpServerDatabase {
-        addTransactionsForAccount(
-          FROM_ACCOUNT_ID,
-          listOf(manuallyAddedTransaction().toApiTransaction())
-        )
-        addTransactionsForAccount(
-          TO_ACCOUNT_ID,
-          listOf(manuallyAddedTransactionComplement().toApiTransaction())
-        )
+        test("mirrorTransactions doesn't duplicate the transaction") {
+          transactionMirrorer.mirrorTransactions()
+
+          serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+            .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+            .shouldContainSingleComplementOf(manuallyAddedTransaction())
+          serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+            .toPublicTransactionDetailList(FROM_BUDGET_ID, UP_TO_DATE)
+            .shouldContainSingleComplementOf(manuallyAddedTransactionComplement())
+        }
       }
 
-      test("mirrorTransactions doesn't duplicate the transaction") {
-        transactionMirrorer.mirrorTransactions()
-
-        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-          .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
-          .shouldContainSingleComplementOf(manuallyAddedTransaction())
-        serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
-          .toPublicTransactionDetailList(FROM_BUDGET_ID, UP_TO_DATE)
-          .shouldContainSingleComplementOf(manuallyAddedTransactionComplement())
-      }
-    }
-
-    context("with a red-flagged transaction") {
-      val redFlaggedTransaction = manuallyAddedTransaction().copy(flagColor = RED)
-      setUpServerDatabase {
-        addTransactionsForAccount(
-          FROM_ACCOUNT_ID,
-          listOf(redFlaggedTransaction.toApiTransaction())
-        )
-      }
-
-      test("mirrorTransactions doesn't duplicate the transaction") {
-        transactionMirrorer.mirrorTransactions()
-
-        serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
-          .shouldContain(redFlaggedTransaction.toApiTransaction())
-        serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-          .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
-          .shouldNotContainComplementOf(redFlaggedTransaction)
-        localDatabase.shouldHaveNoReplacedTransactions()
-        localDatabase.getAllTransactions()
-          .shouldContain(redFlaggedTransaction.copy(processedState = CREATED))
-        localDatabase.getAllTransactions()
-          .shouldNotContainComplementOf(redFlaggedTransaction)
-      }
-
-      context("with a red-flagged update") {
-        val oldManualTransaction = manuallyAddedTransaction(UP_TO_DATE)
-          .copy(approved = false)
-
-        setUpLocalDatabase {
-          addTransactions(oldManualTransaction)
+      context("with a red-flagged transaction") {
+        val redFlaggedTransaction = manuallyAddedTransaction().copy(flagColor = RED)
+        setUpServerDatabase {
+          addTransactionsForAccount(
+            FROM_ACCOUNT_ID,
+            listOf(redFlaggedTransaction.toApiTransaction())
+          )
         }
 
         test("mirrorTransactions doesn't duplicate the transaction") {
@@ -774,11 +796,35 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
             .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
             .shouldNotContainComplementOf(redFlaggedTransaction)
-          localDatabase.getAllReplacedTransactions().shouldContainExactly(oldManualTransaction)
+          localDatabase.shouldHaveNoReplacedTransactions()
           localDatabase.getAllTransactions()
-            .shouldContain(redFlaggedTransaction.copy(processedState = UPDATED))
+            .shouldContain(redFlaggedTransaction.copy(processedState = CREATED))
           localDatabase.getAllTransactions()
             .shouldNotContainComplementOf(redFlaggedTransaction)
+        }
+
+        context("with a red-flagged update") {
+          val oldManualTransaction = manuallyAddedTransaction(UP_TO_DATE)
+            .copy(approved = false)
+
+          setUpLocalDatabase {
+            addTransactions(oldManualTransaction)
+          }
+
+          test("mirrorTransactions doesn't duplicate the transaction") {
+            transactionMirrorer.mirrorTransactions()
+
+            serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+              .shouldContain(redFlaggedTransaction.toApiTransaction())
+            serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+              .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
+              .shouldNotContainComplementOf(redFlaggedTransaction)
+            localDatabase.getAllReplacedTransactions().shouldContainExactly(oldManualTransaction)
+            localDatabase.getAllTransactions()
+              .shouldContain(redFlaggedTransaction.copy(processedState = UPDATED))
+            localDatabase.getAllTransactions()
+              .shouldNotContainComplementOf(redFlaggedTransaction)
+          }
         }
       }
     }
