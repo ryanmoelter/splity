@@ -25,7 +25,12 @@ interface DatabaseModule {
   @Singleton
   fun database(sqlDriver: SqlDriver): Database {
 
-    Database.Schema.create(sqlDriver)
+    try {
+      Database.Schema.create(sqlDriver)
+    } catch (error: Throwable) {
+      // This throws an error if the database is already created, but it's safe to ignore
+      println(error.message)
+    }
 
     return Database(
       sqlDriver,

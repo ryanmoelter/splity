@@ -9,4 +9,6 @@
 /captures
 .externalNativeBuild
 app/gradle.properties
+
 config.yaml
+incrementalSyncCache.db
