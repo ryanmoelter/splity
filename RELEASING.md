@@ -14,4 +14,4 @@ I've set up GitHub actions to automatically release this library when we add a "
 Or, if not using github's releases do this between steps 3 and 4:
 
 1. `./gradlew assemble`
-2. Copy zip in `/build/distribution` to desired location.  
+2. Copy zip in `/build/distribution` to desired location.
