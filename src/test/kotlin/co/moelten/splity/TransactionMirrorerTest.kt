@@ -26,6 +26,7 @@ import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.BLUE
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import io.kotest.assertions.assertSoftly
@@ -150,7 +151,7 @@ internal class TransactionMirrorerTest : FunSpec({
             date shouldBe manuallyAddedTransaction().date
             payeeName shouldBe manuallyAddedTransaction().payeeName
             memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
-            cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+            cleared shouldBe CLEARED
             approved.shouldBeFalse()
             deleted.shouldBeFalse()
             accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -277,9 +278,9 @@ internal class TransactionMirrorerTest : FunSpec({
           updatedTransaction.thisOnServerShould(serverDatabase) {
             flagColor shouldBe RED
             approved.shouldBeFalse()
-            memo shouldBe "ERROR: This updated transaction has no complement; this shouldn't be " +
-              "possible, but manually create a complement transaction in the other account to " +
-              "bring them back in sync. • " + updatedTransaction.memo
+            memo shouldBe "ERROR: This updated transaction has no complement; this shouldn't " +
+              "be possible, so delete this transaction and re-create it to get things " +
+              "back in sync. • " + updatedTransaction.memo
 
             amount shouldBe updatedTransaction.amount
             date shouldBe updatedTransaction.date
@@ -293,14 +294,77 @@ internal class TransactionMirrorerTest : FunSpec({
           )
         }
 
-        context("once a complement is created") {
+        // This error shouldn't be possible, so we're going to ignore it for now
+        xcontext("once a complement is created") {
+          transactionMirrorer.mirrorTransactions()
+          val updatedComplement = manuallyAddedTransactionComplement().copy(
+            amount = 300_000,
+            date = manuallyAddedTransaction().date.plusDays(1)
+          )
+          setUpServerDatabase {
+            addTransactions(updatedComplement)
+          }
+
           test("nothing happens") {
-            TODO()
+            val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+            transactionMirrorer.mirrorTransactions()
+
+            assertSoftly {
+              withClue("Server knowledge should not change") {
+                serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+              }
+
+              localDatabase.shouldMatchServer(serverDatabase)
+              localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                setOf(
+                  updatedTransaction.id,
+                  updatedComplement.id
+                ),
+              )
+            }
           }
 
           context("once the transaction is unflagged") {
+            transactionMirrorer.mirrorTransactions()
+            setUpServerDatabase {
+              addTransactions(updatedTransaction)
+            }
+
             test("the conflict is resolved") {
-              TODO()
+              val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+              transactionMirrorer.mirrorTransactions()
+
+              assertSoftly {
+                withClue("Server knowledge should not change") {
+                  serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+                }
+
+                updatedComplement.thisOnServerShould(serverDatabase) {
+                  amount shouldBe updatedComplement.amount
+                  date shouldBe updatedComplement.date
+                  payeeName shouldBe updatedComplement.payeeName
+                  memo shouldBe updatedComplement.memo
+                  cleared shouldBe CLEARED
+                  approved.shouldBeTrue()
+                  deleted.shouldBeFalse()
+                  accountId shouldBe TO_ACCOUNT_ID.plainUuid
+                }
+
+                updatedTransaction.thisOnServerShould(serverDatabase) {
+                  amount shouldBe updatedTransaction.amount
+                  date shouldBe updatedTransaction.date
+                  payeeName shouldBe updatedTransaction.payeeName
+                  memo shouldBe updatedTransaction.memo
+                  cleared shouldBe CLEARED
+                  flagColor shouldBe null
+                  approved.shouldBeTrue()
+                  deleted.shouldBeFalse()
+                  accountId shouldBe updatedTransaction.accountId.plainUuid
+                }
+
+                localDatabase.shouldMatchServer(serverDatabase)
+                localDatabase.shouldHaveAllTransactionsProcessed()
+              }
             }
           }
         }
@@ -373,8 +437,8 @@ internal class TransactionMirrorerTest : FunSpec({
           updatedTransaction.thisOnServerShould(serverDatabase) {
             flagColor shouldBe RED
             approved.shouldBeFalse()
-            memo shouldBe "ERROR: Both this and its complement have been updated; delete one and " +
-              "un-flag the other to bring them back in sync. • " + updatedTransaction.memo
+            memo shouldBe "ERROR: Both this and its complement have been updated; update both to " +
+              "the same amount and date to bring them back in sync. • " + updatedTransaction.memo
 
             amount shouldBe updatedTransaction.amount
             date shouldBe updatedTransaction.date
@@ -386,8 +450,8 @@ internal class TransactionMirrorerTest : FunSpec({
           updatedComplement.thisOnServerShould(serverDatabase) {
             flagColor shouldBe RED
             approved.shouldBeFalse()
-            memo shouldBe "ERROR: Both this and its complement have been updated; delete one and " +
-              "un-flag the other to bring them back in sync. • " + updatedComplement.memo
+            memo shouldBe "ERROR: Both this and its complement have been updated; update both to " +
+              "the same amount and date to bring them back in sync. • " + updatedComplement.memo
 
             amount shouldBe updatedComplement.amount
             date shouldBe updatedComplement.date
@@ -405,13 +469,69 @@ internal class TransactionMirrorerTest : FunSpec({
         }
 
         context("once one side updates") {
+          transactionMirrorer.mirrorTransactions()
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement().copy(approved = true))
+          }
+
           test("nothing happens") {
-            TODO()
+            val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+            transactionMirrorer.mirrorTransactions()
+
+            assertSoftly {
+              withClue("Server knowledge should not change") {
+                serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+              }
+
+              localDatabase.shouldMatchServer(serverDatabase)
+              localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                setOf(
+                  manuallyAddedTransactionComplement().id,
+                  manuallyAddedTransaction().id
+                ),
+              )
+            }
           }
 
           context("once the other side updates") {
+            transactionMirrorer.mirrorTransactions()
+            setUpServerDatabase {
+              addTransactions(manuallyAddedTransaction().copy(cleared = CLEARED))
+            }
+
             test("conflict is resolved") {
-              TODO()
+              val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+              transactionMirrorer.mirrorTransactions()
+
+              withClue("Server knowledge should not change") {
+                serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+              }
+
+              manuallyAddedTransactionComplement().thisOnServerShould(serverDatabase) {
+                amount shouldBe manuallyAddedTransactionComplement().amount
+                date shouldBe manuallyAddedTransactionComplement().date
+                payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+                memo shouldBe manuallyAddedTransactionComplement().memo
+                cleared shouldBe CLEARED
+                approved.shouldBeTrue()
+                deleted.shouldBeFalse()
+                accountId shouldBe TO_ACCOUNT_ID.plainUuid
+              }
+
+              manuallyAddedTransaction().thisOnServerShould(serverDatabase) {
+                amount shouldBe manuallyAddedTransaction().amount
+                date shouldBe manuallyAddedTransaction().date
+                payeeName shouldBe manuallyAddedTransaction().payeeName
+                memo shouldBe manuallyAddedTransaction().memo
+                cleared shouldBe CLEARED
+                flagColor shouldBe null
+                approved.shouldBeTrue()
+                deleted.shouldBeFalse()
+                accountId shouldBe manuallyAddedTransaction().accountId.plainUuid
+              }
+
+              localDatabase.shouldMatchServer(serverDatabase)
+              localDatabase.shouldHaveAllTransactionsProcessed()
             }
           }
         }
@@ -497,14 +617,77 @@ internal class TransactionMirrorerTest : FunSpec({
         }
 
         context("once the complement is also deleted") {
+          transactionMirrorer.mirrorTransactions()
+          setUpServerDatabase {
+            addOrUpdateTransactionsForAccount(
+              TO_ACCOUNT_ID,
+              listOf(
+                serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+                  .find { it.id == manuallyAddedTransactionComplement().id.string }!!
+                  .copy(deleted = true)
+              )
+            )
+          }
+
           test("both transactions are fully deleted") {
-            TODO()
+            transactionMirrorer.mirrorTransactions()
+
+            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              deleted.shouldBeTrue()
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
           }
         }
 
-        context("once the complement is un-flagged (un-deleted)") {
+        xcontext("once the complement is un-flagged (un-deleted)") {
+          /* TODO: This causes problems because you can't recreate the transaction with the same
+           * importId. Let's just ignore this for now, and come back to it later.
+           *
+           * Some ideas for then:
+           * - Store the DELETED transaction in the local database even after deletion, update it
+           *   rather than creating a whole new transaction. Definitely the best option, but need
+           *   to double-check that it works with the API.
+           * - Right now, we ignore any changes that aren't amount, date, and approved. Need to add
+           *   a "flag" UpdateField to cover un-deletion (and eventually flag-to-split).
+           */
+          transactionMirrorer.mirrorTransactions()
+          val unflaggedTransaction = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+            .find { it.id == manuallyAddedTransactionComplement().id.string }!!
+            .copy(flagColor = null, approved = true)
+            .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
+          setUpServerDatabase {
+            addTransactions(unflaggedTransaction)
+          }
+
           test("this transaction is recreated") {
-            TODO()
+            transactionMirrorer.mirrorTransactions()
+
+            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              flagColor shouldBe null
+              approved.shouldBeTrue()
+              deleted.shouldBeFalse()
+
+              amount shouldBe manuallyAddedTransactionComplement().amount
+              date shouldBe manuallyAddedTransactionComplement().date
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+            }
+
+            unflaggedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              flagColor shouldBe null
+              approved.shouldBeTrue()
+              deleted.shouldBeFalse()
+
+              amount shouldBe manuallyAddedTransactionComplement().amount
+              date shouldBe manuallyAddedTransactionComplement().date
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
           }
         }
       }
@@ -628,7 +811,7 @@ internal class TransactionMirrorerTest : FunSpec({
             date shouldBe transactionAddedFromTransfer().date
             payeeName shouldBe transactionTransferSplitSource().payeeName
             memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-            cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+            cleared shouldBe CLEARED
             deleted.shouldBeFalse()
             accountId shouldBe TO_ACCOUNT_ID.plainUuid
           }
@@ -653,7 +836,7 @@ internal class TransactionMirrorerTest : FunSpec({
             transactionMirrorer.mirrorTransactions()
 
             transactionAddedFromTransfer().thisOnServerShould(serverDatabase) {
-              cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+              cleared shouldBe CLEARED
 
               amount shouldBe transactionAddedFromTransfer().amount
               date shouldBe transactionAddedFromTransfer().date
@@ -706,7 +889,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           date shouldBe manuallyAddedTransaction().date
           payeeName shouldBe manuallyAddedTransaction().payeeName
           memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
-          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
           accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -737,7 +920,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           date shouldBe transactionAddedFromTransfer().date
           payeeName shouldBe "Chicken Butt"
           memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
-          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
           accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -764,7 +947,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           date shouldBe transactionAddedFromTransfer().date
           payeeName shouldBe transactionTransferSplitSource().payeeName
           memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
           accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -809,7 +992,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           date shouldBe transactionAddedFromTransferWithLongId.date
           payeeName shouldBe transactionTransferSplitSource().payeeName
           memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-          cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
+          cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
           accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -956,10 +1139,12 @@ private fun PublicTransactionDetail.thisOnServerShould(
 
   transactionsInToAccount.shouldForOne { it.id shouldBe this.id.string }
 
-  val complement = transactionsInToAccount
+  val transaction = transactionsInToAccount
     .find { transaction -> transaction.id == this.id.string }!!
 
-  assertSoftly(complement, assertSoftly)
+  withClue("For transaction $transaction") {
+    assertSoftly(transaction, assertSoftly)
+  }
 }
 
 private fun PublicTransactionDetail.complementOnServerShould(
@@ -978,5 +1163,7 @@ private fun PublicTransactionDetail.complementOnServerShould(
     transaction.toPublicTransactionDetail(complementAccountAndBudget.budgetId) isComplementOf this
   }!!
 
-  assertSoftly(complement, assertSoftly)
+  withClue("For complement $complement") {
+    assertSoftly(complement, assertSoftly)
+  }
 }

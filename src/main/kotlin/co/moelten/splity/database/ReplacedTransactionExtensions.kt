@@ -1,11 +1,16 @@
 package co.moelten.splity.database
 
+import co.moelten.splity.database.UpdateField.AMOUNT
+import co.moelten.splity.database.UpdateField.CLEAR
+import co.moelten.splity.database.UpdateField.DATE
+import co.moelten.splity.database.UpdateField.values
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
+import com.youneedabudget.client.models.TransactionDetail
 
 fun StoredTransaction.toReplacedTransaction() = ReplacedTransaction(
   id = id,
@@ -43,20 +48,32 @@ fun StoredSubTransaction.toReplacedSubTransaction() = ReplacedSubTransaction(
   budgetId = budgetId
 )
 
-fun StoredTransaction.calculateUpdatedFieldsFrom(replacedTransaction: StoredTransaction): Set<UpdateField> =
+fun StoredTransaction.calculateUpdatedFieldsFrom(
+  replacedTransaction: StoredTransaction
+): Set<UpdateField> =
   this.toPublicTransactionDetail(emptyList())
     .calculateUpdatedFieldsFrom(replacedTransaction.toPublicTransactionDetail(emptyList()))
 
-fun PublicTransactionDetail.calculateUpdatedFieldsFrom(replaced: PublicTransactionDetail): Set<UpdateField> {
+fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
+  replaced: PublicTransactionDetail,
+  complement: PublicTransactionDetail? = null
+): Set<UpdateField> {
   assert(subTransactions.isEmpty()) { "Cannot update a transaction that has sub-transactions" }
 
   // Loop over values to make sure we don't forget any
-  return UpdateField.values()
+  return values()
     .filter { updateField ->
       when (updateField) {
-        UpdateField.CLEAR -> approved && !replaced.approved // Newly approved -> clear complement
-        UpdateField.AMOUNT -> amount != replaced.amount
-        UpdateField.DATE -> date != replaced.date
+        CLEAR -> approved && !replaced.approved // Newly approved -> clear complement
+        AMOUNT -> amount != replaced.amount
+        DATE -> date != replaced.date
+      }
+    }
+    .filter { updateField ->
+      complement == null || when (updateField) {
+        CLEAR -> complement.cleared != TransactionDetail.ClearedEnum.CLEARED
+        AMOUNT -> complement.amount != -amount
+        DATE -> complement.date != date
       }
     }
     .toSet()

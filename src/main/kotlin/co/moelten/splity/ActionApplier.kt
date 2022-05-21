@@ -192,7 +192,7 @@ class ActionApplier(
     repository.addOrUpdateTransaction(
       firstResponse.data.transaction,
       fromTransaction.budgetId,
-      UP_TO_DATE
+      fromTransaction.processedState
     )
 
     if (complement != null) {
@@ -203,7 +203,7 @@ class ActionApplier(
           complement.toSaveTransaction().copy(
             flagColor = SaveTransaction.FlagColorEnum.RED,
             approved = false,
-            memo = "ERROR: " + action.message + " • " + complement.memo
+            memo = "ERROR: " + message + " • " + complement.memo
           )
         )
       )
@@ -211,7 +211,7 @@ class ActionApplier(
       repository.addOrUpdateTransaction(
         complementResponse.data.transaction,
         complement.budgetId,
-        UP_TO_DATE
+        complement.processedState
       )
     }
   }
@@ -268,11 +268,11 @@ sealed interface TransactionAction {
     val message: String
   ) : TransactionAction {
     companion object ErrorMessages {
-      const val BOTH_UPDATED = "Both this and its complement have been updated; delete one and " +
-        "un-flag the other to bring them back in sync."
+      const val BOTH_UPDATED = "Both this and its complement have been updated; update both to " +
+        "the same amount and date to bring them back in sync."
       const val UPDATED_WITHOUT_COMPLEMENT = "This updated transaction has no complement; this " +
-        "shouldn't be possible, but manually create a complement transaction in the other " +
-        "account to bring them back in sync."
+        "shouldn't be possible, so delete this transaction and re-create it to get things back " +
+        "in sync."
     }
   }
 

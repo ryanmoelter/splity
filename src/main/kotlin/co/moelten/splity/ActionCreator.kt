@@ -1,7 +1,12 @@
 package co.moelten.splity
 
+import co.moelten.splity.TransactionAction.CreateComplement
+import co.moelten.splity.TransactionAction.DeleteComplement
+import co.moelten.splity.TransactionAction.MarkError
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.BOTH_UPDATED
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.UPDATED_WITHOUT_COMPLEMENT
+import co.moelten.splity.TransactionAction.MarkProcessed
+import co.moelten.splity.TransactionAction.UpdateComplement
 import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
@@ -66,6 +71,9 @@ class ActionCreator(
           // Match using the replaced transaction, since that's what was matched last time
           unprocessedSecondTransactions
             .find { it.id == replacedMatch.id }
+            ?.also { foundComplement ->
+              unprocessedSecondTransactions = unprocessedSecondTransactions - foundComplement
+            }
             ?: error("Cannot find updated transaction for replaced: $replacedMatch")
         }
 
@@ -88,7 +96,11 @@ class ActionCreator(
           UP_TO_DATE, null -> false
           CREATED, UPDATED, DELETED -> true
         }
-        when {
+        val isDeleted = when (transaction.processedState) {
+          UP_TO_DATE, CREATED, UPDATED -> false
+          DELETED -> true
+        }
+        isDeleted || when {
           transaction.flagColor == TransactionDetail.FlagColorEnum.RED ||
             complement?.flagColor == TransactionDetail.FlagColorEnum.RED -> false
           !transaction.approved && !complementNeedsProcessing -> false
@@ -114,58 +126,86 @@ class ActionCreator(
     toAccountAndBudget: AccountAndBudget
   ) = when (val state = fromTransaction.processedState) {
     CREATED -> when (complement?.processedState) {
-      UP_TO_DATE, CREATED -> TransactionAction.MarkProcessed(fromTransaction, complement)
-      UPDATED -> TransactionAction.UpdateComplement(
-        fromTransaction = complement,
-        complement = fromTransaction,
-        updateFields = complement.getUpdatedFields()
-      )
-      DELETED -> TransactionAction.DeleteComplement(
+      UP_TO_DATE, CREATED -> MarkProcessed(fromTransaction, complement)
+      UPDATED -> calculateUpdateAction(
         fromTransaction = complement,
         complement = fromTransaction
       )
-      null -> TransactionAction.CreateComplement(
+      DELETED -> DeleteComplement(
+        fromTransaction = complement,
+        complement = fromTransaction
+      )
+      null -> CreateComplement(
         fromTransaction = fromTransaction,
         toAccountAndBudget = toAccountAndBudget
       )
     }
     UPDATED -> when (complement?.processedState) {
-      UP_TO_DATE, CREATED -> TransactionAction.UpdateComplement(
-        fromTransaction = fromTransaction,
-        complement = complement,
-        updateFields = fromTransaction.getUpdatedFields(),
-      )
-      UPDATED -> TransactionAction.MarkError(
-        fromTransaction = fromTransaction,
-        complement = complement,
-        message = BOTH_UPDATED
-      )
-      DELETED -> TransactionAction.DeleteComplement(
+      UP_TO_DATE, CREATED -> {
+        calculateUpdateAction(
+          fromTransaction = fromTransaction,
+          complement = complement
+        )
+      }
+      UPDATED -> if (fromTransaction.getUpdatedFields(complement).isEmpty() && complement.getUpdatedFields(fromTransaction).isEmpty()) {
+        MarkProcessed(
+          fromTransaction = fromTransaction,
+          complement = complement
+        )
+      } else {
+        MarkError(
+          fromTransaction = fromTransaction,
+          complement = complement,
+          message = BOTH_UPDATED
+        )
+      }
+      DELETED -> DeleteComplement(
         fromTransaction = complement,
         complement = fromTransaction
       )
       // TODO: report soft error
-      null -> TransactionAction.MarkError(
+      null -> MarkError(
         fromTransaction = fromTransaction,
         message = UPDATED_WITHOUT_COMPLEMENT
       )
     }
     DELETED -> when (complement?.processedState) {
-      UP_TO_DATE, CREATED, UPDATED -> TransactionAction.DeleteComplement(
+      UP_TO_DATE, CREATED, UPDATED -> DeleteComplement(
         fromTransaction = fromTransaction,
         complement = complement
       )
       // Already deleted
-      DELETED -> TransactionAction.MarkProcessed(fromTransaction, complement)
+      DELETED -> MarkProcessed(fromTransaction, complement)
       // Never existed? Can't throw an error, else we'd never be able to fix it
       // TODO: report soft error
-      null -> TransactionAction.MarkProcessed(fromTransaction)
+      null -> MarkProcessed(fromTransaction)
     }
     UP_TO_DATE -> error("State should never be $state")
   }
 
-  private fun PublicTransactionDetail.getUpdatedFields(): Set<UpdateField> {
+  private fun calculateUpdateAction(
+    fromTransaction: PublicTransactionDetail,
+    complement: PublicTransactionDetail
+  ): TransactionAction {
+    val updatedFields = fromTransaction.getUpdatedFields(complement)
+    return if (updatedFields.isEmpty()) {
+      MarkProcessed(
+        fromTransaction = fromTransaction,
+        complement = complement
+      )
+    } else {
+      UpdateComplement(
+        fromTransaction = fromTransaction,
+        complement = complement,
+        updateFields = updatedFields,
+      )
+    }
+  }
+
+  private fun PublicTransactionDetail.getUpdatedFields(
+    complement: PublicTransactionDetail? = null
+  ): Set<UpdateField> {
     val replaced = repository.getReplacedTransactionById(id)
-    return calculateUpdatedFieldsFrom(replaced)
+    return calculateUpdatedFieldsFrom(replaced, complement)
   }
 }
