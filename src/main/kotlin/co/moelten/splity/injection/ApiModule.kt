@@ -17,5 +17,5 @@ interface ApiModule {
 @Component
 abstract class RealApiModule : ApiModule {
   override fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient =
-    YnabClientImpl(config.ynabToken, sentry::doInSpan)
+    YnabClientImpl(config.ynabToken, sentry::doInImmediateSpan)
 }

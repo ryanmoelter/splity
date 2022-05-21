@@ -7,11 +7,19 @@ import me.tatarka.inject.annotations.Inject
 class TransactionMirrorer(
   private val repository: Repository,
   private val actionApplier: ActionApplier,
-  private val actionCreator: ActionCreator
+  private val actionCreator: ActionCreator,
+  private val sentry: SentryWrapper
 ) {
   suspend fun mirrorTransactions() {
-    repository.fetchNewTransactions()
+    sentry.doInSpan("Fetch new transactions") {
+      repository.fetchNewTransactions()
+    }
 
-    actionApplier.applyActions(actionCreator.createDifferentialActionsForBothAccounts())
+    val actions = sentry.doInSpan("Fetch new transactions") {
+      actionCreator.createDifferentialActionsForBothAccounts()
+    }
+    sentry.doInSpan("Fetch new transactions") {
+      actionApplier.applyActions(actions)
+    }
   }
 }

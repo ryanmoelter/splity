@@ -18,10 +18,8 @@ fun main() {
 
   sentry.doInTransaction(operation = "runBlocking()", name = "run splity") {
     runBlocking {
-      sentry.doInSpan(operation = "run (suspended)") {
-        sentry.doInSpan(operation = "mirrorTransactions()") {
-          component.transactionMirrorer.mirrorTransactions()
-        }
+      sentry.doInSpan(operation = "mirrorTransactions()") {
+        component.transactionMirrorer.mirrorTransactions()
       }
     }
   }
