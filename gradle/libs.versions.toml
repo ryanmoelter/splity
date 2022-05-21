@@ -2,12 +2,14 @@
 kotlin = "1.6.21"
 coroutines = "1.6.0"
 ksp = "1.6.21-1.0.5"
+inject = "0.4.1"
 hoplite = "1.4.16"
 sqldelight = "1.5.3"
 datetime = "0.3.2"
 moshi = "1.13.0"
 okhttp = "4.9.3"
 retrofit = "2.9.0"
+kotest = "5.2.3"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
@@ -22,12 +24,16 @@ coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", ve
 coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
 
+# Injection
+kotlin-inject-runtime = { module = "me.tatarka.inject:kotlin-inject-runtime", version.ref = "inject" }
+kotlin-inject-compiler-ksp = { module = "me.tatarka.inject:kotlin-inject-compiler-ksp", version.ref = "inject" }
+
 # Config
 hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "hoplite" }
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
 # Database
-sqldelight-driver-native = { module = "com.squareup.sqldelight:native-driver", version.ref = "sqldelight" }
+sqldelight-driver-jvm = { module = "com.squareup.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
 uuid = { module = "com.benasher44:uuid", version = "0.4.0" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
@@ -51,6 +57,9 @@ junit4 = { module = "junit:junit", version = "4.13.2"}
 junit5 = { module = "org.junit.jupiter:junit-jupiter", version = "5.8.2" }
 strikt = { module = "io.strikt:strikt-core", version = "0.33.0"}
 mockk = { module = "io.mockk:mockk", version = "1.12.2" }
+kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest"}
+kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 
 # Sentry
 sentry = { module = "io.sentry:sentry", version = "5.7.3" }

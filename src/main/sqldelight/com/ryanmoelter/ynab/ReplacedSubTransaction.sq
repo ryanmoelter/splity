@@ -1,0 +1,57 @@
+import co.moelten.splity.database.AccountId;
+import co.moelten.splity.database.BudgetId;
+import co.moelten.splity.database.CategoryId;
+import co.moelten.splity.database.PayeeId;
+import co.moelten.splity.database.SubTransactionId;
+import co.moelten.splity.database.TransactionId;
+
+CREATE TABLE replacedSubTransaction (
+  id TEXT AS SubTransactionId PRIMARY KEY NOT NULL,
+  transactionId TEXT AS TransactionId NOT NULL,
+  amount INTEGER NOT NULL,
+  memo TEXT,
+  payeeId TEXT AS PayeeId,
+  payeeName TEXT,
+  categoryId TEXT AS CategoryId,
+  categoryName TEXT,
+  transferAccountId TEXT AS AccountId,
+  transferTransactionId TEXT AS TransactionId,
+
+  accountId TEXT AS AccountId NOT NULL,
+  budgetId TEXT AS BudgetId NOT NULL,
+  FOREIGN KEY(id) REFERENCES storedSubTransaction(id),
+  FOREIGN KEY(accountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(budgetId) REFERENCES storedBudget(id),
+  FOREIGN KEY(transactionId) REFERENCES storedTransaction(id),
+  FOREIGN KEY(transferAccountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferTransactionId) REFERENCES storedTransaction(id)
+);
+
+CREATE INDEX replacedSubTransactionId ON replacedSubTransaction(id);
+
+getById:
+SELECT *
+FROM replacedSubTransaction
+WHERE id = ?
+;
+
+getByTransactionId:
+SELECT *
+FROM replacedSubTransaction
+WHERE transactionId = ?
+;
+
+getAll:
+SELECT *
+FROM replacedSubTransaction
+;
+
+insert:
+INSERT INTO replacedSubTransaction
+VALUES ?
+;
+
+deleteByTransactionId:
+DELETE FROM replacedSubTransaction
+WHERE transactionId = ?
+;

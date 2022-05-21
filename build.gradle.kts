@@ -5,10 +5,13 @@ plugins {
   application
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.spotless)
+  alias(libs.plugins.sqldelight)
+  alias(libs.plugins.ksp)
+  idea
 }
 
 group = "co.moelten"
-version = "0.7.3-SNAPSHOT"
+version = "0.8.0-SNAPSHOT"
 
 repositories {
   mavenCentral()
@@ -17,12 +20,19 @@ repositories {
 dependencies {
   implementation(project(":ynab-api"))
 
+  implementation(libs.kotlin.inject.runtime)
   implementation(libs.coroutines.core)
   implementation(libs.hoplite.core)
   implementation(libs.hoplite.yaml)
   implementation(libs.sentry)
 
-  testImplementation(libs.junit5)
+  ksp(libs.kotlin.inject.compiler.ksp)
+
+  implementation(libs.sqldelight.driver.jvm)
+
+  testImplementation(libs.kotest.runner)
+  testImplementation(libs.kotest.assertions.core)
+  testImplementation(libs.kotest.framework.datatest)
   testImplementation(libs.coroutines.test)
   testImplementation(libs.strikt)
   testImplementation(libs.mockk)
@@ -40,9 +50,21 @@ val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOption
 val compileTestKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
 compileKotlin.kotlinOptions {
   jvmTarget = "11"
+  // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
+  freeCompilerArgs = freeCompilerArgs + "-progressive"
 }
 compileTestKotlin.kotlinOptions {
   jvmTarget = "11"
+  // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
+  freeCompilerArgs = freeCompilerArgs + "-progressive"
+}
+
+sqldelight {
+  database("Database") {
+    packageName = "com.ryanmoelter.ynab.database"
+    schemaOutputDirectory = file("src/main/sqldelight/databases")
+    verifyMigrations = true
+  }
 }
 
 spotless {
@@ -75,3 +97,14 @@ task("createProperties") {
 
 val classes: Task by tasks
 classes.dependsOn("createProperties")
+
+idea {
+  module {
+    // Not using += due to https://github.com/gradle/gradle/issues/8749
+    sourceDirs =
+      sourceDirs + file("build/generated/ksp/main/kotlin") // or tasks["kspKotlin"].destination
+    testSourceDirs = testSourceDirs + file("build/generated/ksp/test/kotlin")
+    generatedSourceDirs =
+      generatedSourceDirs + file("build/generated/ksp/main/kotlin") + file("build/generated/ksp/test/kotlin")
+  }
+}

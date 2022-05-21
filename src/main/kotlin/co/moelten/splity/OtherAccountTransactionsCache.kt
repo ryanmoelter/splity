@@ -1,5 +1,6 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.toAccountId
 import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.TransactionDetail
@@ -11,7 +12,7 @@ data class OtherAccountTransactionsCache(
 ) {
 
   suspend fun getOtherAccountTransactions(accountAndBudget: AccountAndBudget): List<TransactionDetail> =
-    otherAccountTransactions[accountAndBudget.accountId]
+    otherAccountTransactions[accountAndBudget.accountId.plainUuid]
       ?: ynab.transactions.getTransactionsByAccount(
         accountAndBudget.budgetId.toString(),
         accountAndBudget.accountId.toString(),
@@ -21,7 +22,7 @@ data class OtherAccountTransactionsCache(
       )
         .data
         .transactions
-        .also { transactions -> otherAccountTransactions[accountAndBudget.accountId] = transactions }
+        .also { transactions -> otherAccountTransactions[accountAndBudget.accountId.plainUuid] = transactions }
 
   suspend fun getAssociatedImportId(
     fromTransaction: TransactionDetail,
@@ -32,7 +33,7 @@ data class OtherAccountTransactionsCache(
     } else {
       val otherAccountTransactions = getOtherAccountTransactions(
         AccountAndBudget(
-          fromTransaction.transferAccountId!!,
+          fromTransaction.transferAccountId!!.toAccountId(),
           fromAccountAndBudget.budgetId
         )
       )

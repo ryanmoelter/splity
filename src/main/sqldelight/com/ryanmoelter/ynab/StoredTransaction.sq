@@ -1,0 +1,108 @@
+import co.moelten.splity.database.AccountId;
+import co.moelten.splity.database.BudgetId;
+import co.moelten.splity.database.CategoryId;
+import co.moelten.splity.database.PayeeId;
+import co.moelten.splity.database.ProcessedState;
+import co.moelten.splity.database.TransactionId;
+import com.youneedabudget.client.models.TransactionDetail;
+import kotlin.Boolean;
+import org.threeten.bp.LocalDate;
+
+CREATE TABLE storedTransaction (
+  id TEXT AS TransactionId PRIMARY KEY NOT NULL,
+  date TEXT AS LocalDate NOT NULL,
+  amount INTEGER NOT NULL,
+  cleared TEXT AS TransactionDetail.ClearedEnum NOT NULL,
+  approved INTEGER AS Boolean NOT NULL,
+  accountId TEXT AS AccountId NOT NULL,
+  accountName TEXT NOT NULL,
+  memo TEXT,
+  flagColor TEXT AS TransactionDetail.FlagColorEnum,
+  payeeId TEXT AS PayeeId,
+  categoryId TEXT AS CategoryId,
+  transferAccountId TEXT AS AccountId,
+  transferTransactionId TEXT AS TransactionId,
+  matchedTransactionId TEXT AS TransactionId,
+  importId TEXT,
+  payeeName TEXT,
+  categoryName TEXT,
+
+  processedState TEXT AS ProcessedState NOT NULL,
+  budgetId TEXT AS BudgetId NOT NULL,
+  FOREIGN KEY(budgetId) REFERENCES storedBudget(id),
+  FOREIGN KEY(accountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferAccountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferTransactionId) REFERENCES storedTransaction(id),
+  FOREIGN KEY(matchedTransactionId) REFERENCES storedTransaction(id)
+);
+
+CREATE INDEX transactionId ON storedTransaction(id);
+
+getById:
+SELECT *
+FROM storedTransaction
+WHERE id = ?
+;
+
+getByTransferId:
+SELECT *
+FROM storedTransaction
+WHERE transferTransactionId = ?
+;
+
+getBySubTransactionTransferId:
+WITH targetTransactionId AS (
+  SELECT transactionId
+  FROM storedSubTransaction
+  WHERE transferTransactionId = ?
+)
+SELECT *
+FROM storedTransaction
+WHERE id IN targetTransactionId
+;
+
+getByAccount:
+SELECT *
+FROM storedTransaction
+WHERE accountId = ?
+ORDER BY date ASC
+;
+
+getUnprocessedByAccount:
+SELECT *
+FROM storedTransaction
+WHERE accountId = ?
+  AND processedState != "UP_TO_DATE"
+ORDER BY date ASC
+;
+
+getUnprocessedExcept:
+SELECT *
+FROM storedTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+ORDER BY date ASC
+;
+
+getByComplement:
+SELECT *
+FROM storedTransaction
+WHERE accountId = ?
+  AND date = ?
+  AND amount = ?
+;
+
+getAll:
+SELECT *
+FROM storedTransaction
+;
+
+replaceSingle:
+REPLACE INTO storedTransaction
+VALUES ?
+;
+
+deleteById:
+DELETE FROM storedTransaction
+WHERE id = ?
+;

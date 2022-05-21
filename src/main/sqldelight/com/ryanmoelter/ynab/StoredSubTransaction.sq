@@ -1,0 +1,71 @@
+import co.moelten.splity.database.AccountId;
+import co.moelten.splity.database.BudgetId;
+import co.moelten.splity.database.CategoryId;
+import co.moelten.splity.database.PayeeId;
+import co.moelten.splity.database.ProcessedState;
+import co.moelten.splity.database.SubTransactionId;
+import co.moelten.splity.database.TransactionId;
+
+CREATE TABLE storedSubTransaction (
+  id TEXT AS SubTransactionId PRIMARY KEY NOT NULL,
+  transactionId TEXT AS TransactionId NOT NULL,
+  amount INTEGER NOT NULL,
+  memo TEXT,
+  payeeId TEXT AS PayeeId,
+  payeeName TEXT,
+  categoryId TEXT AS CategoryId,
+  categoryName TEXT,
+  transferAccountId TEXT AS AccountId,
+  transferTransactionId TEXT AS TransactionId,
+
+  processedState TEXT AS ProcessedState NOT NULL,
+  accountId TEXT AS AccountId NOT NULL,
+  budgetId TEXT AS BudgetId NOT NULL,
+  FOREIGN KEY(accountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(budgetId) REFERENCES storedBudget(id),
+  FOREIGN KEY(transactionId) REFERENCES storedTransaction(id),
+  FOREIGN KEY(transferAccountId) REFERENCES storedAccount(id),
+  FOREIGN KEY(transferTransactionId) REFERENCES storedTransaction(id)
+);
+
+CREATE INDEX subTransactionId ON storedSubTransaction(id);
+
+getById:
+SELECT *
+FROM storedSubTransaction
+WHERE id = ?
+;
+
+getByTransactionId:
+SELECT *
+FROM storedSubTransaction
+WHERE transactionId = ?
+;
+
+getByAccount:
+SELECT *
+FROM storedSubTransaction
+WHERE accountId = ?
+;
+
+getUnprocessedExcept:
+SELECT *
+FROM storedSubTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+;
+
+getAll:
+SELECT *
+FROM storedSubTransaction
+;
+
+replaceSingle:
+REPLACE INTO storedSubTransaction
+VALUES ?
+;
+
+deleteByTransactionId:
+DELETE FROM storedSubTransaction
+WHERE transactionId = ?
+;

@@ -1,0 +1,10 @@
+import co.moelten.splity.database.BudgetId;
+import org.threeten.bp.LocalDate;
+
+CREATE TABLE storedBudget (
+  id TEXT AS BudgetId PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  lastModifiedOn TEXT AS LocalDate
+);
+
+CREATE INDEX budgetId ON storedBudget(id);

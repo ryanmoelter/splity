@@ -6,6 +6,7 @@ import com.youneedabudget.client.models.SaveMonthCategory
 import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import org.threeten.bp.LocalDate
 
+@Suppress("unused")
 suspend fun ensureZeroBalanceOnCreditCards(
   ynab: YnabClient,
   config: Config,
