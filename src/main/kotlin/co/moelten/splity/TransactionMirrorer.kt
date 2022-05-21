@@ -15,10 +15,10 @@ class TransactionMirrorer(
       repository.fetchNewTransactions()
     }
 
-    val actions = sentry.doInSpan("Fetch new transactions") {
+    val actions = sentry.doInSpan("Create actions") {
       actionCreator.createDifferentialActionsForBothAccounts()
     }
-    sentry.doInSpan("Fetch new transactions") {
+    sentry.doInSpan("Apply actions") {
       actionApplier.applyActions(actions)
     }
   }

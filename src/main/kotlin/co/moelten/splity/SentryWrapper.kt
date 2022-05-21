@@ -55,7 +55,7 @@ class SentryWrapperImpl(
     operation: String,
     action: () -> T
   ): T {
-    val span = Sentry.getSpan()!!.startChild(operation)
+    val span = Sentry.getSpan()!!.startChild(operation, operation)
     return try {
       action().also { span.status = SpanStatus.OK }
     } catch (e: Throwable) {
@@ -71,7 +71,7 @@ class SentryWrapperImpl(
     operation: String,
     action: suspend () -> T
   ): T {
-    val span = Sentry.getSpan()!!.startChild(operation)
+    val span = Sentry.getSpan()!!.startChild(operation, operation)
     return try {
       action().also { span.status = SpanStatus.OK }
     } catch (e: Throwable) {
