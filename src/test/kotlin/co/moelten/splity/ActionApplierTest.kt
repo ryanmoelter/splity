@@ -67,7 +67,7 @@ class ActionApplierTest : FunSpec({
     test("create from transfer") {
       actionApplier.applyActions(
         TransactionAction.CreateComplement(
-          fromTransaction = transactionAddedFromTransfer(),
+          fromTransaction = transactionAddedFromTransfer(isFromSplitSource = false),
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
@@ -76,9 +76,9 @@ class ActionApplierTest : FunSpec({
         serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
       transactionList shouldHaveSize 1
       assertSoftly(transactionList.first()) {
-        amount shouldBe -transactionAddedFromTransfer().amount
-        importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
-        date shouldBe transactionAddedFromTransfer().date
+        amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
+        importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = false).amount}:${transactionAddedFromTransfer(isFromSplitSource = false).date}:1"
+        date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
         payeeName shouldBe "Chicken Butt"
         memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
@@ -92,7 +92,7 @@ class ActionApplierTest : FunSpec({
     test("create from transfer without duplicating network calls") {
       actionApplier.applyActions(
         TransactionAction.CreateComplement(
-          transactionAddedFromTransfer(),
+          transactionAddedFromTransfer(isFromSplitSource = false),
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         )
       )
@@ -100,12 +100,12 @@ class ActionApplierTest : FunSpec({
       val transactionList =
         serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
       transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
-        .shouldContainSingleComplementOf(transactionAddedFromTransfer())
+        .shouldContainSingleComplementOf(transactionAddedFromTransfer(isFromSplitSource = false))
 
       assertSoftly(transactionList.first()) {
-        amount shouldBe -transactionAddedFromTransfer().amount
-        importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
-        date shouldBe transactionAddedFromTransfer().date
+        amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
+        importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = false).amount}:${transactionAddedFromTransfer(isFromSplitSource = false).date}:1"
+        date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
         payeeName shouldBe "Chicken Butt"
         memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
         cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
@@ -123,7 +123,7 @@ class ActionApplierTest : FunSpec({
     }
     actionApplier.applyActions(
       TransactionAction.CreateComplement(
-        transactionAddedFromTransfer(),
+        transactionAddedFromTransfer(isFromSplitSource = true),
         toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
       )
     )
@@ -131,17 +131,17 @@ class ActionApplierTest : FunSpec({
     val transactionList = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
 
     transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
-      .shouldContainSingleComplementOf(transactionAddedFromTransfer())
+      .shouldContainSingleComplementOf(transactionAddedFromTransfer(isFromSplitSource = true))
 
     val complement = transactionList.find { transactionDetail ->
       transactionDetail.toPublicTransactionDetail(TO_BUDGET_ID, UP_TO_DATE)
-        .isComplementOf(transactionAddedFromTransfer())
+        .isComplementOf(transactionAddedFromTransfer(isFromSplitSource = true))
     }!!
 
     assertSoftly(complement) {
-      amount shouldBe -transactionAddedFromTransfer().amount
-      importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
-      date shouldBe transactionAddedFromTransfer().date
+      amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
+      importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = true).amount}:${transactionAddedFromTransfer(isFromSplitSource = true).date}:1"
+      date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
       payeeName shouldBe transactionTransferSplitSource().payeeName
       memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
@@ -154,8 +154,8 @@ class ActionApplierTest : FunSpec({
   }
 
   test("create from split transfer: recurring transaction") {
-    val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
-      id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
+    val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer(isFromSplitSource = true).copy(
+      id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
     )
     setUpLocalDatabase {
       addTransactions(
@@ -181,7 +181,7 @@ class ActionApplierTest : FunSpec({
     val transactionList = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
 
     transactionList.toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
-      .shouldContainSingleComplementOf(transactionAddedFromTransfer())
+      .shouldContainSingleComplementOf(transactionAddedFromTransfer(isFromSplitSource = true))
 
     assertSoftly(transactionList.first()) {
       amount shouldBe -transactionAddedFromTransferWithLongId.amount

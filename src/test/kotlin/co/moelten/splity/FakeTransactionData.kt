@@ -66,6 +66,7 @@ fun manuallyAddedTransactionComplement(
 )
 
 fun transactionAddedFromTransfer(
+  isFromSplitSource: Boolean,
   processedState: ProcessedState = CREATED
 ) = PublicTransactionDetail(
   id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
@@ -82,7 +83,11 @@ fun transactionAddedFromTransfer(
   categoryId = null,
   categoryName = null,
   transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-  transferTransactionId = null,
+  transferTransactionId = if (isFromSplitSource) {
+    TRANSFER_SOURCE_SPLIT_SUB_TRANSACTION_ID.string.toTransactionId()
+  } else {
+    TRANSFER_SOURCE_NON_SPLIT_TRANSACTION_ID
+  },
   matchedTransactionId = null,
   importId = null,
   subTransactions = emptyList(),
@@ -133,10 +138,11 @@ fun subTransactionNonTransferSplitSource(
   processedState = processedState
 )
 
+val TRANSFER_SOURCE_SPLIT_SUB_TRANSACTION_ID = "splitTransferSubTransaction".toSubTransactionId()
 fun subTransactionTransferSplitSource(
   processedState: ProcessedState = CREATED
-) = PublicSubTransaction(
-  id = "splitTransferSubTransaction".toSubTransactionId(),
+): PublicSubTransaction = PublicSubTransaction(
+  id = TRANSFER_SOURCE_SPLIT_SUB_TRANSACTION_ID,
   transactionId = "transactionTransferSplitSource".toTransactionId(),
   amount = -10000,
   memo = "I'm the split you're looking for",
@@ -179,10 +185,11 @@ fun transactionTransferSplitSource(
   processedState = processedState,
 )
 
+val TRANSFER_SOURCE_NON_SPLIT_TRANSACTION_ID = "transactionTransferNonSplitSource".toTransactionId()
 fun transactionTransferNonSplitSource(
   processedState: ProcessedState = CREATED
-) = PublicTransactionDetail(
-  id = "transactionTransferNonSplitSource".toTransactionId(),
+): PublicTransactionDetail = PublicTransactionDetail(
+  id = TRANSFER_SOURCE_NON_SPLIT_TRANSACTION_ID,
   date = LocalDate.of(2020, Month.FEBRUARY, 7),
   amount = -10000,
   cleared = TransactionDetail.ClearedEnum.CLEARED,

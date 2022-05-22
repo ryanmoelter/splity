@@ -173,12 +173,25 @@ class ActionApplier(
   }
 
   private suspend fun applyError(action: MarkError): Unit = with(action) {
+    var amount = action.fromTransaction.amount
+    var date = action.fromTransaction.date
+    if (action.revertFromTransactionUpdatedFieldsTo != null) {
+      UpdateField.values().forEach {
+        when (it) {
+          AMOUNT -> amount = action.revertFromTransactionUpdatedFieldsTo.amount
+          DATE -> date = action.revertFromTransactionUpdatedFieldsTo.date
+        }
+      }
+    }
+
     val firstResponse = ynab.transactions.updateTransaction(
       fromTransaction.budgetId.toString(),
       fromTransaction.id.string,
       SaveTransactionWrapper(
         fromTransaction.toSaveTransaction().copy(
           flagColor = SaveTransaction.FlagColorEnum.RED,
+          amount = amount,
+          date = date,
           approved = false,
           memo = "ERROR: " + message + " • " + fromTransaction.memo
         )
@@ -261,7 +274,8 @@ sealed interface TransactionAction {
   data class MarkError(
     override val fromTransaction: PublicTransactionDetail,
     val complement: PublicTransactionDetail? = null,
-    val message: String
+    val message: String,
+    val revertFromTransactionUpdatedFieldsTo: PublicTransactionDetail? = null
   ) : TransactionAction {
     companion object ErrorMessages {
       const val BOTH_UPDATED = "Both this and its complement have been updated; update both to " +

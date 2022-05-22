@@ -7,7 +7,9 @@ import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.DELETED
 import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
+import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
+import co.moelten.splity.models.toPublicSubTransaction
 import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
@@ -82,6 +84,15 @@ class Repository(
     return storedTransaction?.toPublicTransactionDetail(
       database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
     )
+  }
+
+  fun getSubTransactionsByTransferTransactionId(
+    transferId: TransactionId
+  ): PublicSubTransaction? {
+    return database.storedSubTransactionQueries
+      .getById(transferId.string.toSubTransactionId())
+      .executeAsOneOrNull()
+      ?.toPublicSubTransaction()
   }
 
   fun getTransactionBySubTransactionTransferId(

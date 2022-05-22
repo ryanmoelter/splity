@@ -95,8 +95,8 @@ class ActionCreatorTest : FunSpec({
     }
 
     test("ignore complement with recurring split") {
-      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
-        id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
+      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer(isFromSplitSource = true).copy(
+        id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
       )
       val transactionAddedFromTransferWithLongIdComplement =
         transactionAddedFromTransferWithLongId.copy(
