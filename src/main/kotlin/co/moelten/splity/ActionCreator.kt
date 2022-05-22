@@ -4,6 +4,7 @@ import co.moelten.splity.TransactionAction.CreateComplement
 import co.moelten.splity.TransactionAction.DeleteComplement
 import co.moelten.splity.TransactionAction.MarkError
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.BOTH_UPDATED
+import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.UPDATED_TRANSFER_FROM_SPLIT
 import co.moelten.splity.TransactionAction.MarkError.ErrorMessages.UPDATED_WITHOUT_COMPLEMENT
 import co.moelten.splity.TransactionAction.MarkProcessed
 import co.moelten.splity.TransactionAction.UpdateComplement
@@ -82,10 +83,21 @@ class ActionCreator(
 
     unprocessedSecondTransactions
       .forEach { transactionDetail ->
-        // Complement isn't in the unprocesed transactions, otherwise it would have been matched
-        // by one of the unprocessedFirstTransactions. It's also not UPDATED, for the same reason.
+        /* Complement isn't in the unprocesed transactions, otherwise it would have been matched
+         * by one of the unprocessedFirstTransactions. So, the complement is UP_TO_DATE, and there's
+         * no need to search for a replaced complement.
+         */
+
+        // Match on the replaced transaction, since that's what was matched last time
+        val transactionToMatch = when (transactionDetail.processedState) {
+          CREATED, DELETED -> transactionDetail
+          UPDATED -> repository.getReplacedTransactionById(transactionDetail.id)
+          UP_TO_DATE -> error("Unprocessed transaction is ${transactionDetail.processedState}")
+        }
+
+        // Complement is not UPDATED or DELETED, so it's either CREATED or UP_TO_DATE
         val complement =
-          repository.findComplementOf(transactionDetail, firstAccountAndBudget.accountId)
+          repository.findComplementOf(transactionToMatch, firstAccountAndBudget.accountId)
 
         complementPairs += transactionDetail to complement
       }
@@ -100,10 +112,12 @@ class ActionCreator(
           UP_TO_DATE, CREATED, UPDATED -> false
           DELETED -> true
         }
-        isDeleted || when {
+        when {
+          isDeleted -> true
           transaction.flagColor == TransactionDetail.FlagColorEnum.RED ||
             complement?.flagColor == TransactionDetail.FlagColorEnum.RED -> false
-          !transaction.approved && !complementNeedsProcessing -> false
+          complementNeedsProcessing -> true
+          !transaction.approved -> false
           else -> true
         }
       }
@@ -147,7 +161,10 @@ class ActionCreator(
           complement = complement
         )
       }
-      UPDATED -> if (fromTransaction.getUpdatedFields(complement).isEmpty() && complement.getUpdatedFields(fromTransaction).isEmpty()) {
+      UPDATED -> if (
+        fromTransaction.getUpdatedFields(complement).isEmpty() &&
+        complement.getUpdatedFields(fromTransaction).isEmpty()
+      ) {
         MarkProcessed(
           fromTransaction = fromTransaction,
           complement = complement
@@ -188,18 +205,34 @@ class ActionCreator(
     complement: PublicTransactionDetail
   ): TransactionAction {
     val updatedFields = fromTransaction.getUpdatedFields(complement)
-    return if (updatedFields.isEmpty()) {
-      MarkProcessed(
-        fromTransaction = fromTransaction,
-        complement = complement
-      )
-    } else {
-      UpdateComplement(
-        fromTransaction = fromTransaction,
-        complement = complement,
-        updateFields = updatedFields,
-      )
+    val complementIsFromSplit = complement.isTransferFromSplitTransaction()
+    return when {
+      updatedFields.isEmpty() -> {
+        MarkProcessed(
+          fromTransaction = fromTransaction,
+          complement = complement
+        )
+      }
+      complementIsFromSplit -> {
+        MarkError(
+          fromTransaction = fromTransaction,
+          complement = complement,
+          message = UPDATED_TRANSFER_FROM_SPLIT
+        )
+      }
+      else -> {
+        UpdateComplement(
+          fromTransaction = fromTransaction,
+          complement = complement,
+          updateFields = updatedFields,
+        )
+      }
     }
+  }
+
+  private fun PublicTransactionDetail.isTransferFromSplitTransaction(): Boolean {
+    return transferTransactionId != null &&
+      repository.getSubTransactionsByTransferTransactionId(transferTransactionId) != null
   }
 
   private fun PublicTransactionDetail.getUpdatedFields(

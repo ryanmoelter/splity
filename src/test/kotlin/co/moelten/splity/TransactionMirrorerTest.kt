@@ -774,7 +774,7 @@ internal class TransactionMirrorerTest : FunSpec({
       setUpServerDatabase {
         addTransactions(
           transactionTransferSplitSource(),
-          transactionAddedFromTransfer().copy(approved = false)
+          transactionAddedFromTransfer(isFromSplitSource = true).copy(approved = false)
         )
       }
 
@@ -787,28 +787,28 @@ internal class TransactionMirrorerTest : FunSpec({
         }
         localDatabase.shouldMatchServer(serverDatabase)
         localDatabase.shouldHaveAllTransactionsProcessedExcept(
-          setOf(transactionAddedFromTransfer().id)
+          setOf(transactionAddedFromTransfer(isFromSplitSource = true).id)
         )
       }
 
-      context("once approved") {
+      context("when approved") {
         transactionMirrorer.mirrorTransactions()
         setUpServerDatabase {
-          addTransactions(transactionAddedFromTransfer())
+          addTransactions(transactionAddedFromTransfer(isFromSplitSource = true))
         }
 
         test("the approved transaction is mirrored") {
           transactionMirrorer.mirrorTransactions()
 
-          transactionAddedFromTransfer().complementOnServerShould(
+          transactionAddedFromTransfer(isFromSplitSource = true).complementOnServerShould(
             serverDatabase,
             TO_ACCOUNT_AND_BUDGET
           ) {
             approved.shouldBeFalse()
 
-            amount shouldBe -transactionAddedFromTransfer().amount
+            amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
             importId shouldBe "splity:-10000:2020-02-07:1"
-            date shouldBe transactionAddedFromTransfer().date
+            date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
             payeeName shouldBe transactionTransferSplitSource().payeeName
             memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
             cleared shouldBe CLEARED
@@ -819,13 +819,13 @@ internal class TransactionMirrorerTest : FunSpec({
           localDatabase.shouldHaveAllTransactionsProcessed()
         }
 
-        // TODO: Update the app to properly error on updates and unignore this
-        xcontext("when the complement is updated") {
+        context("when the complement is updated") {
           transactionMirrorer.mirrorTransactions()
           val existingComplement = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-            .find { it isComplementOf transactionAddedFromTransfer().toApiTransaction() }!!
+            .find { it isComplementOf transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction() }!!
             .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
           val updatedComplement = existingComplement
+            .copy(approved = true)
             .copy(amount = -15_000)
           setUpServerDatabase {
             addTransactions(updatedComplement)
@@ -849,7 +849,9 @@ internal class TransactionMirrorerTest : FunSpec({
                 deleted.shouldBeFalse()
               }
               localDatabase.shouldMatchServer(serverDatabase)
-              localDatabase.shouldHaveAllTransactionsProcessed()
+              localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                setOf(updatedComplement.id)
+              )
             }
           }
         }
@@ -861,7 +863,11 @@ internal class TransactionMirrorerTest : FunSpec({
               TO_ACCOUNT_ID,
               listOf(
                 serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-                  .find { it isComplementOf transactionAddedFromTransfer().toApiTransaction() }!!
+                  .find {
+                    it.isComplementOf(
+                      transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction()
+                    )
+                  }!!
                   .copy(approved = true)
               )
             )
@@ -928,7 +934,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(transactionAddedFromTransfer().toApiTransaction())
+            listOf(transactionAddedFromTransfer(isFromSplitSource = false).toApiTransaction())
           )
           addOrUpdateTransactionsForAccount(
             FROM_TRANSFER_SOURCE_ACCOUNT_ID,
@@ -937,15 +943,15 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         }
 
         mirrorTransactionMirrorsTransaction(
-          transactionToMirror = transactionAddedFromTransfer(),
+          transactionToMirror = transactionAddedFromTransfer(isFromSplitSource = false),
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         ) {
-          amount shouldBe -transactionAddedFromTransfer().amount
+          amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
           importId shouldBe "splity:-10000:2020-02-07:1"
-          date shouldBe transactionAddedFromTransfer().date
+          date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
           payeeName shouldBe "Chicken Butt"
           memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
           cleared shouldBe CLEARED
@@ -958,21 +964,25 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       context("with a split transfer") {
         setUpServerDatabase {
           addTransactions(
-            transactionAddedFromTransfer(),
+            transactionAddedFromTransfer(isFromSplitSource = true),
             transactionTransferSplitSource()
           )
         }
 
         mirrorTransactionMirrorsTransaction(
-          transactionToMirror = transactionAddedFromTransfer(),
+          transactionToMirror = transactionAddedFromTransfer(isFromSplitSource = true),
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         ) {
-          amount shouldBe -transactionAddedFromTransfer().amount
-          importId shouldBe "splity:${-transactionAddedFromTransfer().amount}:${transactionAddedFromTransfer().date}:1"
-          date shouldBe transactionAddedFromTransfer().date
+          amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
+          importId shouldBe "splity:${
+            -transactionAddedFromTransfer(isFromSplitSource = true).amount
+          }:${
+            transactionAddedFromTransfer(isFromSplitSource = true).date
+          }:1"
+          date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
           payeeName shouldBe transactionTransferSplitSource().payeeName
           memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
           cleared shouldBe CLEARED
@@ -983,9 +993,10 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       }
 
       context("with a recurring split transaction") {
-        val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer().copy(
-          id = transactionAddedFromTransfer().id + "_st_1_2020-06-20"
-        )
+        val transactionAddedFromTransferWithLongId =
+          transactionAddedFromTransfer(isFromSplitSource = true).copy(
+            id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
+          )
 
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
@@ -1016,7 +1027,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
         ) {
           amount shouldBe -transactionAddedFromTransferWithLongId.amount
-          importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
+          importId shouldBe "splity:${
+            -transactionAddedFromTransferWithLongId.amount
+          }:${
+            transactionAddedFromTransferWithLongId.date
+          }:1"
           date shouldBe transactionAddedFromTransferWithLongId.date
           payeeName shouldBe transactionTransferSplitSource().payeeName
           memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
