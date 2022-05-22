@@ -1,7 +1,6 @@
 package co.moelten.splity.database
 
 import co.moelten.splity.database.UpdateField.AMOUNT
-import co.moelten.splity.database.UpdateField.CLEAR
 import co.moelten.splity.database.UpdateField.DATE
 import co.moelten.splity.database.UpdateField.values
 import co.moelten.splity.models.PublicTransactionDetail
@@ -10,7 +9,6 @@ import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
-import com.youneedabudget.client.models.TransactionDetail
 
 fun StoredTransaction.toReplacedTransaction() = ReplacedTransaction(
   id = id,
@@ -64,14 +62,12 @@ fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
   return values()
     .filter { updateField ->
       when (updateField) {
-        CLEAR -> approved && !replaced.approved // Newly approved -> clear complement
         AMOUNT -> amount != replaced.amount
         DATE -> date != replaced.date
       }
     }
     .filter { updateField ->
       complement == null || when (updateField) {
-        CLEAR -> complement.cleared != TransactionDetail.ClearedEnum.CLEARED
         AMOUNT -> complement.amount != -amount
         DATE -> complement.date != date
       }
@@ -80,5 +76,5 @@ fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
 }
 
 enum class UpdateField(val shouldNotify: Boolean) {
-  CLEAR(false), AMOUNT(true), DATE(true),
+  AMOUNT(true), DATE(true),
 }

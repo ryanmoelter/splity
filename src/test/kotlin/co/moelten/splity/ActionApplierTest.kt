@@ -1,8 +1,6 @@
 package co.moelten.splity
 
-import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
-import co.moelten.splity.database.UpdateField
 import co.moelten.splity.database.plus
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
@@ -10,7 +8,6 @@ import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.isComplementOf
 import co.moelten.splity.test.shouldContainSingleComplementOf
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
-import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.test.toPublicTransactionDetail
 import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.database.Database
@@ -196,33 +193,5 @@ class ActionApplierTest : FunSpec({
       approved.shouldBeFalse()
       accountId shouldBe TO_ACCOUNT_ID.plainUuid
     }
-  }
-
-  test("update approved") {
-    setUpServerDatabase {
-      setUpBudgetsAndAccounts(fromBudget to listOf(FROM_ACCOUNT))
-      addTransactions(manuallyAddedTransaction())
-    }
-
-    setUpLocalDatabase {
-      addTransactions(
-        manuallyAddedTransaction(UP_TO_DATE),
-        manuallyAddedTransactionComplement(UPDATED)
-      )
-    }
-
-    actionApplier.applyActions(
-      TransactionAction.UpdateComplement(
-        fromTransaction = manuallyAddedTransactionComplement(UPDATED),
-        complement = manuallyAddedTransaction(),
-        updateFields = setOf(UpdateField.CLEAR),
-      )
-    )
-
-    serverDatabase.getTransactionById(manuallyAddedTransaction().id) shouldBe
-      manuallyAddedTransaction().copy(cleared = TransactionDetail.ClearedEnum.CLEARED)
-        .toApiTransaction()
-
-    localDatabase.shouldHaveAllTransactionsProcessed()
   }
 })

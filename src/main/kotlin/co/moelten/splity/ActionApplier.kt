@@ -9,14 +9,12 @@ import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.Repository
 import co.moelten.splity.database.UpdateField
 import co.moelten.splity.database.UpdateField.AMOUNT
-import co.moelten.splity.database.UpdateField.CLEAR
 import co.moelten.splity.database.UpdateField.DATE
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
-import com.youneedabudget.client.models.TransactionDetail
 import me.tatarka.inject.annotations.Inject
 import kotlin.math.absoluteValue
 
@@ -97,13 +95,11 @@ class ActionApplier(
 
   private suspend fun applyUpdate(action: UpdateComplement): Unit = with(action) {
     if (updateFields.isNotEmpty()) {
-      var cleared = complement.cleared
       var amount = complement.amount
       var date = complement.date
       val shouldNotify = updateFields.any { it.shouldNotify }
       updateFields.forEach { updateField ->
         when (updateField) {
-          CLEAR -> cleared = TransactionDetail.ClearedEnum.CLEARED
           AMOUNT -> amount = -fromTransaction.amount
           DATE -> date = fromTransaction.date
         }
@@ -121,7 +117,7 @@ class ActionApplier(
             payeeName = complement.payeeName,
             categoryId = complement.categoryId?.plainUuid,
             memo = complement.memo,
-            cleared = cleared.toSaveTransactionClearedEnum(),
+            cleared = complement.cleared.toSaveTransactionClearedEnum(),
             approved = if (shouldNotify) {
               false
             } else {
@@ -270,6 +266,9 @@ sealed interface TransactionAction {
     companion object ErrorMessages {
       const val BOTH_UPDATED = "Both this and its complement have been updated; update both to " +
         "the same amount and date to bring them back in sync."
+      const val UPDATED_TRANSFER_FROM_SPLIT = "Mirrors of transfers from split transactions " +
+        "can't be updated, so the change has been undone. Change the mirror of this transaction " +
+        "in the other budget instead."
       const val UPDATED_WITHOUT_COMPLEMENT = "This updated transaction has no complement; this " +
         "shouldn't be possible, so delete this transaction and re-create it to get things back " +
         "in sync."

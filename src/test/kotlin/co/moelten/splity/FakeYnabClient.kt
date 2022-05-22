@@ -106,7 +106,10 @@ class FakeTransactions(
     }
     val newTransactionDetail = data.transaction!!.toNewTransactionDetail()
     val accountId = data.transaction!!.accountId.toAccountId()
-    fakeYnabServerDatabase.addOrUpdateTransactionsForAccount(accountId, listOf(newTransactionDetail))
+    fakeYnabServerDatabase.addOrUpdateTransactionsForAccount(
+      accountId,
+      listOf(newTransactionDetail)
+    )
 
     return SaveTransactionsResponse(
       SaveTransactionsResponseData(
@@ -194,6 +197,27 @@ class FakeTransactions(
     transactionId: String,
     data: SaveTransactionWrapper
   ): TransactionResponse {
+    // TODO: Uncomment this
+//    val isTransferFromSplit = (fakeYnabServerDatabase.getTransactionById(transactionId.toTransactionId())
+//      ?: error("Cannot find transaction to update in server database with id $transactionId"))
+//      .let { transaction ->
+//        if (transaction.transferTransactionId != null) {
+//          fakeYnabServerDatabase
+//            .getTransactionsForAccount(transaction.accountId.toAccountId())
+//            .any { transactions ->
+//              transactions.subtransactions.any { subTransaction ->
+//                subTransaction.id == transaction.transferTransactionId
+//              }
+//            }
+//        } else {
+//          false
+//        }
+//      }
+//
+//    assert(isTransferFromSplit) {
+//      "Updating a transfer with a split source will cause them to silently break on the real API"
+//    }
+
     fakeYnabServerDatabase.budgetToAccountsMap
       .getValue(budgetId.toBudgetId())
       .map { account -> account.id.toAccountId() } shouldContain
