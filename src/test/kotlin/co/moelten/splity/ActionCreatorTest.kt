@@ -1,15 +1,12 @@
 package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState.CREATED
-import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
-import co.moelten.splity.database.UpdateField
 import co.moelten.splity.database.plus
 import co.moelten.splity.database.replaceOnly
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
-import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
@@ -154,33 +151,6 @@ class ActionCreatorTest : FunSpec({
         TransactionAction.MarkProcessed(
           manuallyAddedTransaction(CREATED),
           manuallyAddedTransactionComplementWithoutImportId
-        )
-      )
-    }
-
-    test("clear transaction on complement approved") {
-      val manuallyAddedTransactionComplementApproved =
-        manuallyAddedTransactionComplement(UPDATED).copy(approved = true)
-      val existingManuallyAddedTransactionComplement =
-        manuallyAddedTransactionComplement(UP_TO_DATE)
-      val existingManuallyAddedTransaction =
-        manuallyAddedTransaction(UP_TO_DATE)
-
-      setUpLocalDatabase {
-        addReplacedTransactions(existingManuallyAddedTransactionComplement)
-        addTransactions(
-          manuallyAddedTransactionComplementApproved,
-          existingManuallyAddedTransaction
-        )
-      }
-
-      val actions = actionCreater.createDifferentialActionsForBothAccounts()
-
-      actions.shouldContainExactly(
-        TransactionAction.UpdateComplement(
-          fromTransaction = manuallyAddedTransactionComplementApproved,
-          complement = existingManuallyAddedTransaction,
-          updateFields = setOf(UpdateField.CLEAR),
         )
       )
     }
