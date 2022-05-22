@@ -819,7 +819,7 @@ internal class TransactionMirrorerTest : FunSpec({
           localDatabase.shouldHaveAllTransactionsProcessed()
         }
 
-        // TODO: Update the app to properly error on updates and do this
+        // TODO: Update the app to properly error on updates and unignore this
         xcontext("when the complement is updated") {
           transactionMirrorer.mirrorTransactions()
           val existingComplement = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)

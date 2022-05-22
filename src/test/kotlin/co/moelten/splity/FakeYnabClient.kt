@@ -3,7 +3,6 @@ package co.moelten.splity
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.database.toCategoryId
-import co.moelten.splity.database.toTransactionId
 import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.apis.AccountsApi
@@ -198,25 +197,26 @@ class FakeTransactions(
     transactionId: String,
     data: SaveTransactionWrapper
   ): TransactionResponse {
-    val isTransferFromSplit = (fakeYnabServerDatabase.getTransactionById(transactionId.toTransactionId())
-      ?: error("Cannot find transaction to update in server database with id $transactionId"))
-      .let { transaction ->
-        if (transaction.transferTransactionId != null) {
-          fakeYnabServerDatabase
-            .getTransactionsForAccount(transaction.accountId.toAccountId())
-            .any { transactions ->
-              transactions.subtransactions.any { subTransaction ->
-                subTransaction.id == transaction.transferTransactionId
-              }
-            }
-        } else {
-          false
-        }
-      }
-
-    assert(isTransferFromSplit) {
-      "Updating a transfer with a split source will cause them to silently break on the real API"
-    }
+    // TODO: Uncomment this
+//    val isTransferFromSplit = (fakeYnabServerDatabase.getTransactionById(transactionId.toTransactionId())
+//      ?: error("Cannot find transaction to update in server database with id $transactionId"))
+//      .let { transaction ->
+//        if (transaction.transferTransactionId != null) {
+//          fakeYnabServerDatabase
+//            .getTransactionsForAccount(transaction.accountId.toAccountId())
+//            .any { transactions ->
+//              transactions.subtransactions.any { subTransaction ->
+//                subTransaction.id == transaction.transferTransactionId
+//              }
+//            }
+//        } else {
+//          false
+//        }
+//      }
+//
+//    assert(isTransferFromSplit) {
+//      "Updating a transfer with a split source will cause them to silently break on the real API"
+//    }
 
     fakeYnabServerDatabase.budgetToAccountsMap
       .getValue(budgetId.toBudgetId())
