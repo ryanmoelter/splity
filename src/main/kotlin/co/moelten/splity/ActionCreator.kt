@@ -204,7 +204,8 @@ class ActionCreator(
     fromTransaction: PublicTransactionDetail,
     complement: PublicTransactionDetail
   ): TransactionAction {
-    val updatedFields = fromTransaction.getUpdatedFields(complement)
+    val replaced = repository.getReplacedTransactionById(fromTransaction.id)
+    val updatedFields = fromTransaction.calculateUpdatedFieldsFrom(replaced, complement)
     val complementIsFromSplit = complement.isTransferFromSplitTransaction()
     return when {
       updatedFields.isEmpty() -> {
@@ -217,7 +218,8 @@ class ActionCreator(
         MarkError(
           fromTransaction = fromTransaction,
           complement = complement,
-          message = UPDATED_TRANSFER_FROM_SPLIT
+          message = UPDATED_TRANSFER_FROM_SPLIT,
+          revertFromTransactionUpdatedFieldsTo = replaced
         )
       }
       else -> {
