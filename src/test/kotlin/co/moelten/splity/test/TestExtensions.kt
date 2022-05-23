@@ -1,19 +1,12 @@
 package co.moelten.splity.test
 
 import co.moelten.splity.FakeYnabServerDatabase
-import co.moelten.splity.database.AccountId
-import co.moelten.splity.database.BudgetId
 import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.TransactionId
 import co.moelten.splity.database.replaceOnly
-import co.moelten.splity.database.toAccountId
-import co.moelten.splity.database.toCategoryId
-import co.moelten.splity.database.toPayeeId
 import co.moelten.splity.database.toPublicTransactionList
 import co.moelten.splity.database.toStoredSubTransaction
 import co.moelten.splity.database.toStoredTransaction
-import co.moelten.splity.database.toSubTransactionId
-import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.models.toPublicTransactionDetail
@@ -163,58 +156,4 @@ fun PublicSubTransaction.toApiSubTransaction(): SubTransaction = SubTransaction(
   categoryName = categoryName,
   transferAccountId = transferAccountId?.plainUuid,
   transferTransactionId = transferTransactionId?.string
-)
-
-fun List<TransactionDetail>.toPublicTransactionDetailList(
-  budgetId: BudgetId,
-  processedState: ProcessedState = ProcessedState.CREATED
-) = this.map { it.toPublicTransactionDetail(budgetId, processedState) }
-
-fun TransactionDetail.toPublicTransactionDetail(
-  budgetId: BudgetId,
-  processedState: ProcessedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED
-) =
-  PublicTransactionDetail(
-    id = id.toTransactionId(),
-    date = date,
-    amount = amount,
-    cleared = cleared,
-    approved = approved,
-    accountId = accountId.toAccountId(),
-    accountName = accountName,
-    memo = memo,
-    flagColor = flagColor,
-    payeeId = payeeId?.toPayeeId(),
-    categoryId = categoryId?.toCategoryId(),
-    transferAccountId = transferAccountId?.toAccountId(),
-    transferTransactionId = transferTransactionId?.toTransactionId(),
-    matchedTransactionId = matchedTransactionId?.toTransactionId(),
-    importId = importId,
-    payeeName = payeeName,
-    categoryName = categoryName,
-    processedState = processedState,
-    budgetId = budgetId,
-    subTransactions = this.subtransactions.map {
-      it.toPublicSubTransaction(accountId.toAccountId(), budgetId, processedState)
-    }
-  )
-
-fun SubTransaction.toPublicSubTransaction(
-  accountId: AccountId,
-  budgetId: BudgetId,
-  processedState: ProcessedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED
-) = PublicSubTransaction(
-  id = id.toSubTransactionId(),
-  transactionId = transactionId.toTransactionId(),
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId?.toPayeeId(),
-  payeeName = payeeName,
-  categoryId = categoryId?.toCategoryId(),
-  categoryName = categoryName,
-  transferAccountId = transferAccountId?.toAccountId(),
-  transferTransactionId = transferTransactionId?.toTransactionId(),
-  processedState = processedState,
-  accountId = accountId,
-  budgetId = budgetId
 )

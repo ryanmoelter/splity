@@ -1,9 +1,12 @@
 package co.moelten.splity
 
+import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.database.toCategoryId
+import co.moelten.splity.database.toPayeeId
 import co.moelten.splity.database.toTransactionId
+import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.apis.AccountsApi
@@ -24,11 +27,13 @@ import com.youneedabudget.client.models.HybridTransactionsResponse
 import com.youneedabudget.client.models.SaveCategoryResponse
 import com.youneedabudget.client.models.SaveCategoryResponseData
 import com.youneedabudget.client.models.SaveMonthCategoryWrapper
+import com.youneedabudget.client.models.SaveSubTransaction
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsResponse
 import com.youneedabudget.client.models.SaveTransactionsResponseData
 import com.youneedabudget.client.models.SaveTransactionsWrapper
+import com.youneedabudget.client.models.SubTransaction
 import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionResponse
 import com.youneedabudget.client.models.TransactionResponseData
@@ -223,10 +228,52 @@ class FakeTransactions(
 
     fakeYnabServerDatabase.budgetToAccountsMap
       .getValue(budgetId.toBudgetId())
-      .map { account -> account.id.toAccountId() } shouldContain
-      data.transaction.accountId.toAccountId()
+      .map { account -> account.id.toAccountId() }
+      .shouldContain(data.transaction.accountId.toAccountId())
 
     val newTransaction = fakeYnabServerDatabase.updateTransaction(transactionId, data.transaction)
+
+    val payeeIds = fakeYnabServerDatabase.budgetToAccountsMap
+      .getValue(budgetId.toBudgetId())
+      .map { account -> account.transferPayeeId.toPayeeId() }
+      .toSet()
+
+    // Create transfers for subtransactions
+    newTransaction.subtransactions
+      .filter { payeeIds.contains(it.payeeId?.toPayeeId()) }
+      .forEach { subTransaction ->
+        val transferTargetAccount = (
+          fakeYnabServerDatabase.budgetToAccountsMap[budgetId.toBudgetId()]!!
+            .find { it.transferPayeeId == subTransaction.payeeId }
+            ?: error("Cannot split into non-existent account with payeeId: ${subTransaction.payeeId}")
+          )
+        fakeYnabServerDatabase.addTransactions(
+          with(subTransaction) {
+            PublicTransactionDetail(
+              id = UUID.randomUUID().toTransactionId(),
+              date = newTransaction.date,
+              accountId = transferTargetAccount.id.toAccountId(),
+              accountName = transferTargetAccount.name,
+              amount = -amount,
+              payeeId = null,
+              payeeName = "Transfer : ${newTransaction.accountName}",
+              categoryId = null,
+              categoryName = null,
+              memo = memo,
+              cleared = TransactionDetail.ClearedEnum.UNCLEARED,
+              approved = newTransaction.approved,
+              flagColor = null,
+              importId = null,
+              transferAccountId = newTransaction.accountId.toAccountId(),
+              transferTransactionId = subTransaction.id.toTransactionId(),
+              matchedTransactionId = null,
+              subTransactions = emptyList(),
+              processedState = ProcessedState.CREATED,
+              budgetId = budgetId.toBudgetId(),
+            )
+          }
+        )
+      }
 
     return TransactionResponse(TransactionResponseData(newTransaction))
   }
@@ -290,25 +337,45 @@ fun SaveTransaction.toNewTransactionDetail(
   id: String = UUID.randomUUID().toString(),
   oldTransaction: TransactionDetail? = null
 ) = TransactionDetail(
-  id,
-  date,
-  amount,
-  cleared?.toTransactionDetailClearedEnum() ?: TransactionDetail.ClearedEnum.UNCLEARED,
-  approved ?: false,
-  accountId,
-  false,
-  oldTransaction?.accountName ?: "",
-  if (subtransactions.isNullOrEmpty()) emptyList() else TODO("Add sub-transaction support"),
-  memo,
-  flagColor?.toRegularFlagColorEnum(),
-  payeeId,
-  categoryId,
-  null,
-  null,
-  null,
-  importId,
-  payeeName ?: oldTransaction?.payeeName,
-  oldTransaction?.categoryName ?: ""
+  id = id,
+  date = date,
+  amount = amount,
+  cleared = cleared?.toTransactionDetailClearedEnum() ?: TransactionDetail.ClearedEnum.UNCLEARED,
+  approved = approved ?: false,
+  accountId = accountId,
+  deleted = false,
+  accountName = oldTransaction?.accountName ?: "",
+  subtransactions = if (subtransactions.isNullOrEmpty()) {
+    emptyList()
+  } else {
+    subtransactions!!.map { it.toNewSubTransaction(id) }
+  },
+  memo = memo,
+  flagColor = flagColor?.toRegularFlagColorEnum(),
+  payeeId = payeeId,
+  categoryId = categoryId,
+  transferAccountId = null,
+  transferTransactionId = null,
+  matchedTransactionId = null,
+  importId = importId,
+  payeeName = payeeName ?: oldTransaction?.payeeName,
+  categoryName = oldTransaction?.categoryName ?: ""
+)
+
+fun SaveSubTransaction.toNewSubTransaction(
+  transactionId: String
+) = SubTransaction(
+  id = UUID.randomUUID().toString(),
+  transactionId = transactionId,
+  amount = amount,
+  deleted = false,
+  memo = memo,
+  payeeId = payeeId,
+  payeeName = payeeName,
+  categoryId = categoryId,
+  categoryName = null,
+  transferAccountId = null,  // TODO
+  transferTransactionId = null,  // TODO
 )
 
 private fun SaveTransaction.ClearedEnum.toTransactionDetailClearedEnum() = when (this) {

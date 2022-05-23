@@ -6,6 +6,8 @@ import co.moelten.splity.database.ProcessedState.UPDATED
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
 import co.moelten.splity.database.replaceOnly
+import co.moelten.splity.database.toPublicTransactionDetail
+import co.moelten.splity.database.toPublicTransactionDetailList
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.models.PublicTransactionDetail
 import co.moelten.splity.test.Setup
@@ -21,25 +23,28 @@ import co.moelten.splity.test.shouldMatchServer
 import co.moelten.splity.test.shouldNotContainComplementOf
 import co.moelten.splity.test.syncServerKnowledge
 import co.moelten.splity.test.toApiTransaction
-import co.moelten.splity.test.toPublicTransactionDetail
-import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.BLUE
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.core.test.AssertionMode
+import io.kotest.inspectors.shouldForAny
 import io.kotest.inspectors.shouldForOne
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import org.threeten.bp.LocalDate
 
 // This file is a bit long, cmd+shift+- (Collapse all) is your friend
 
@@ -79,10 +84,11 @@ internal class TransactionMirrorerTest : FunSpec({
           NO_SERVER_KNOWLEDGE,
           FROM_BUDGET_ID,
           FROM_ACCOUNT_ID,
+          FROM_ACCOUNT_PAYEE_ID,
           NO_SERVER_KNOWLEDGE,
           TO_BUDGET_ID,
           TO_ACCOUNT_ID,
-          shouldMatchTransactions = false
+          TO_ACCOUNT_PAYEE_ID
         )
       )
       addTransactions(
@@ -115,10 +121,7 @@ internal class TransactionMirrorerTest : FunSpec({
         .copy(amount = -150_000)
       setUpServerDatabase {
         addTransactions(anotherUnremarkableTransactionInTransferSource())
-        updateTransaction(
-          updatedUnremarkableTransaction.id.string,
-          updatedUnremarkableTransaction.toSaveTransaction()
-        )
+        addTransactions(updatedUnremarkableTransaction)
       }
       val beginningServerKnowledge = serverDatabase.currentServerKnowledge
 
@@ -1140,6 +1143,98 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       }
     }
   }
+
+  context("with a purple-flagged transaction in another account") {
+    setUpServerDatabase {
+      addTransactions(unremarkableTransactionInTransferSource().copy(flagColor = PURPLE))
+    }
+
+    test("should mirror transaction") {
+      transactionMirrorer.mirrorTransactions()
+
+      val halfAmount = unremarkableTransactionInTransferSource().amount / 2
+
+      withClue("Newly-split transaction") {
+        unremarkableTransactionInTransferSource().thisOnServerShould(serverDatabase) {
+          date shouldBe unremarkableTransactionInTransferSource().date
+          payeeId shouldBe unremarkableTransactionInTransferSource().payeeId?.plainUuid
+          payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
+          memo shouldBe unremarkableTransactionInTransferSource().memo
+          cleared shouldBe CLEARED
+          approved.shouldBeTrue()
+          deleted.shouldBeFalse()
+          accountId shouldBe FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid
+          // TODO: categoryId.shouldBeNull()
+          subtransactions.shouldForAny { subTransaction ->
+            with(subTransaction) {
+              transactionId shouldBe unremarkableTransactionInTransferSource().id.string
+              amount shouldBe halfAmount
+              deleted.shouldBeFalse()
+              memo.shouldBeNull()
+              payeeId shouldBe FROM_ACCOUNT_PAYEE_ID.plainUuid
+              payeeName.shouldBeNull()
+              categoryId.shouldBeNull()
+              // TODO: fix limitation of our fake backend
+              // transferAccountId shouldBe FROM_ACCOUNT_ID
+              // transferTransactionId.shouldNotBeNull()
+            }
+          }
+          subtransactions.shouldForAny { subTransaction ->
+            with(subTransaction) {
+              transactionId shouldBe unremarkableTransactionInTransferSource().id.string
+              amount shouldBe halfAmount
+              deleted.shouldBeFalse()
+              memo.shouldBeNull()
+              payeeId.shouldBeNull()
+              payeeName.shouldBeNull()
+              categoryId shouldBe unremarkableTransactionInTransferSource().categoryId!!.plainUuid
+              transferAccountId.shouldBeNull()
+              transferTransactionId.shouldBeNull()
+            }
+          }
+        }
+      }
+
+      withClue("Generated split transaction") {
+        complementOnServerShould(
+          -halfAmount,
+          unremarkableTransactionInTransferSource().date,
+          serverDatabase,
+          FROM_ACCOUNT_AND_BUDGET
+        ) {
+          importId shouldBe null
+          date shouldBe unremarkableTransactionInTransferSource().date
+          payeeName shouldBe "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME"
+          memo shouldBe null
+          cleared shouldBe UNCLEARED
+          approved.shouldBeTrue()
+          deleted.shouldBeFalse()
+          accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+        }
+      }
+
+      withClue("Mirrored complement transaction") {
+        complementOnServerShould(
+          halfAmount,
+          unremarkableTransactionInTransferSource().date,
+          serverDatabase,
+          TO_ACCOUNT_AND_BUDGET
+        ) {
+          importId shouldBe "splity:${halfAmount}:${unremarkableTransactionInTransferSource().date}:1"
+          date shouldBe unremarkableTransactionInTransferSource().date
+          payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
+          memo shouldBe unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
+          cleared shouldBe CLEARED
+          approved.shouldBeFalse()
+          deleted.shouldBeFalse()
+          accountId shouldBe TO_ACCOUNT_ID.plainUuid
+        }
+      }
+
+      localDatabase.shouldMatchServer(serverDatabase)
+      localDatabase.shouldHaveAllTransactionsProcessed()
+    }
+  }
 }
 
 private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
@@ -1210,6 +1305,29 @@ private fun PublicTransactionDetail.complementOnServerShould(
 
   val complement = transactionsInToAccount.find { transaction ->
     transaction.toPublicTransactionDetail(complementAccountAndBudget.budgetId) isComplementOf this
+  }!!
+
+  withClue("For complement $complement") {
+    assertSoftly(complement, assertSoftly)
+  }
+}
+
+private fun complementOnServerShould(
+  complementAmount: Long,
+  complementDate: LocalDate,
+  serverDatabase: FakeYnabServerDatabase,
+  complementAccountAndBudget: AccountAndBudget,
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+) {
+  val transactionsInToAccount =
+    serverDatabase.getTransactionsForAccount(complementAccountAndBudget.accountId)
+
+  transactionsInToAccount.shouldForAny { transaction ->
+    transaction.date == complementDate && transaction.amount == complementAmount
+  }
+
+  val complement = transactionsInToAccount.find { transaction ->
+    transaction.date == complementDate && transaction.amount == complementAmount
   }!!
 
   withClue("For complement $complement") {

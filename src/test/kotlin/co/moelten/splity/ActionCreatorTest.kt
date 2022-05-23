@@ -30,10 +30,11 @@ class ActionCreatorTest : FunSpec({
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,
           firstAccountId = FROM_ACCOUNT_ID,
+          firstAccountPayeeId = FROM_ACCOUNT_PAYEE_ID,
           secondServerKnowledge = 0,
           secondBudgetId = TO_BUDGET_ID,
           secondAccountId = TO_ACCOUNT_ID,
-          shouldMatchTransactions = true
+          secondAccountPayeeId = TO_ACCOUNT_PAYEE_ID
         )
       )
     }
@@ -95,9 +96,10 @@ class ActionCreatorTest : FunSpec({
     }
 
     test("ignore complement with recurring split") {
-      val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer(isFromSplitSource = true).copy(
-        id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
-      )
+      val transactionAddedFromTransferWithLongId =
+        transactionAddedFromTransfer(isFromSplitSource = true).copy(
+          id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
+        )
       val transactionAddedFromTransferWithLongIdComplement =
         transactionAddedFromTransferWithLongId.copy(
           id = "085a3584-2cc0-4570-b0f2-087eb61c3944".toTransactionId(),
@@ -173,10 +175,11 @@ class ActionCreatorTest : FunSpec({
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,
           firstAccountId = FROM_ACCOUNT_ID,
+          firstAccountPayeeId = FROM_ACCOUNT_PAYEE_ID,
           secondServerKnowledge = 0,
           secondBudgetId = TO_BUDGET_ID,
           secondAccountId = TO_ACCOUNT_ID,
-          shouldMatchTransactions = true
+          secondAccountPayeeId = TO_ACCOUNT_PAYEE_ID
         )
       )
     }

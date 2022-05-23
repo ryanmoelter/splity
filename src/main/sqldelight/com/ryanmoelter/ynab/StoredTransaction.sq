@@ -44,17 +44,11 @@ FROM storedTransaction
 WHERE id = ?
 ;
 
-getByTransferId:
-SELECT *
-FROM storedTransaction
-WHERE transferTransactionId = ?
-;
-
 getBySubTransactionTransferId:
 WITH targetTransactionId AS (
   SELECT transactionId
   FROM storedSubTransaction
-  WHERE transferTransactionId = ?
+  WHERE id = ?
 )
 SELECT *
 FROM storedTransaction
@@ -81,6 +75,15 @@ SELECT *
 FROM storedTransaction
 WHERE accountId NOT IN :accountsToExclude
   AND processedState != "UP_TO_DATE"
+ORDER BY date ASC
+;
+
+getUnprocessedAndFlaggedExcept:
+SELECT *
+FROM storedTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+  AND flagColor IS NOT NULL
 ORDER BY date ASC
 ;
 

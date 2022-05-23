@@ -2,9 +2,9 @@ package co.moelten.splity.database
 
 import co.moelten.splity.database.UpdateField.AMOUNT
 import co.moelten.splity.database.UpdateField.DATE
+import co.moelten.splity.database.UpdateField.FLAG
 import co.moelten.splity.database.UpdateField.values
 import co.moelten.splity.models.PublicTransactionDetail
-import co.moelten.splity.models.toPublicTransactionDetail
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredSubTransaction
@@ -46,12 +46,6 @@ fun StoredSubTransaction.toReplacedSubTransaction() = ReplacedSubTransaction(
   budgetId = budgetId
 )
 
-fun StoredTransaction.calculateUpdatedFieldsFrom(
-  replacedTransaction: StoredTransaction
-): Set<UpdateField> =
-  this.toPublicTransactionDetail(emptyList())
-    .calculateUpdatedFieldsFrom(replacedTransaction.toPublicTransactionDetail(emptyList()))
-
 fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
   replaced: PublicTransactionDetail,
   complement: PublicTransactionDetail? = null
@@ -64,17 +58,19 @@ fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
       when (updateField) {
         AMOUNT -> amount != replaced.amount
         DATE -> date != replaced.date
+        FLAG -> flagColor != replaced.flagColor
       }
     }
     .filter { updateField ->
       complement == null || when (updateField) {
         AMOUNT -> complement.amount != -amount
         DATE -> complement.date != date
+        FLAG -> true
       }
     }
     .toSet()
 }
 
-enum class UpdateField(val shouldNotify: Boolean) {
-  AMOUNT(true), DATE(true),
+enum class UpdateField(val updatesComplement: Boolean) {
+  AMOUNT(true), DATE(true), FLAG(false)
 }

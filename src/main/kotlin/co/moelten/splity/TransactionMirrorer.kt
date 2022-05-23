@@ -8,11 +8,16 @@ class TransactionMirrorer(
   private val repository: Repository,
   private val actionApplier: ActionApplier,
   private val actionCreator: ActionCreator,
+  private val transactionSplitter: TransactionSplitter,
   private val sentry: SentryWrapper
 ) {
   suspend fun mirrorTransactions() {
     sentry.doInSpan("Fetch new transactions") {
       repository.fetchNewTransactions()
+    }
+
+    sentry.doInSpan("Split flagged transactions") {
+      transactionSplitter.splitFlaggedTransactions()
     }
 
     val actions = sentry.doInSpan("Create actions") {

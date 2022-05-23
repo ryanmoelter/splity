@@ -78,9 +78,9 @@ data class FakeYnabServerDatabase(
     var result: TransactionDetail? = null
     accountToTransactionsMap = accountToTransactionsMap
       .mutateOrCreateValue(transaction.accountId.toAccountId()) { list ->
-        val originalTransaction = list.find { it.transactionDetail.id == transactionId }
+        val originalTransaction = list.find { it.transactionDetail.id == transactionId }!!
         val newTransaction =
-          transaction.toNewTransactionDetail(transactionId, originalTransaction?.transactionDetail)
+          transaction.toNewTransactionDetail(transactionId, originalTransaction.transactionDetail)
         result = newTransaction
 
         list.filter { it.transactionDetail.id != transactionId } +

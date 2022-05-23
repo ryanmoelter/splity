@@ -5,6 +5,7 @@ import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.SubTransactionId
 import co.moelten.splity.database.TransactionId
 import co.moelten.splity.database.toBudgetId
+import co.moelten.splity.database.toPublicTransactionDetail
 import co.moelten.splity.models.PublicTransactionDetail
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail

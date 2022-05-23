@@ -10,8 +10,12 @@ import co.moelten.splity.database.Repository
 import co.moelten.splity.database.UpdateField
 import co.moelten.splity.database.UpdateField.AMOUNT
 import co.moelten.splity.database.UpdateField.DATE
+import co.moelten.splity.database.UpdateField.FLAG
+import co.moelten.splity.database.UpdateField.values
+import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
+import com.youneedabudget.client.models.SaveSubTransaction
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsWrapper
@@ -43,14 +47,14 @@ class ActionApplier(
 
   private suspend fun applyCreate(action: CreateComplement) = with(action) {
     val transactionDescription = if (fromTransaction.transferAccountId != null) {
+      fromTransaction.transferTransactionId!!  // Shouldn't be null if transferAccountId isn't null
+
       val parentOfSplitTransaction =
-        repository.getTransactionBySubTransactionTransferId(fromTransaction.id)
+        repository.getTransactionBySubTransactionTransferId(fromTransaction.transferTransactionId)
 
       parentOfSplitTransaction
         ?.transactionDescription
-        ?: repository.getTransactionByTransferId(
-          fromTransaction.id
-        )!!
+        ?: repository.getTransactionById(fromTransaction.transferTransactionId)!!
           .let { transactionDetail ->
             TransactionDescription(
               "Chicken Butt",
@@ -94,14 +98,14 @@ class ActionApplier(
   }
 
   private suspend fun applyUpdate(action: UpdateComplement): Unit = with(action) {
-    if (updateFields.isNotEmpty()) {
+    if (updateFields.any { it.updatesComplement }) {
       var amount = complement.amount
       var date = complement.date
-      val shouldNotify = updateFields.any { it.shouldNotify }
       updateFields.forEach { updateField ->
         when (updateField) {
           AMOUNT -> amount = -fromTransaction.amount
           DATE -> date = fromTransaction.date
+          FLAG -> {}
         }
       }
 
@@ -118,22 +122,10 @@ class ActionApplier(
             categoryId = complement.categoryId?.plainUuid,
             memo = complement.memo,
             cleared = complement.cleared.toSaveTransactionClearedEnum(),
-            approved = if (shouldNotify) {
-              false
-            } else {
-              complement.approved
-            },
-            flagColor = if (shouldNotify) {
-              SaveTransaction.FlagColorEnum.BLUE
-            } else {
-              complement.flagColor?.toSaveTransactionFlagColorEnum()
-            },
+            approved = false,
+            flagColor = SaveTransaction.FlagColorEnum.BLUE,
             importId = complement.importId,
-            subtransactions = if (action.complement.subTransactions.isEmpty()) {
-              null
-            } else {
-              TODO("Handle subTransactions")
-            }
+            subtransactions = action.complement.subTransactions.map { it.toSaveSubTransaction() }
           )
         )
       )
@@ -176,10 +168,11 @@ class ActionApplier(
     var amount = action.fromTransaction.amount
     var date = action.fromTransaction.date
     if (action.revertFromTransactionUpdatedFieldsTo != null) {
-      UpdateField.values().forEach {
+      values().forEach {
         when (it) {
           AMOUNT -> amount = action.revertFromTransactionUpdatedFieldsTo.amount
           DATE -> date = action.revertFromTransactionUpdatedFieldsTo.date
+          FLAG -> {}
         }
       }
     }
@@ -245,11 +238,15 @@ fun PublicTransactionDetail.toSaveTransaction(): SaveTransaction = SaveTransacti
   approved = approved,
   flagColor = flagColor?.toSaveTransactionFlagColorEnum(),
   importId = importId,
-  subtransactions = if (subTransactions.isEmpty()) {
-    null
-  } else {
-    error("Unsupported: subTransactions on a SaveTransaction")
-  }
+  subtransactions = subTransactions.map { it.toSaveSubTransaction() }
+)
+
+fun PublicSubTransaction.toSaveSubTransaction(): SaveSubTransaction = SaveSubTransaction(
+  amount = amount,
+  payeeId = payeeId?.plainUuid,
+  payeeName = payeeName,
+  categoryId = categoryId?.plainUuid,
+  memo = memo,
 )
 
 sealed interface TransactionAction {
