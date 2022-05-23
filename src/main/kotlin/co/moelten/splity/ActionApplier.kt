@@ -22,6 +22,8 @@ import com.youneedabudget.client.models.SaveTransactionsWrapper
 import me.tatarka.inject.annotations.Inject
 import kotlin.math.absoluteValue
 
+const val MAX_MEMO_LENGTH = 200
+
 @Inject
 class ActionApplier(
   val repository: Repository,
@@ -231,7 +233,7 @@ fun PublicTransactionDetail.toSaveTransaction(): SaveTransaction = SaveTransacti
   payeeId = payeeId?.plainUuid,
   payeeName = payeeName,
   categoryId = categoryId?.plainUuid,
-  memo = memo,
+  memo = memo?.take(MAX_MEMO_LENGTH),
   cleared = cleared.toSaveTransactionClearedEnum(),
   approved = approved,
   flagColor = flagColor?.toSaveTransactionFlagColorEnum(),
@@ -244,7 +246,7 @@ fun PublicSubTransaction.toSaveSubTransaction(): SaveSubTransaction = SaveSubTra
   payeeId = payeeId?.plainUuid,
   payeeName = payeeName,
   categoryId = categoryId?.plainUuid,
-  memo = memo,
+  memo = memo?.take(MAX_MEMO_LENGTH),
 )
 
 sealed interface TransactionAction {
