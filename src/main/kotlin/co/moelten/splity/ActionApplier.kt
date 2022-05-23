@@ -47,14 +47,12 @@ class ActionApplier(
 
   private suspend fun applyCreate(action: CreateComplement) = with(action) {
     val transactionDescription = if (fromTransaction.transferAccountId != null) {
-      fromTransaction.transferTransactionId!!  // Shouldn't be null if transferAccountId isn't null
-
       val parentOfSplitTransaction =
-        repository.getTransactionBySubTransactionTransferId(fromTransaction.transferTransactionId)
+        repository.getTransactionBySubTransactionTransferId(fromTransaction.id)
 
       parentOfSplitTransaction
         ?.transactionDescription
-        ?: repository.getTransactionById(fromTransaction.transferTransactionId)!!
+        ?: repository.getTransactionByTransferTransactionId(fromTransaction.id)!!
           .let { transactionDetail ->
             TransactionDescription(
               "Chicken Butt",

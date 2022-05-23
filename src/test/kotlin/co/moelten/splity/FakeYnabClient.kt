@@ -5,6 +5,8 @@ import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.database.toCategoryId
 import co.moelten.splity.database.toPayeeId
+import co.moelten.splity.database.toPublicSubTransaction
+import co.moelten.splity.database.toPublicTransactionDetail
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.MAX_IMPORT_ID_LENGTH
@@ -132,7 +134,11 @@ class FakeTransactions(
     budgetId: String,
     transactionId: String
   ): TransactionResponse {
-    TODO("Not yet implemented")
+    return TransactionResponse(
+      TransactionResponseData(
+        fakeYnabServerDatabase.getTransactionById(transactionId.toTransactionId())!!
+      )
+    )
   }
 
   override suspend fun getTransactions(
@@ -239,43 +245,61 @@ class FakeTransactions(
       .toSet()
 
     // Create transfers for subtransactions
-    newTransaction.subtransactions
-      .filter { payeeIds.contains(it.payeeId?.toPayeeId()) }
-      .forEach { subTransaction ->
-        val transferTargetAccount = (
-          fakeYnabServerDatabase.budgetToAccountsMap[budgetId.toBudgetId()]!!
-            .find { it.transferPayeeId == subTransaction.payeeId }
-            ?: error("Cannot split into non-existent account with payeeId: ${subTransaction.payeeId}")
-          )
-        fakeYnabServerDatabase.addTransactions(
-          with(subTransaction) {
-            PublicTransactionDetail(
-              id = UUID.randomUUID().toTransactionId(),
-              date = newTransaction.date,
-              accountId = transferTargetAccount.id.toAccountId(),
-              accountName = transferTargetAccount.name,
-              amount = -amount,
-              payeeId = null,
-              payeeName = "Transfer : ${newTransaction.accountName}",
-              categoryId = null,
-              categoryName = null,
-              memo = memo,
-              cleared = TransactionDetail.ClearedEnum.UNCLEARED,
-              approved = newTransaction.approved,
-              flagColor = null,
-              importId = null,
-              transferAccountId = newTransaction.accountId.toAccountId(),
-              transferTransactionId = subTransaction.id.toTransactionId(),
-              matchedTransactionId = null,
-              subTransactions = emptyList(),
-              processedState = ProcessedState.CREATED,
-              budgetId = budgetId.toBudgetId(),
+    val subTransactionUpdates = newTransaction.subtransactions
+      .map { subTransaction ->
+        if (payeeIds.contains(subTransaction.payeeId?.toPayeeId())) {
+          val transferTargetAccount = (
+            fakeYnabServerDatabase.budgetToAccountsMap[budgetId.toBudgetId()]!!
+              .find { it.transferPayeeId == subTransaction.payeeId }
+              ?: error("Cannot split into non-existent account with payeeId: ${subTransaction.payeeId}")
             )
-          }
-        )
+          val transferTransactionId = UUID.randomUUID().toTransactionId()
+          fakeYnabServerDatabase.addTransactions(
+            with(subTransaction) {
+              PublicTransactionDetail(
+                id = transferTransactionId,
+                date = newTransaction.date,
+                accountId = transferTargetAccount.id.toAccountId(),
+                accountName = transferTargetAccount.name,
+                amount = -amount,
+                payeeId = null,
+                payeeName = "Transfer : ${newTransaction.accountName}",
+                categoryId = null,
+                categoryName = null,
+                memo = memo,
+                cleared = TransactionDetail.ClearedEnum.UNCLEARED,
+                approved = newTransaction.approved,
+                flagColor = null,
+                importId = null,
+                transferAccountId = newTransaction.accountId.toAccountId(),
+                transferTransactionId = subTransaction.id.toTransactionId(),
+                matchedTransactionId = null,
+                subTransactions = emptyList(),
+                processedState = ProcessedState.CREATED,
+                budgetId = budgetId.toBudgetId(),
+              )
+            }
+          )
+
+          subTransaction.copy(
+            transferAccountId = transferTargetAccount.id,
+            transferTransactionId = transferTransactionId.string
+          )
+        } else {
+          subTransaction
+        }
       }
 
-    return TransactionResponse(TransactionResponseData(newTransaction))
+    fakeYnabServerDatabase.addTransactions(
+      newTransaction.toPublicTransactionDetail(budgetId.toBudgetId())
+        .copy(
+          subTransactions = subTransactionUpdates.map {
+            it.toPublicSubTransaction(newTransaction.accountId.toAccountId(), budgetId.toBudgetId())
+          }
+        )
+    )
+
+    return getTransactionById(budgetId = budgetId, transactionId = newTransaction.id)
   }
 
   override suspend fun updateTransactions(

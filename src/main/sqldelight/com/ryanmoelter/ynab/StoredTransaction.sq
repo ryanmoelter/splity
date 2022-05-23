@@ -44,11 +44,17 @@ FROM storedTransaction
 WHERE id = ?
 ;
 
+getByTransferId:
+SELECT *
+FROM storedTransaction
+WHERE transferTransactionId = ?
+;
+
 getBySubTransactionTransferId:
 WITH targetTransactionId AS (
   SELECT transactionId
   FROM storedSubTransaction
-  WHERE id = ?
+  WHERE transferTransactionId = ?
 )
 SELECT *
 FROM storedTransaction

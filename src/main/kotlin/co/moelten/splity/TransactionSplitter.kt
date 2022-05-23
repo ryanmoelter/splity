@@ -23,11 +23,13 @@ class TransactionSplitter(
         listOf(syncData.firstAccountId, syncData.secondAccountId)
       )
         .filter { it.flagColor == PURPLE }
+        .filter { it.subTransactions.isEmpty() }
 
     unprocessedFlaggedTransactions
-      .forEach {
-        it.splitIntoSplitAccount(
-          splitAccountPayeeId = if (it.budgetId == syncData.firstBudgetId) {
+      .forEach { transaction ->
+        println("Splitting transaction: $transaction")
+        transaction.splitIntoSplitAccount(
+          splitAccountPayeeId = if (transaction.budgetId == syncData.firstBudgetId) {
             syncData.firstAccountPayeeId
           } else {
             syncData.secondAccountPayeeId
