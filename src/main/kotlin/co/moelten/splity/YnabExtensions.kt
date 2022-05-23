@@ -2,12 +2,13 @@ package co.moelten.splity
 
 import co.moelten.splity.database.AccountId
 import co.moelten.splity.database.BudgetId
+import co.moelten.splity.database.PayeeId
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.TransactionDetail
 import kotlin.math.absoluteValue
 
-data class AccountAndBudget(val accountId: AccountId, val budgetId: BudgetId)
+data class AccountAndBudget(val accountId: AccountId, val accountPayeeId: PayeeId, val budgetId: BudgetId)
 data class TransactionDescription(val payeeName: String?, val memo: String?, val totalAmount: Long)
 
 val PublicTransactionDetail.transactionDescription

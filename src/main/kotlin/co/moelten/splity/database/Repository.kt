@@ -44,6 +44,19 @@ class Repository(
     return storedTransactions.toPublicTransactionList(storedSubTransactions)
   }
 
+  fun getUnprocessedAndFlaggedTransactionsInAccountsExcept(
+    accountIds: List<AccountId>
+  ): List<PublicTransactionDetail> {
+    val storedTransactions =
+      database.storedTransactionQueries.getUnprocessedAndFlaggedExcept(accountIds)
+        .executeAsList()
+        .map { it.toStoredTransaction() }
+    val storedSubTransactions =
+      database.storedSubTransactionQueries.getUnprocessedExcept(accountIds).executeAsList()
+
+    return storedTransactions.toPublicTransactionList(storedSubTransactions)
+  }
+
   /**
    * Search for the complement of [originalTransaction] in the replaced transactions of
    * [inAccountId], finding something only if the complement has been [UPDATED] since the last time
@@ -75,7 +88,18 @@ class Repository(
       .toPublicTransactionDetail()
   }
 
-  fun getTransactionByTransferId(
+  fun getTransactionById(
+    id: TransactionId
+  ): PublicTransactionDetail? {
+    val storedTransaction = database.storedTransactionQueries
+      .getById(id)
+      .executeAsOneOrNull()
+    return storedTransaction?.toPublicTransactionDetail(
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+    )
+  }
+
+  fun getTransactionByTransferTransactionId(
     transferId: TransactionId
   ): PublicTransactionDetail? {
     val storedTransaction = database.storedTransactionQueries
@@ -129,10 +153,11 @@ class Repository(
         firstServerKnowledge = null,
         firstBudgetId = firstAccountAndBudget.budgetId,
         firstAccountId = firstAccountAndBudget.accountId,
+        firstAccountPayeeId = firstAccountAndBudget.accountPayeeId,
         secondServerKnowledge = null,
         secondBudgetId = secondAccountAndBudget.budgetId,
         secondAccountId = secondAccountAndBudget.accountId,
-        shouldMatchTransactions = true
+        secondAccountPayeeId = secondAccountAndBudget.accountPayeeId
       )
     }
 
@@ -158,13 +183,6 @@ class Repository(
       budgetId = syncData.secondBudgetId
     )
 
-    markAllTransactionsProcessedExceptInAccounts(
-      listOf(
-        syncData.firstAccountId,
-        syncData.secondAccountId
-      )
-    )
-
     replaceSyncData(
       syncData.copy(
         firstServerKnowledge = firstResponse.data.serverKnowledge,
@@ -180,6 +198,17 @@ class Repository(
   ) {
     val storedTransaction = transactionDetail.toStoredTransaction(budgetId, processedState)
     database.storedTransactionQueries.replaceSingle(storedTransaction)
+    transactionDetail.subtransactions
+      .map { subTransaction ->
+        subTransaction.toStoredSubTransaction(
+          accountId = transactionDetail.accountId.toAccountId(),
+          budgetId = budgetId,
+          processedState = processedState
+        )
+      }
+      .forEach { storedSubTransaction ->
+        database.storedSubTransactionQueries.replaceSingle(storedSubTransaction)
+      }
   }
 
   /**
@@ -197,40 +226,45 @@ class Repository(
     transactions: List<TransactionDetail>,
     budgetId: BudgetId
   ) {
-    val (storedTransactions, storedSubTransactions) = transactions
-      .toUnprocessedStoredTransactions(budgetId)
+    val publicTransactions = transactions
+      .toPublicTransactionDetailList(budgetId)
 
     // Compare against transactions in database, specifically by id
     database.storedTransactionQueries.transaction {
-      storedTransactions
-        .map { storedTransaction ->
-          val existingTransaction =
-            database.storedTransactionQueries.getById(storedTransaction.id).executeAsOneOrNull()
+      publicTransactions
+        .map { publicTransaction ->
+          val existingTransaction = getTransactionById(publicTransaction.id)
           if (existingTransaction != null) {
+            // publicTransaction is UPDATED or DELETED, but is currently marked as CREATED or DELETED
             when (existingTransaction.processedState) {
               UP_TO_DATE -> {
                 // Only update if there's a change we care about
                 if (
-                  storedTransaction.calculateUpdatedFieldsFrom(existingTransaction).isNotEmpty() ||
-                  storedTransaction.processedState == DELETED
+                  publicTransaction.calculateUpdatedFieldsFrom(existingTransaction).isNotEmpty() ||
+                  publicTransaction.processedState == DELETED
                 ) {
                   database.replacedTransactionQueries
-                    .insert(existingTransaction.toReplacedTransaction())
+                    .insert(existingTransaction.toStoredTransaction().toReplacedTransaction())
+                  existingTransaction.subTransactions.forEach { publicSubTransaction ->
+                    database.replacedSubTransactionQueries.insert(
+                      publicSubTransaction.toStoredSubTransaction().toReplacedSubTransaction()
+                    )
+                  }
 
-                  when (val state = storedTransaction.processedState) {
-                    CREATED -> storedTransaction.copy(processedState = UPDATED)
-                    DELETED -> storedTransaction
+                  when (val state = publicTransaction.processedState) {
+                    CREATED -> publicTransaction.copy(processedState = UPDATED)
+                    DELETED -> publicTransaction
                     UP_TO_DATE, UPDATED -> error("New transactions should never be $state")
                   }
                 } else {
-                  storedTransaction.copy(processedState = UP_TO_DATE)
+                  publicTransaction.copy(processedState = UP_TO_DATE)
                 }
               }
               // Treat as CREATED (or DELETED) if the old transaction hasn't been processed yet
-              CREATED -> storedTransaction
+              CREATED -> publicTransaction
               // Don't overwrite a pending UPDATE, unless DELETED
-              UPDATED -> storedTransaction.copy(
-                processedState = if (storedTransaction.processedState == DELETED) {
+              UPDATED -> publicTransaction.copy(
+                processedState = if (publicTransaction.processedState == DELETED) {
                   DELETED
                 } else {
                   UPDATED
@@ -239,35 +273,17 @@ class Repository(
               DELETED -> error("Trying to update an unprocessed DELETED transaction")
             }
           } else {
-            storedTransaction
+            publicTransaction
           }
         }
-        .forEach { storedTransaction ->
-          database.storedTransactionQueries.replaceSingle(storedTransaction)
-        }
-    }
-
-    database.storedSubTransactionQueries.transaction {
-      storedSubTransactions
-        .map { storedSubTransaction ->
-          val existingTransaction =
-            database.storedSubTransactionQueries.getById(storedSubTransaction.id)
-              .executeAsOneOrNull()
-          if (existingTransaction != null) {
-            database.replacedSubTransactionQueries
-              .insert(existingTransaction.toReplacedSubTransaction())
-
-            when (val state = storedSubTransaction.processedState) {
-              CREATED -> storedSubTransaction.copy(processedState = UPDATED)
-              DELETED -> storedSubTransaction
-              UP_TO_DATE, UPDATED -> error("New sub-transactions should never be $state")
-            }
-          } else {
-            storedSubTransaction
+        .forEach { publicTransaction ->
+          database.storedTransactionQueries.replaceSingle(publicTransaction.toStoredTransaction())
+          publicTransaction.subTransactions.forEach { subTransaction ->
+            database.storedSubTransactionQueries.replaceSingle(
+              subTransaction.toStoredSubTransaction()
+                .copy(processedState = publicTransaction.processedState)
+            )
           }
-        }
-        .forEach { storedSubTransaction ->
-          database.storedSubTransactionQueries.replaceSingle(storedSubTransaction)
         }
     }
   }
@@ -281,8 +297,12 @@ class Repository(
     accountConfig: AccountConfig
   ): AccountAndBudget {
     val budget = budgetResponse.budgets.findByName(accountConfig.budgetName)
-    val splitAccountId = budget.accounts!!.findByName(accountConfig.accountName).id.toAccountId()
-    return AccountAndBudget(splitAccountId, budget.id.toBudgetId())
+    val splitAccount = budget.accounts!!.findByName(accountConfig.accountName)
+    return AccountAndBudget(
+      splitAccount.id.toAccountId(),
+      splitAccount.transferPayeeId.toPayeeId(),
+      budget.id.toBudgetId()
+    )
   }
 
   fun markProcessed(transaction: PublicTransactionDetail) {

@@ -84,6 +84,15 @@ WHERE accountId NOT IN :accountsToExclude
 ORDER BY date ASC
 ;
 
+getUnprocessedAndFlaggedExcept:
+SELECT *
+FROM storedTransaction
+WHERE accountId NOT IN :accountsToExclude
+  AND processedState != "UP_TO_DATE"
+  AND flagColor IS NOT NULL
+ORDER BY date ASC
+;
+
 getByComplement:
 SELECT *
 FROM storedTransaction

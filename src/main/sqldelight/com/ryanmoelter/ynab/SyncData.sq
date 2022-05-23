@@ -1,15 +1,16 @@
 import co.moelten.splity.database.AccountId;
 import co.moelten.splity.database.BudgetId;
-import kotlin.Boolean;
+import co.moelten.splity.database.PayeeId;
 
 CREATE TABLE syncData (
   firstServerKnowledge INTEGER,
   firstBudgetId TEXT AS BudgetId NOT NULL,
   firstAccountId TEXT AS AccountId NOT NULL,
+  firstAccountPayeeId TEXT AS PayeeId NOT NULL,
   secondServerKnowledge INTEGER,
   secondBudgetId TEXT AS BudgetId NOT NULL,
   secondAccountId TEXT AS AccountId NOT NULL,
-  shouldMatchTransactions INTEGER AS Boolean NOT NULL
+  secondAccountPayeeId TEXT AS PayeeId NOT NULL
 );
 
 getOnly:

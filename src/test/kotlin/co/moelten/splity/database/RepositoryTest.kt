@@ -2,12 +2,14 @@ package co.moelten.splity.database
 
 import co.moelten.splity.FROM_ACCOUNT
 import co.moelten.splity.FROM_ACCOUNT_ID
+import co.moelten.splity.FROM_ACCOUNT_PAYEE_ID
 import co.moelten.splity.FROM_BUDGET_ID
 import co.moelten.splity.FROM_TRANSFER_SOURCE_ACCOUNT
 import co.moelten.splity.FROM_TRANSFER_SOURCE_ACCOUNT_ID
 import co.moelten.splity.FakeYnabServerDatabase
 import co.moelten.splity.TO_ACCOUNT
 import co.moelten.splity.TO_ACCOUNT_ID
+import co.moelten.splity.TO_ACCOUNT_PAYEE_ID
 import co.moelten.splity.TO_BUDGET_ID
 import co.moelten.splity.database.ProcessedState.CREATED
 import co.moelten.splity.database.ProcessedState.UPDATED
@@ -20,6 +22,7 @@ import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addReplacedTransactions
 import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
+import co.moelten.splity.test.shouldHaveAllTransactionsProcessedExcept
 import co.moelten.splity.test.shouldHaveNoReplacedTransactions
 import co.moelten.splity.test.toApiTransaction
 import co.moelten.splity.toBudget
@@ -30,6 +33,7 @@ import io.kotest.assertions.throwables.shouldThrowAny
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.core.spec.style.scopes.FunSpecContainerScope
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.shouldBe
 
@@ -57,10 +61,11 @@ class RepositoryTest : FunSpec({
           firstServerKnowledge = 0,
           firstBudgetId = FROM_BUDGET_ID,
           firstAccountId = FROM_ACCOUNT_ID,
+          firstAccountPayeeId = FROM_ACCOUNT_PAYEE_ID,
           secondServerKnowledge = 0,
           secondBudgetId = TO_BUDGET_ID,
           secondAccountId = TO_ACCOUNT_ID,
-          shouldMatchTransactions = false
+          secondAccountPayeeId = TO_ACCOUNT_PAYEE_ID
         )
       )
     }
@@ -106,10 +111,13 @@ private suspend fun FunSpecContainerScope.fetchTransactionsPullsDataProperly(
 
     test("fetchNewTransactions finds a new transaction") {
       repository.fetchNewTransactions()
-      repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID) shouldHaveSingleElement
-        unremarkableTransactionInTransferSource(UP_TO_DATE)
+      repository.getTransactionsByAccount(FROM_TRANSFER_SOURCE_ACCOUNT_ID).shouldContainExactly(
+        unremarkableTransactionInTransferSource(CREATED)
+      )
 
-      localDatabase.shouldHaveAllTransactionsProcessed()
+      localDatabase.shouldHaveAllTransactionsProcessedExcept(
+        setOf(unremarkableTransactionInTransferSource().id)
+      )
     }
 
     context("when that transaction is an update") {

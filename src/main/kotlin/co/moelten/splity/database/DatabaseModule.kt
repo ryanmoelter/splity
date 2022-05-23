@@ -72,8 +72,10 @@ interface DatabaseModule {
       syncDataAdapter = SyncData.Adapter(
         firstBudgetIdAdapter = budgetIdAdapter,
         firstAccountIdAdapter = accountIdAdapter,
+        firstAccountPayeeIdAdapter = payeeIdAdapter,
         secondBudgetIdAdapter = budgetIdAdapter,
-        secondAccountIdAdapter = accountIdAdapter
+        secondAccountIdAdapter = accountIdAdapter,
+        secondAccountPayeeIdAdapter = payeeIdAdapter
       ),
       replacedTransactionAdapter = ReplacedTransaction.Adapter(
         idAdapter = transactionIdAdapter,

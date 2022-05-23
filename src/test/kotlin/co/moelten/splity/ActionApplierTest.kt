@@ -2,14 +2,14 @@ package co.moelten.splity
 
 import co.moelten.splity.database.ProcessedState.UP_TO_DATE
 import co.moelten.splity.database.plus
+import co.moelten.splity.database.toPublicTransactionDetail
+import co.moelten.splity.database.toPublicTransactionDetailList
 import co.moelten.splity.injection.createFakeSplityComponent
 import co.moelten.splity.test.Setup
 import co.moelten.splity.test.addTransactions
 import co.moelten.splity.test.isComplementOf
 import co.moelten.splity.test.shouldContainSingleComplementOf
 import co.moelten.splity.test.shouldHaveAllTransactionsProcessed
-import co.moelten.splity.test.toPublicTransactionDetail
-import co.moelten.splity.test.toPublicTransactionDetailList
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.models.TransactionDetail
 import io.kotest.assertions.assertSoftly
@@ -77,7 +77,11 @@ class ActionApplierTest : FunSpec({
       transactionList shouldHaveSize 1
       assertSoftly(transactionList.first()) {
         amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
-        importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = false).amount}:${transactionAddedFromTransfer(isFromSplitSource = false).date}:1"
+        importId shouldBe "splity:${
+          -transactionAddedFromTransfer(isFromSplitSource = false).amount
+        }:${
+          transactionAddedFromTransfer(isFromSplitSource = false).date
+        }:1"
         date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
         payeeName shouldBe "Chicken Butt"
         memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
@@ -104,7 +108,11 @@ class ActionApplierTest : FunSpec({
 
       assertSoftly(transactionList.first()) {
         amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
-        importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = false).amount}:${transactionAddedFromTransfer(isFromSplitSource = false).date}:1"
+        importId shouldBe "splity:${
+          -transactionAddedFromTransfer(isFromSplitSource = false).amount
+        }:${
+          transactionAddedFromTransfer(isFromSplitSource = false).date
+        }:1"
         date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
         payeeName shouldBe "Chicken Butt"
         memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
@@ -140,7 +148,11 @@ class ActionApplierTest : FunSpec({
 
     assertSoftly(complement) {
       amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
-      importId shouldBe "splity:${-transactionAddedFromTransfer(isFromSplitSource = true).amount}:${transactionAddedFromTransfer(isFromSplitSource = true).date}:1"
+      importId shouldBe "splity:${
+        -transactionAddedFromTransfer(isFromSplitSource = true).amount
+      }:${
+        transactionAddedFromTransfer(isFromSplitSource = true).date
+      }:1"
       date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
       payeeName shouldBe transactionTransferSplitSource().payeeName
       memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
@@ -154,9 +166,10 @@ class ActionApplierTest : FunSpec({
   }
 
   test("create from split transfer: recurring transaction") {
-    val transactionAddedFromTransferWithLongId = transactionAddedFromTransfer(isFromSplitSource = true).copy(
-      id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
-    )
+    val transactionAddedFromTransferWithLongId =
+      transactionAddedFromTransfer(isFromSplitSource = true).copy(
+        id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
+      )
     setUpLocalDatabase {
       addTransactions(
         transactionTransferSplitSource(UP_TO_DATE).copy(

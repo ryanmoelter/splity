@@ -9,9 +9,10 @@ import co.moelten.splity.database.toSubTransactionId
 import co.moelten.splity.database.toTransactionId
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
-import com.youneedabudget.client.models.TransactionDetail
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
+import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import org.threeten.bp.LocalDate
-import org.threeten.bp.Month
+import org.threeten.bp.Month.FEBRUARY
 import java.util.UUID
 
 val TRANSACTION_ADDED_FROM_TRANSFER_ID = "transactionAddedFromTransferLength36".toTransactionId()
@@ -19,9 +20,9 @@ const val NO_SERVER_KNOWLEDGE = 0L
 
 fun manuallyAddedTransaction(processedState: ProcessedState = CREATED) = PublicTransactionDetail(
   id = "manuallyAddedTransaction".toTransactionId(),
-  date = LocalDate.of(2020, Month.FEBRUARY, 6),
+  date = LocalDate.of(2020, FEBRUARY, 6),
   amount = 350000,
-  cleared = TransactionDetail.ClearedEnum.UNCLEARED,
+  cleared = UNCLEARED,
   approved = true,
   accountId = FROM_ACCOUNT_ID,
   accountName = FROM_ACCOUNT_NAME,
@@ -44,9 +45,9 @@ fun manuallyAddedTransactionComplement(
   processedState: ProcessedState = CREATED
 ) = PublicTransactionDetail(
   id = "manuallyAddedTransactionComplement".toTransactionId(),
-  date = LocalDate.of(2020, Month.FEBRUARY, 6),
+  date = LocalDate.of(2020, FEBRUARY, 6),
   amount = -350000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  cleared = CLEARED,
   approved = false,
   accountId = TO_ACCOUNT_ID,
   accountName = TO_ACCOUNT_NAME,
@@ -70,9 +71,9 @@ fun transactionAddedFromTransfer(
   processedState: ProcessedState = CREATED
 ) = PublicTransactionDetail(
   id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  date = LocalDate.of(2020, FEBRUARY, 7),
   amount = 10000,
-  cleared = TransactionDetail.ClearedEnum.UNCLEARED,
+  cleared = UNCLEARED,
   approved = true,
   accountId = FROM_ACCOUNT_ID,
   accountName = FROM_ACCOUNT_NAME,
@@ -99,9 +100,9 @@ fun transactionAddedFromTransferComplement(
   processedState: ProcessedState = CREATED
 ) = PublicTransactionDetail(
   id = "transactionAddedFromTransferComplement".toTransactionId(),
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  date = LocalDate.of(2020, FEBRUARY, 7),
   amount = -10000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  cleared = CLEARED,
   approved = true,
   accountId = TO_ACCOUNT_ID,
   accountName = TO_ACCOUNT_NAME,
@@ -161,9 +162,9 @@ fun transactionTransferSplitSource(
   processedState: ProcessedState = CREATED
 ) = PublicTransactionDetail(
   id = "transactionTransferSplitSource".toTransactionId(),
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  date = LocalDate.of(2020, FEBRUARY, 7),
   amount = -30000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  cleared = CLEARED,
   approved = true,
   accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
@@ -190,9 +191,9 @@ fun transactionTransferNonSplitSource(
   processedState: ProcessedState = CREATED
 ): PublicTransactionDetail = PublicTransactionDetail(
   id = TRANSFER_SOURCE_NON_SPLIT_TRANSACTION_ID,
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  date = LocalDate.of(2020, FEBRUARY, 7),
   amount = -10000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  cleared = CLEARED,
   approved = true,
   accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
@@ -220,9 +221,9 @@ val EXISTING_MIRRORED_TRANSACTION_SOURCE_SPLIT_TRANSFER_ID =
 fun existingMirroredTransaction(processedState: ProcessedState = UP_TO_DATE) =
   PublicTransactionDetail(
     id = EXISTING_MIRRORED_TRANSACTION_ID,
-    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    date = LocalDate.of(2020, FEBRUARY, 7),
     amount = 25_000,
-    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    cleared = CLEARED,
     approved = true,
     accountId = FROM_ACCOUNT_ID,
     accountName = FROM_ACCOUNT_NAME,
@@ -244,9 +245,9 @@ fun existingMirroredTransaction(processedState: ProcessedState = UP_TO_DATE) =
 fun existingMirroredTransactionComplement(processedState: ProcessedState = UP_TO_DATE) =
   PublicTransactionDetail(
     id = "existingMirroredTransactionComplement".toTransactionId(),
-    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    date = LocalDate.of(2020, FEBRUARY, 7),
     amount = -25_000,
-    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    cleared = CLEARED,
     approved = true,
     accountId = TO_ACCOUNT_ID,
     accountName = TO_ACCOUNT_NAME,
@@ -269,9 +270,9 @@ fun existingMirroredTransactionSourceParent(
   processedState: ProcessedState = UP_TO_DATE
 ) = PublicTransactionDetail(
   id = EXISTING_MIRRORED_TRANSACTION_SOURCE_PARENT_ID,
-  date = LocalDate.of(2020, Month.FEBRUARY, 7),
+  date = LocalDate.of(2020, FEBRUARY, 7),
   amount = -55_000,
-  cleared = TransactionDetail.ClearedEnum.CLEARED,
+  cleared = CLEARED,
   approved = true,
   accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
   accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
@@ -335,9 +336,9 @@ fun existingMirroredTransactionSourceSplitCategory(
 fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
   PublicTransactionDetail(
     id = "unremarkableTransactionInTransferSource".toTransactionId(),
-    date = LocalDate.of(2020, Month.FEBRUARY, 7),
+    date = LocalDate.of(2020, FEBRUARY, 7),
     amount = -101_000,
-    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    cleared = CLEARED,
     approved = true,
     accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
     accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
@@ -359,9 +360,9 @@ fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CRE
 fun anotherUnremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
   PublicTransactionDetail(
     id = "anotherUnremarkableTransactionInTransferSource".toTransactionId(),
-    date = LocalDate.of(2020, Month.FEBRUARY, 8),
+    date = LocalDate.of(2020, FEBRUARY, 8),
     amount = -21_000,
-    cleared = TransactionDetail.ClearedEnum.CLEARED,
+    cleared = CLEARED,
     approved = true,
     accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
     accountName = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
