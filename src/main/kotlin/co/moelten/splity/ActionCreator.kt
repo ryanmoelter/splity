@@ -162,8 +162,8 @@ class ActionCreator(
         )
       }
       UPDATED -> if (
-        fromTransaction.getUpdatedFields(complement).isEmpty() &&
-        complement.getUpdatedFields(fromTransaction).isEmpty()
+        fromTransaction.getUpdatedFields(complement).none { it.updatesComplement } &&
+        complement.getUpdatedFields(fromTransaction).none { it.updatesComplement }
       ) {
         MarkProcessed(
           fromTransaction = fromTransaction,
@@ -233,8 +233,8 @@ class ActionCreator(
   }
 
   private fun PublicTransactionDetail.isTransferFromSplitTransaction(): Boolean {
-    return transferTransactionId != null &&
-      repository.getSubTransactionsByTransferTransactionId(transferTransactionId) != null
+    return transferAccountId != null &&
+      repository.getTransactionBySubTransactionTransferId(id) != null
   }
 
   private fun PublicTransactionDetail.getUpdatedFields(

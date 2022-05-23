@@ -5,6 +5,7 @@ import co.moelten.splity.database.Repository
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.SaveSubTransaction
+import com.youneedabudget.client.models.SaveTransaction
 import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
 import me.tatarka.inject.annotations.Inject
@@ -84,7 +85,7 @@ class TransactionSplitter(
       data = SaveTransactionWrapper(
         toSaveTransaction().copy(
           categoryId = null,
-          flagColor = null,
+          flagColor = SaveTransaction.FlagColorEnum.GREEN,
           subtransactions = subTransactions
         )
       )
