@@ -50,8 +50,6 @@ fun PublicTransactionDetail.calculateUpdatedFieldsFrom(
   replaced: PublicTransactionDetail,
   complement: PublicTransactionDetail? = null
 ): Set<UpdateField> {
-  assert(subTransactions.isEmpty()) { "Cannot update a transaction that has sub-transactions" }
-
   // Loop over values to make sure we don't forget any
   return values()
     .filter { updateField ->
