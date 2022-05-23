@@ -29,6 +29,7 @@ import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.CLEARED
 import com.youneedabudget.client.models.TransactionDetail.ClearedEnum.UNCLEARED
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.BLUE
+import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.GREEN
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.RED
 import io.kotest.assertions.assertSoftly
@@ -43,6 +44,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.threeten.bp.LocalDate
 
@@ -1164,8 +1166,9 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           approved.shouldBeTrue()
           deleted.shouldBeFalse()
           accountId shouldBe FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid
-          // TODO: categoryId.shouldBeNull()
-          subtransactions.shouldForAny { subTransaction ->
+          flagColor shouldBe GREEN
+          categoryId.shouldBeNull()
+          subtransactions.shouldForOne { subTransaction ->
             with(subTransaction) {
               transactionId shouldBe unremarkableTransactionInTransferSource().id.string
               amount shouldBe halfAmount
@@ -1174,12 +1177,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
               payeeId shouldBe FROM_ACCOUNT_PAYEE_ID.plainUuid
               payeeName.shouldBeNull()
               categoryId.shouldBeNull()
-              // TODO: fix limitation of our fake backend
-              // transferAccountId shouldBe FROM_ACCOUNT_ID
-              // transferTransactionId.shouldNotBeNull()
+              transferAccountId shouldBe FROM_ACCOUNT_ID.plainUuid
+              transferTransactionId.shouldNotBeNull()
             }
           }
-          subtransactions.shouldForAny { subTransaction ->
+          subtransactions.shouldForOne { subTransaction ->
             with(subTransaction) {
               transactionId shouldBe unremarkableTransactionInTransferSource().id.string
               amount shouldBe halfAmount
