@@ -281,7 +281,12 @@ class Repository(
           publicTransaction.subTransactions.forEach { subTransaction ->
             database.storedSubTransactionQueries.replaceSingle(
               subTransaction.toStoredSubTransaction()
-                .copy(processedState = publicTransaction.processedState)
+                .copy(
+                  processedState = when (subTransaction.processedState) {
+                    UP_TO_DATE, CREATED, UPDATED -> publicTransaction.processedState
+                    DELETED -> DELETED
+                  }
+                )
             )
           }
         }
@@ -337,6 +342,18 @@ class Repository(
         database.storedSubTransactionQueries.deleteByTransactionId(transaction.id)
         database.replacedTransactionQueries.deleteById(transaction.id)
         database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)
+      }
+    }
+
+    transaction.subTransactions.forEach { subTransaction ->
+      when (subTransaction.processedState) {
+        UP_TO_DATE, CREATED, UPDATED -> {
+          // Handled by parent transaction
+        }
+        DELETED -> {
+          database.storedSubTransactionQueries.deleteByTransactionId(transaction.id)
+          database.replacedSubTransactionQueries.deleteByTransactionId(transaction.id)
+        }
       }
     }
   }

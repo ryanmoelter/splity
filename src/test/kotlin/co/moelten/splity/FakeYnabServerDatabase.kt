@@ -36,6 +36,9 @@ data class FakeYnabServerDatabase(
       transactionList
         .filterBefore(NO_SERVER_KNOWLEDGE)
         .filter { !it.deleted }
+        .map { transaction ->
+          transaction.copy(subtransactions = transaction.subtransactions.filter { !it.deleted })
+        }
     }
     .filterValues { it.isNotEmpty() }
 
@@ -62,7 +65,10 @@ data class FakeYnabServerDatabase(
     groupedTransactions.forEach(::addOrUpdateTransactionsForAccount)
   }
 
-  fun addOrUpdateTransactionsForAccount(accountId: AccountId, transactions: List<TransactionDetail>) {
+  fun addOrUpdateTransactionsForAccount(
+    accountId: AccountId,
+    transactions: List<TransactionDetail>
+  ) {
     val updatedTransactionIds = transactions.map { it.id }.toHashSet()
 
     accountToTransactionsMap = accountToTransactionsMap

@@ -1236,6 +1236,110 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       localDatabase.shouldMatchServer(serverDatabase)
       localDatabase.shouldHaveAllTransactionsProcessed()
     }
+
+    context("with deleted sub-transactions") {
+      // This is the case where we split the transaction, but then undo it and flag it purple
+
+      setUpServerDatabase {
+        addTransactions(
+          unremarkableTransactionInTransferSource().copy(
+            flagColor = PURPLE,
+            subTransactions = listOf(
+              unremarkableNonTransferSubTransactionInTransferSource(DELETED),
+              unremarkableTransferSubTransactionInTransferSource(DELETED)
+            )
+          ),
+          newlyRemarkableTransactionInFromAccount(DELETED)
+        )
+      }
+
+      test("should mirror transaction") {
+        transactionMirrorer.mirrorTransactions()
+
+        val halfAmount = unremarkableTransactionInTransferSource().amount / 2
+
+        withClue("Newly-split transaction") {
+          unremarkableTransactionInTransferSource().thisOnServerShould(serverDatabase) {
+            date shouldBe unremarkableTransactionInTransferSource().date
+            payeeId shouldBe unremarkableTransactionInTransferSource().payeeId?.plainUuid
+            payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
+            memo shouldBe unremarkableTransactionInTransferSource().memo
+            cleared shouldBe CLEARED
+            approved.shouldBeTrue()
+            deleted.shouldBeFalse()
+            accountId shouldBe FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid
+            flagColor shouldBe GREEN
+            categoryId.shouldBeNull()
+            subtransactions.shouldForOne { subTransaction ->
+              with(subTransaction) {
+                transactionId shouldBe unremarkableTransactionInTransferSource().id.string
+                amount shouldBe halfAmount
+                deleted.shouldBeFalse()
+                memo.shouldBeNull()
+                payeeId shouldBe FROM_ACCOUNT_PAYEE_ID.plainUuid
+                payeeName.shouldBeNull()
+                categoryId.shouldBeNull()
+                transferAccountId shouldBe FROM_ACCOUNT_ID.plainUuid
+                transferTransactionId.shouldNotBeNull()
+              }
+            }
+            subtransactions.shouldForOne { subTransaction ->
+              with(subTransaction) {
+                transactionId shouldBe unremarkableTransactionInTransferSource().id.string
+                amount shouldBe halfAmount
+                deleted.shouldBeFalse()
+                memo.shouldBeNull()
+                payeeId.shouldBeNull()
+                payeeName.shouldBeNull()
+                categoryId shouldBe unremarkableTransactionInTransferSource().categoryId!!.plainUuid
+                transferAccountId.shouldBeNull()
+                transferTransactionId.shouldBeNull()
+              }
+            }
+          }
+        }
+
+        withClue("Generated split transaction") {
+          complementOnServerShould(
+            -halfAmount,
+            unremarkableTransactionInTransferSource().date,
+            serverDatabase,
+            FROM_ACCOUNT_AND_BUDGET
+          ) {
+            importId shouldBe null
+            date shouldBe unremarkableTransactionInTransferSource().date
+            payeeName shouldBe "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME"
+            memo shouldBe null
+            cleared shouldBe UNCLEARED
+            approved.shouldBeTrue()
+            deleted.shouldBeFalse()
+            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+          }
+        }
+
+        withClue("Mirrored complement transaction") {
+          complementOnServerShould(
+            halfAmount,
+            unremarkableTransactionInTransferSource().date,
+            serverDatabase,
+            TO_ACCOUNT_AND_BUDGET
+          ) {
+            importId shouldBe "splity:${halfAmount}:${unremarkableTransactionInTransferSource().date}:1"
+            date shouldBe unremarkableTransactionInTransferSource().date
+            payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
+            memo shouldBe unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
+            cleared shouldBe CLEARED
+            approved.shouldBeFalse()
+            deleted.shouldBeFalse()
+            accountId shouldBe TO_ACCOUNT_ID.plainUuid
+          }
+        }
+
+        localDatabase.shouldMatchServer(serverDatabase)
+        localDatabase.shouldHaveAllTransactionsProcessed()
+      }
+
+    }
   }
 }
 

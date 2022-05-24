@@ -149,7 +149,7 @@ fun TransactionDetail.toPublicTransactionDetail(
     processedState = processedState,
     budgetId = budgetId,
     subTransactions = this.subtransactions.map {
-      it.toPublicSubTransaction(accountId.toAccountId(), budgetId, processedState)
+      it.toPublicSubTransaction(accountId.toAccountId(), budgetId, overrideProcessedState)
     }
   )
 }
@@ -157,19 +157,26 @@ fun TransactionDetail.toPublicTransactionDetail(
 fun SubTransaction.toPublicSubTransaction(
   accountId: AccountId,
   budgetId: BudgetId,
-  processedState: ProcessedState = if (deleted) ProcessedState.DELETED else ProcessedState.CREATED
-) = PublicSubTransaction(
-  id = id.toSubTransactionId(),
-  transactionId = transactionId.toTransactionId(),
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId?.toPayeeId(),
-  payeeName = payeeName,
-  categoryId = categoryId?.toCategoryId(),
-  categoryName = categoryName,
-  transferAccountId = transferAccountId?.toAccountId(),
-  transferTransactionId = transferTransactionId?.toTransactionId(),
-  processedState = processedState,
-  accountId = accountId,
-  budgetId = budgetId
-)
+  overrideProcessedState: ProcessedState? = null
+): PublicSubTransaction {
+  val processedState = overrideProcessedState ?: if (deleted) {
+    ProcessedState.DELETED
+  } else {
+    ProcessedState.CREATED
+  }
+  return PublicSubTransaction(
+    id = id.toSubTransactionId(),
+    transactionId = transactionId.toTransactionId(),
+    amount = amount,
+    memo = memo,
+    payeeId = payeeId?.toPayeeId(),
+    payeeName = payeeName,
+    categoryId = categoryId?.toCategoryId(),
+    categoryName = categoryName,
+    transferAccountId = transferAccountId?.toAccountId(),
+    transferTransactionId = transferTransactionId?.toTransactionId(),
+    processedState = processedState,
+    accountId = accountId,
+    budgetId = budgetId
+  )
+}
