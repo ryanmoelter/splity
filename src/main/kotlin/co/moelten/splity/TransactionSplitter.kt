@@ -1,6 +1,7 @@
 package co.moelten.splity
 
 import co.moelten.splity.database.PayeeId
+import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.Repository
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
@@ -24,7 +25,20 @@ class TransactionSplitter(
         listOf(syncData.firstAccountId, syncData.secondAccountId)
       )
         .filter { it.flagColor == PURPLE }
-        .filter { it.subTransactions.isEmpty() }
+        .filterNot { transaction ->
+          transaction.subTransactions
+            .any { subTransaction ->
+              subTransaction.processedState != ProcessedState.DELETED
+            }
+            .also { hasNonDeletedSubTransactions ->
+              if (hasNonDeletedSubTransactions) {
+                println(
+                  "Not splitting purple-flagged transaction to avoid duplicating " +
+                    "sub-transactions: $transaction"
+                )
+              }
+            }
+        }
 
     unprocessedFlaggedTransactions
       .forEach { transaction ->

@@ -333,9 +333,11 @@ fun existingMirroredTransactionSourceSplitCategory(
 // -- Normal, non-split transactions ---------------------------------------------------------------
 // These should be ignored by splity in most cases
 
-fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
-  PublicTransactionDetail(
-    id = "unremarkableTransactionInTransferSource".toTransactionId(),
+val UNREMARKABLE_TRANSACTION_ID = "unremarkableTransactionInTransferSource".toTransactionId()
+
+fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED): PublicTransactionDetail {
+  return PublicTransactionDetail(
+    id = UNREMARKABLE_TRANSACTION_ID,
     date = LocalDate.of(2020, FEBRUARY, 7),
     amount = -101_000,
     cleared = CLEARED,
@@ -356,6 +358,66 @@ fun unremarkableTransactionInTransferSource(processedState: ProcessedState = CRE
     budgetId = FROM_BUDGET_ID,
     processedState = processedState,
   )
+}
+
+fun unremarkableNonTransferSubTransactionInTransferSource(processedState: ProcessedState = CREATED) =
+  PublicSubTransaction(
+    id = "unremarkableNonTransferSubTransactionInTransferSource".toSubTransactionId(),
+    transactionId = UNREMARKABLE_TRANSACTION_ID,
+    amount = -51_000,
+    memo = "Unremarkable non-transfer split",
+    payeeId = null,
+    payeeName = null,
+    categoryId = "1ab5b286-72e6-422b-8b8b-06d51a5bfdc6".toCategoryId(),
+    categoryName = "Household Stuff",
+    transferAccountId = null,
+    transferTransactionId = null,
+    processedState = processedState,
+    accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+    budgetId = FROM_BUDGET_ID
+  )
+
+fun unremarkableTransferSubTransactionInTransferSource(processedState: ProcessedState = CREATED) =
+  PublicSubTransaction(
+    id = "unremarkableTransferSubTransactionInTransferSource".toSubTransactionId(),
+    transactionId = UNREMARKABLE_TRANSACTION_ID,
+    amount = -50_000,
+    memo = "Unremarkable transfer split",
+    payeeId = FROM_ACCOUNT_PAYEE_ID,
+    payeeName = "Transfer : $FROM_ACCOUNT_NAME",
+    categoryId = null,
+    categoryName = null,
+    transferAccountId = FROM_ACCOUNT_ID,
+    transferTransactionId = "1e9dba6b-14d2-4bea-823a-0ee0623b122f".toTransactionId(),
+    processedState = processedState,
+    accountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+    budgetId = FROM_BUDGET_ID
+  )
+
+fun newlyRemarkableTransactionInFromAccount(
+  processedState: ProcessedState = CREATED
+) = PublicTransactionDetail(
+  id = TRANSACTION_ADDED_FROM_TRANSFER_ID,
+  date = LocalDate.of(2020, FEBRUARY, 7),
+  amount = 50_000,
+  cleared = UNCLEARED,
+  approved = true,
+  accountId = FROM_ACCOUNT_ID,
+  accountName = FROM_ACCOUNT_NAME,
+  memo = "Unremarkable transaction",
+  flagColor = null,
+  payeeId = FROM_TRANSFER_SOURCE_ACCOUNT_PAYEE_ID,
+  payeeName = "Transfer : $FROM_TRANSFER_SOURCE_ACCOUNT_NAME",
+  categoryId = null,
+  categoryName = null,
+  transferAccountId = FROM_TRANSFER_SOURCE_ACCOUNT_ID,
+  transferTransactionId = null,
+  matchedTransactionId = null,
+  importId = null,
+  subTransactions = emptyList(),
+  budgetId = FROM_BUDGET_ID,
+  processedState = processedState
+)
 
 fun anotherUnremarkableTransactionInTransferSource(processedState: ProcessedState = CREATED) =
   PublicTransactionDetail(

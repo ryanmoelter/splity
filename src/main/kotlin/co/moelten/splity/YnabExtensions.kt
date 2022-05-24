@@ -40,4 +40,5 @@ fun TransactionDetail.FlagColorEnum.toSaveTransactionFlagColorEnum() = when (thi
   TransactionDetail.FlagColorEnum.GREEN -> SaveTransaction.FlagColorEnum.GREEN
   TransactionDetail.FlagColorEnum.BLUE -> SaveTransaction.FlagColorEnum.BLUE
   TransactionDetail.FlagColorEnum.PURPLE -> SaveTransaction.FlagColorEnum.PURPLE
+  TransactionDetail.FlagColorEnum.NONE -> null  // TODO: Create a SaveTransaction.Flag.NONE?
 }
