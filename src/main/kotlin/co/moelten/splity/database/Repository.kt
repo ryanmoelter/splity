@@ -110,13 +110,13 @@ class Repository(
     )
   }
 
-  fun getSubTransactionsByTransferTransactionId(
+  fun getSubTransactionByTransferId(
     transferId: TransactionId
   ): PublicSubTransaction? {
-    return database.storedSubTransactionQueries
-      .getById(transferId.string.toSubTransactionId())
+    val storedSubTransaction = database.storedSubTransactionQueries
+      .getByTransferId(transferId)
       .executeAsOneOrNull()
-      ?.toPublicSubTransaction()
+    return storedSubTransaction?.toPublicSubTransaction()
   }
 
   fun getTransactionBySubTransactionTransferId(

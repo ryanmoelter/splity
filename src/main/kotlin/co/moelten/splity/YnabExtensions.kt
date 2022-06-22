@@ -9,12 +9,12 @@ import com.youneedabudget.client.models.TransactionDetail
 import kotlin.math.absoluteValue
 
 data class AccountAndBudget(val accountId: AccountId, val accountPayeeId: PayeeId, val budgetId: BudgetId)
-data class TransactionDescription(val payeeName: String?, val memo: String?, val totalAmount: Long)
+data class TransactionDescription(val payeeName: String?, val memo: String, val totalAmount: Long)
 
 val PublicTransactionDetail.transactionDescription
   get() = TransactionDescription(
     payeeName = payeeName,
-    memo = memo,
+    memo = memo.orEmpty(),
     totalAmount = amount
   )
 

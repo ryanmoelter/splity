@@ -815,7 +815,7 @@ internal class TransactionMirrorerTest : FunSpec({
             importId shouldBe "splity:-10000:2020-02-07:1"
             date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
             payeeName shouldBe transactionTransferSplitSource().payeeName
-            memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+            memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
             cleared shouldBe CLEARED
             deleted.shouldBeFalse()
             accountId shouldBe TO_ACCOUNT_ID.plainUuid
@@ -989,7 +989,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           }:1"
           date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
           payeeName shouldBe transactionTransferSplitSource().payeeName
-          memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
@@ -1039,7 +1039,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           }:1"
           date shouldBe transactionAddedFromTransferWithLongId.date
           payeeName shouldBe transactionTransferSplitSource().payeeName
-          memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()

@@ -49,19 +49,29 @@ class ActionApplier(
 
   private suspend fun applyCreate(action: CreateComplement) = with(action) {
     val transactionDescription = if (fromTransaction.transferAccountId != null) {
-      val parentOfSplitTransaction =
+      val otherSideOfTransferParent =
         repository.getTransactionBySubTransactionTransferId(fromTransaction.id)
+      val otherSideOfTransferChild =
+        repository.getSubTransactionByTransferId(fromTransaction.id)
 
-      parentOfSplitTransaction
-        ?.transactionDescription
-        ?: repository.getTransactionByTransferTransactionId(fromTransaction.id)!!
-          .let { transactionDetail ->
-            TransactionDescription(
-              "Chicken Butt",
-              transactionDetail.memo,
-              transactionDetail.amount
-            )
-          }
+      when {
+        otherSideOfTransferParent != null && !otherSideOfTransferChild?.memo.isNullOrBlank() -> {
+          otherSideOfTransferParent.transactionDescription
+            .copy(memo = otherSideOfTransferChild!!.memo.orEmpty())
+        }
+        otherSideOfTransferParent != null -> {
+          otherSideOfTransferParent.transactionDescription
+        }
+        else -> {
+          val otherSideOfTransfer =
+            repository.getTransactionByTransferTransactionId(fromTransaction.id)!!
+          TransactionDescription(
+            payeeName = "Chicken Butt",
+            memo = otherSideOfTransfer.memo.orEmpty(),
+            totalAmount = otherSideOfTransfer.amount
+          )
+        }
+      }
     } else {
       fromTransaction.transactionDescription
     }
@@ -79,7 +89,7 @@ class ActionApplier(
           memo = (transactionDescription.memo + getExtraDetailsForMemo(
             transactionDescription.totalAmount,
             fromTransaction.amount,
-            transactionDescription.memo.isNullOrEmpty()
+            transactionDescription.memo.isEmpty()
           )).trim().trimEndToMeetLengthRequirements(),
           cleared = SaveTransaction.ClearedEnum.CLEARED,
           approved = false,
