@@ -80,7 +80,7 @@ class ActionApplier(
             transactionDescription.totalAmount,
             fromTransaction.amount,
             transactionDescription.memo.isNullOrEmpty()
-          )).trim(),
+          )).trim().trimEndToMeetLengthRequirements(),
           cleared = SaveTransaction.ClearedEnum.CLEARED,
           approved = false,
           flagColor = null,
@@ -186,7 +186,8 @@ class ActionApplier(
           amount = amount,
           date = date,
           approved = false,
-          memo = "ERROR: " + message + " • " + fromTransaction.memo
+          memo = ("ERROR: " + message + " • " + fromTransaction.memo)
+            .trimEndToMeetLengthRequirements()
         )
       )
     )
@@ -205,7 +206,7 @@ class ActionApplier(
           complement.toSaveTransaction().copy(
             flagColor = SaveTransaction.FlagColorEnum.RED,
             approved = false,
-            memo = "ERROR: " + message + " • " + complement.memo
+            memo = ("ERROR: " + message + " • " + complement.memo).trimEndToMeetLengthRequirements()
           )
         )
       )
@@ -233,7 +234,7 @@ fun PublicTransactionDetail.toSaveTransaction(): SaveTransaction = SaveTransacti
   payeeId = payeeId?.plainUuid,
   payeeName = payeeName,
   categoryId = categoryId?.plainUuid,
-  memo = memo?.take(MAX_MEMO_LENGTH),
+  memo = memo?.trimEndToMeetLengthRequirements(),
   cleared = cleared.toSaveTransactionClearedEnum(),
   approved = approved,
   flagColor = flagColor?.toSaveTransactionFlagColorEnum(),
@@ -246,7 +247,7 @@ fun PublicSubTransaction.toSaveSubTransaction(): SaveSubTransaction = SaveSubTra
   payeeId = payeeId?.plainUuid,
   payeeName = payeeName,
   categoryId = categoryId?.plainUuid,
-  memo = memo?.take(MAX_MEMO_LENGTH),
+  memo = memo?.trimEndToMeetLengthRequirements()
 )
 
 sealed interface TransactionAction {
@@ -301,3 +302,5 @@ fun getExtraDetailsForMemo(totalAmount: Long, paidAmount: Long, isBaseEmpty: Boo
     "Out of ${totalAmount.absoluteValue.toMoneyString()}, " +
     "you paid ${paidAmount.absolutePercentageOf(totalAmount).toPercentageString()}"
 }
+
+fun String.trimEndToMeetLengthRequirements() = take(MAX_MEMO_LENGTH)
