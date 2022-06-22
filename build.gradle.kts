@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "co.moelten"
-version = "0.8.8-SNAPSHOT"
+version = "0.8.8"
 
 repositories {
   mavenCentral()
