@@ -843,9 +843,9 @@ internal class TransactionMirrorerTest : FunSpec({
               updatedComplement.thisOnServerShould(serverDatabase) {
                 flagColor shouldBe RED
                 approved.shouldBeFalse()
-                memo shouldBe "ERROR: Mirrors of transfers from split transactions can't be " +
+                memo shouldBe ("ERROR: Mirrors of transfers from split transactions can't be " +
                   "updated, so the change has been undone. Change the mirror of this transaction " +
-                  "in the other budget instead. • " + existingComplement.memo
+                  "in the other budget instead. • " + existingComplement.memo).take(200)
 
                 amount shouldBe existingComplement.amount
                 date shouldBe existingComplement.date
