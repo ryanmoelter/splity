@@ -155,7 +155,7 @@ class ActionApplierTest : FunSpec({
       }:1"
       date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
       payeeName shouldBe transactionTransferSplitSource().payeeName
-      memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+      memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
       approved.shouldBeFalse()
       deleted.shouldBeFalse()
@@ -201,7 +201,7 @@ class ActionApplierTest : FunSpec({
       importId shouldBe "splity:${-transactionAddedFromTransferWithLongId.amount}:${transactionAddedFromTransferWithLongId.date}:1"
       date shouldBe transactionAddedFromTransferWithLongId.date
       payeeName shouldBe transactionTransferSplitSource().payeeName
-      memo shouldBe transactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+      memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
       cleared shouldBe TransactionDetail.ClearedEnum.CLEARED
       approved.shouldBeFalse()
       accountId shouldBe TO_ACCOUNT_ID.plainUuid

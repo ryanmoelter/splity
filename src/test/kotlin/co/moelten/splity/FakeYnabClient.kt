@@ -368,7 +368,7 @@ fun SaveTransaction.toNewTransactionDetail(
   approved = approved ?: false,
   accountId = accountId,
   deleted = false,
-  accountName = oldTransaction?.accountName ?: "",
+  accountName = oldTransaction?.accountName.orEmpty(),
   subtransactions = if (subtransactions.isNullOrEmpty()) {
     emptyList()
   } else {
@@ -383,7 +383,7 @@ fun SaveTransaction.toNewTransactionDetail(
   matchedTransactionId = null,
   importId = importId,
   payeeName = payeeName ?: oldTransaction?.payeeName,
-  categoryName = oldTransaction?.categoryName ?: ""
+  categoryName = oldTransaction?.categoryName.orEmpty()
 )
 
 fun SaveSubTransaction.toNewSubTransaction(
