@@ -1,5 +1,5 @@
 [versions]
-kotlin = "1.7.0"
+kotlin = "1.7.22"
 coroutines = "1.6.4"
 ksp = "1.7.22-1.0.8"
 inject = "0.4.1"
