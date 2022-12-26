@@ -9,8 +9,9 @@ import me.tatarka.inject.annotations.Component
 
 @Component
 abstract class FakeApiModule(
+  sentryModule: SentryModule,
   val fakeYnabServerDatabase: FakeYnabServerDatabase
-) : ApiModule {
+) : ApiModule(sentryModule) {
   override fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient =
     FakeYnabClient(fakeYnabServerDatabase)
 }

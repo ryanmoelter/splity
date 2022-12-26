@@ -1,6 +1,5 @@
 package co.moelten.splity.database
 
-import co.moelten.splity.injection.Singleton
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
 import com.ryanmoelter.ynab.StoredAccount
@@ -14,15 +13,20 @@ import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
+import me.tatarka.inject.annotations.Scope
 
-@Singleton
+@Scope
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
+annotation class DatabaseSingleton
+
+@DatabaseSingleton
 interface DatabaseModule {
   @Provides
-  @Singleton
+  @DatabaseSingleton
   fun sqlDriver(): SqlDriver
 
   @Provides
-  @Singleton
+  @DatabaseSingleton
   fun database(sqlDriver: SqlDriver): Database {
 
     try {

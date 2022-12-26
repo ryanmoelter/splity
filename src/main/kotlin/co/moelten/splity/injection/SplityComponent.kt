@@ -6,18 +6,22 @@ import co.moelten.splity.Config
 import co.moelten.splity.SentryWrapper
 import co.moelten.splity.TransactionMirrorer
 import co.moelten.splity.database.DatabaseModule
-import co.moelten.splity.setUpSentry
 import com.ryanmoelter.ynab.database.Database
 import com.youneedabudget.client.YnabClient
 import me.tatarka.inject.annotations.Component
-import me.tatarka.inject.annotations.Provides
+import me.tatarka.inject.annotations.Scope
+
+@Scope
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
+annotation class Singleton
 
 @Component
 @Singleton
 abstract class SplityComponent(
   @Component val databaseModule: DatabaseModule,
   @Component val configModule: ConfigModule,
-  @Component val apiModule: ApiModule
+  @Component val apiModule: ApiModule,
+  @Component val sentryModule: SentryModule
 ) {
   abstract val config: Config
   abstract val database: Database
@@ -26,8 +30,4 @@ abstract class SplityComponent(
   abstract val transactionMirrorer: TransactionMirrorer
   abstract val actionApplier: ActionApplier
   abstract val actionCreator: ActionCreator
-
-  @Provides
-  @Singleton
-  fun sentryWrapper(config: Config): SentryWrapper = setUpSentry(config.sentryConfig, config.version)
 }
