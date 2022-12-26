@@ -6,16 +6,21 @@ import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.YnabClientImpl
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
+import me.tatarka.inject.annotations.Scope
 
-@Singleton
-interface ApiModule {
+@Scope
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
+annotation class ApiSingleton
+
+@ApiSingleton
+abstract class ApiModule(@Component val sentryModule: SentryModule) {
   @Provides
-  @Singleton
-  fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient
+  @ApiSingleton
+  abstract fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient
 }
 
 @Component
-abstract class RealApiModule : ApiModule {
+abstract class RealApiModule(sentryModule: SentryModule) : ApiModule(sentryModule) {
   override fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient =
     YnabClientImpl(config.ynabToken, sentry::doInImmediateSpan)
 }

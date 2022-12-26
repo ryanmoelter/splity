@@ -6,12 +6,17 @@ import com.sksamuel.hoplite.ConfigLoader
 import com.sksamuel.hoplite.PropertySource
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
+import me.tatarka.inject.annotations.Scope
 import java.io.File
 
-@Singleton
+@Scope
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY_GETTER)
+annotation class ConfigSingleton
+
+@ConfigSingleton
 interface ConfigModule {
   @Provides
-  @Singleton
+  @ConfigSingleton
   fun config(): Config
 }
 

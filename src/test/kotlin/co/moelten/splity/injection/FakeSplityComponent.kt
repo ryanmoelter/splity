@@ -9,9 +9,12 @@ import co.moelten.splity.fakeConfig
 fun createFakeSplityComponent(
   serverDatabase: FakeYnabServerDatabase,
   config: Config = fakeConfig
-): SplityComponent =
-  SplityComponent::class.create(
+): SplityComponent {
+  val sentryModule = SentryModule::class.create()
+  return SplityComponent::class.create(
     databaseModule = FakeDatabaseModule::class.create(),
     configModule = FakeConfigModule::class.create(config),
-    apiModule = FakeApiModule::class.create(serverDatabase)
+    apiModule = FakeApiModule::class.create(sentryModule, serverDatabase),
+    sentryModule
   )
+}
