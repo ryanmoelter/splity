@@ -14,10 +14,16 @@
     {
       "matchUpdateTypes": [
         "minor",
-        "patch",
         "pin",
         "digest"
       ],
+      "automerge": true
+    },
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "groupName": "Patch dependency updates",
       "automerge": true
     }
   ]
