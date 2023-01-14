@@ -54,7 +54,7 @@ threetenbp = { module = "org.threeten:threetenbp", version = "1.6.5" }
 
 # Testing
 junit4 = { module = "junit:junit", version = "4.13.2"}
-junit5 = { module = "org.junit.jupiter:junit-jupiter", version = "5.9.1" }
+junit5 = { module = "org.junit.jupiter:junit-jupiter", version = "5.9.2" }
 strikt = { module = "io.strikt:strikt-core", version = "0.34.1"}
 mockk = { module = "io.mockk:mockk", version = "1.13.3" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest"}
