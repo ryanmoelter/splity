@@ -9,7 +9,7 @@ datetime = "0.4.0"
 moshi = "1.14.0"
 okhttp = "4.10.0"
 retrofit = "2.9.0"
-kotest = "5.5.4"
+kotest = "5.5.5"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
