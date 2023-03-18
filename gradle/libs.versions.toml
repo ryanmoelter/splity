@@ -62,4 +62,4 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 
 # Sentry
-sentry = { module = "io.sentry:sentry", version = "6.15.0" }
+sentry = { module = "io.sentry:sentry", version = "6.16.0" }
