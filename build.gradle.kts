@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "com.ryanmoelter"
-version = "0.8.9-SNAPSHOT"
+version = "0.9.0"
 
 repositories {
   mavenCentral()
