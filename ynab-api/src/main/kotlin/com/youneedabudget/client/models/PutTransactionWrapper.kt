@@ -10,11 +10,9 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * @property transactions
- * @property serverKnowledge The knowledge of the server
+ * @property transaction
  */
 @JsonClass(generateAdapter = true)
-data class HybridTransactionsResponseData(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<HybridTransaction>,
-    @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long? = null
+data class PutTransactionWrapper(
+    @Json(name = "transaction") @field:Json(name = "transaction") var transaction: SaveTransaction
 )

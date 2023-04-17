@@ -10,9 +10,9 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * @property transactions
+ * @property account
  */
 @JsonClass(generateAdapter = true)
-data class UpdateTransactionsWrapper(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<UpdateTransaction>
+data class PostAccountWrapper(
+    @Json(name = "account") @field:Json(name = "account") var account: SaveAccount
 )

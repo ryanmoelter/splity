@@ -6,7 +6,6 @@
 
 package com.youneedabudget.client.apis
 
-import com.youneedabudget.client.models.ErrorResponse
 import com.youneedabudget.client.models.ScheduledTransactionResponse
 import com.youneedabudget.client.models.ScheduledTransactionsResponse
 import retrofit2.http.GET
@@ -18,7 +17,7 @@ interface ScheduledTransactionsApi {
      * Single scheduled transaction
      * Returns a single scheduled transaction
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param scheduledTransactionId The id of the scheduled transaction (required)
      */
     @Headers(
@@ -33,7 +32,7 @@ interface ScheduledTransactionsApi {
      * List scheduled transactions
      * Returns all scheduled transactions
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
      */
     @Headers(

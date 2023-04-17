@@ -20,6 +20,7 @@ import java.util.UUID
  * @property categoryId
  * @property categoryName
  * @property transferAccountId If a transfer, the account_id which the subtransaction transfers to
+ * @property transferTransactionId If a transfer, the id of transaction on the other side of the transfer
  * @property deleted Whether or not the subtransaction has been deleted.  Deleted subtransactions will only be included in delta requests.
  */
 @JsonClass(generateAdapter = true)

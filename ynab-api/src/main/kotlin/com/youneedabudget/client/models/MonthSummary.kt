@@ -13,10 +13,10 @@ import org.threeten.bp.LocalDate
 /**
  * @property month
  * @property note
- * @property income The total amount of transactions categorized to &#39;Inflow: To be Budgeted&#39; in the month
+ * @property income The total amount of transactions categorized to &#39;Inflow: Ready to Assign&#39; in the month
  * @property budgeted The total amount budgeted in the month
- * @property activity The total amount of transactions in the month, excluding those categorized to &#39;Inflow: To be Budgeted&#39;
- * @property toBeBudgeted The available amount for &#39;To be Budgeted&#39;
+ * @property activity The total amount of transactions in the month, excluding those categorized to &#39;Inflow: Ready to Assign&#39;
+ * @property toBeBudgeted The available amount for &#39;Ready to Assign&#39;
  * @property ageOfMoney The Age of Money as of the month
  * @property deleted Whether or not the month has been deleted.  Deleted months will only be included in delta requests.
  */

@@ -2,8 +2,8 @@ package co.moelten.splity
 
 import com.youneedabudget.client.YnabClient
 import com.youneedabudget.client.models.BudgetSummaryResponseData
+import com.youneedabudget.client.models.PatchMonthCategoryWrapper
 import com.youneedabudget.client.models.SaveMonthCategory
-import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import org.threeten.bp.LocalDate
 
 @Suppress("unused")
@@ -42,7 +42,7 @@ suspend fun ensureZeroBalanceOnCreditCardsForOneAccount(
         budgetId = budget.id.toString(),
         month = LocalDate.now(),
         categoryId = category.id.toString(),
-        data = SaveMonthCategoryWrapper(SaveMonthCategory(category.budgeted - (category.balance + account.balance)))
+        data = PatchMonthCategoryWrapper(SaveMonthCategory(category.budgeted - (category.balance + account.balance)))
       )
     } else {
       println("No action: ${category.name}'s balance is ${category.balance}")

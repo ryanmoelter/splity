@@ -10,11 +10,9 @@ import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 
 /**
- * @property transaction
- * @property transactions
+ * @property category
  */
 @JsonClass(generateAdapter = true)
-data class SaveTransactionsWrapper(
-    @Json(name = "transaction") @field:Json(name = "transaction") var transaction: SaveTransaction? = null,
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<SaveTransaction>? = null
+data class PatchMonthCategoryWrapper(
+    @Json(name = "category") @field:Json(name = "category") var category: SaveMonthCategory
 )

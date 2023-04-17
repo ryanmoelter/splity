@@ -6,7 +6,6 @@
 
 package com.youneedabudget.client.apis
 
-import com.youneedabudget.client.models.ErrorResponse
 import com.youneedabudget.client.models.PayeeResponse
 import com.youneedabudget.client.models.PayeesResponse
 import retrofit2.http.GET
@@ -16,9 +15,9 @@ import retrofit2.http.Headers
 interface PayeesApi {
     /**
      * Single payee
-     * Returns single payee
+     * Returns a single payee
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param payeeId The id of the payee (required)
      */
     @Headers(
@@ -33,7 +32,7 @@ interface PayeesApi {
      * List payees
      * Returns all payees
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
      */
     @Headers(

@@ -1,12 +1,12 @@
 {
   "swagger": "2.0",
   "info": {
-    "description": "Our API uses a REST based design, leverages the JSON data format, and relies upon HTTPS for transport. We respond with meaningful HTTP response codes and if an error occurs, we include error details in the response body.  API Documentation is at https://api.youneedabudget.com",
+    "description": "Our API uses a REST based design, leverages the JSON data format, and relies upon HTTPS for transport. We respond with meaningful HTTP response codes and if an error occurs, we include error details in the response body.  API Documentation is at https://api.ynab.com",
     "version": "1.0.0",
     "title": "YNAB API Endpoints"
   },
   "schemes": ["https"],
-  "host": "api.youneedabudget.com",
+  "host": "api.ynab.com",
   "basePath": "/v1",
   "tags": [
     {
@@ -33,7 +33,7 @@
     },
     {
       "name": "Months",
-      "description": "Each budget contains one or more months, which is where To be Budgeted, Age of Money and category (budgeted / activity / balances) amounts are available."
+      "description": "Each budget contains one or more months, which is where Ready to Assign, Age of Money and category (budgeted / activity / balances) amounts are available."
     },
     {
       "name": "Transactions",
@@ -122,7 +122,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -168,7 +168,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           }
@@ -206,7 +206,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -239,6 +239,45 @@
             }
           }
         }
+      },
+      "post": {
+        "tags": ["Accounts"],
+        "summary": "Create a new account",
+        "description": "Creates a new account",
+        "operationId": "createAccount",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget)",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "data",
+            "in": "body",
+            "description": "The account to create.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/PostAccountWrapper"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "The account was successfully created",
+            "schema": {
+              "$ref": "#/definitions/AccountResponse"
+            }
+          },
+          "400": {
+            "description": "The request could not be understood due to malformed syntax or validation error(s).",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
       }
     },
     "/budgets/{budget_id}/accounts/{account_id}": {
@@ -252,7 +291,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -298,7 +337,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -344,7 +383,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -389,7 +428,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -440,7 +479,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -465,7 +504,7 @@
             "description": "The category to update.  Only `budgeted` amount can be updated and any other fields specified will be ignored.",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/SaveMonthCategoryWrapper"
+              "$ref": "#/definitions/PatchMonthCategoryWrapper"
             }
           }
         ],
@@ -496,7 +535,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -535,14 +574,14 @@
       "get": {
         "tags": ["Payees"],
         "summary": "Single payee",
-        "description": "Returns single payee",
+        "description": "Returns a single payee",
         "operationId": "getPayeeById",
         "produces": ["application/json"],
         "parameters": [
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -587,7 +626,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           }
@@ -625,7 +664,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -663,14 +702,14 @@
       "get": {
         "tags": ["Payee Locations"],
         "summary": "List locations for a payee",
-        "description": "Returns all payee locations for the specified payee",
+        "description": "Returns all payee locations for a specified payee",
         "operationId": "getPayeeLocationsByPayee",
         "produces": ["application/json"],
         "parameters": [
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -715,7 +754,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -761,7 +800,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -807,7 +846,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -867,7 +906,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -877,7 +916,7 @@
             "description": "The transaction or transactions to create.  To create a single transaction you can specify a value for the `transaction` object and to create multiple transactions you can specify an array of `transactions`.  It is expected that you will only provide a value for one of these objects.",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/SaveTransactionsWrapper"
+              "$ref": "#/definitions/PostTransactionsWrapper"
             }
           }
         ],
@@ -912,7 +951,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -922,7 +961,7 @@
             "description": "The transactions to update. Each transaction must have either an `id` or `import_id` specified. If `id` is specified as null an `import_id` value can be provided which will allow transaction(s) to be updated by their `import_id`. If an `id` is specified, it will always be used for lookup.",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/UpdateTransactionsWrapper"
+              "$ref": "#/definitions/PatchTransactionsWrapper"
             }
           }
         ],
@@ -946,14 +985,14 @@
       "post": {
         "tags": ["Transactions"],
         "summary": "Import transactions",
-        "description": "Imports transactions.",
+        "description": "Imports available transactions on all linked accounts for the given budget.  Linked accounts allow transactions to be imported directly from a specified financial institution and this endpoint initiates that import.  Sending a request to this endpoint is the equivalent of clicking \"Import\" on each account in the web application or tapping the \"New Transactions\" banner in the mobile applications.  The response for this endpoint contains the transaction ids that have been imported.",
         "operationId": "importTransactions",
         "produces": ["application/json"],
         "parameters": [
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           }
@@ -991,7 +1030,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1027,14 +1066,14 @@
       "put": {
         "tags": ["Transactions"],
         "summary": "Updates an existing transaction",
-        "description": "Updates a transaction",
+        "description": "Updates a single transaction",
         "operationId": "updateTransaction",
         "produces": ["application/json"],
         "parameters": [
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1051,7 +1090,7 @@
             "description": "The transaction to update",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/SaveTransactionWrapper"
+              "$ref": "#/definitions/PutTransactionWrapper"
             }
           }
         ],
@@ -1064,6 +1103,43 @@
           },
           "400": {
             "description": "The request could not be understood due to malformed syntax or validation error(s)",
+            "schema": {
+              "$ref": "#/definitions/ErrorResponse"
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Transactions"],
+        "summary": "Deletes an existing transaction",
+        "description": "Deletes a transaction",
+        "operationId": "deleteTransaction",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "budget_id",
+            "in": "path",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "description": "The id of the transaction",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The transaction was successfully deleted",
+            "schema": {
+              "$ref": "#/definitions/TransactionResponse"
+            }
+          },
+          "404": {
+            "description": "The transaction was not found",
             "schema": {
               "$ref": "#/definitions/ErrorResponse"
             }
@@ -1082,7 +1158,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1123,7 +1199,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1192,7 +1268,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1261,7 +1337,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1330,7 +1406,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1376,7 +1452,7 @@
           {
             "name": "budget_id",
             "in": "path",
-            "description": "The id of the budget (\"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget)",
+            "description": "The id of the budget. \"last-used\" can be used to specify the last used budget and \"default\" can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget).",
             "required": true,
             "type": "string"
           },
@@ -1762,21 +1838,7 @@
           "type": "string"
         },
         "type": {
-          "type": "string",
-          "description": "The type of account. Note: payPal, merchantAccount, investmentAccount, and mortgage types have been deprecated and will be removed in the future.",
-          "enum": [
-            "checking",
-            "savings",
-            "cash",
-            "creditCard",
-            "lineOfCredit",
-            "otherAsset",
-            "otherLiability",
-            "payPal",
-            "merchantAccount",
-            "investmentAccount",
-            "mortgage"
-          ]
+          "$ref": "#/definitions/AccountType"
         },
         "on_budget": {
           "type": "boolean",
@@ -1809,11 +1871,94 @@
           "format": "uuid",
           "description": "The payee id which should be used when transferring to this account"
         },
+        "direct_import_linked": {
+          "type": "boolean",
+          "description": "Whether or not the account is linked to a financial institution for automatic transaction import."
+        },
+        "direct_import_in_error": {
+          "type": "boolean",
+          "description": "If an account linked to a financial institution (direct_import_linked=true) and the linked connection is not in a healthy state, this will be true."
+        },
+        "last_reconciled_at": {
+          "type": "string",
+          "format": "date-time",
+          "description": "A date/time specifying when the account was last reconciled."
+        },
+        "debt_original_balance": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The original debt/loan account balance, specified in milliunits format."
+        },
+        "debt_interest_rates": {
+          "$ref": "#/definitions/LoanAccountPeriodicValue",
+          "description": "The debt/loan account interest rate(s), by effective date."
+        },
+        "debt_minimum_payments": {
+          "$ref": "#/definitions/LoanAccountPeriodicValue",
+          "description": "The minimum payment amount(s) for the debt/loan account, by effective date.  The amounts are specified in milliunits format."
+        },
+        "debt_escrow_amounts": {
+          "$ref": "#/definitions/LoanAccountPeriodicValue",
+          "description": "The escrow value(s) for the debt/loan account, by effective date.  The amounts are specified in milliunits format."
+        },
         "deleted": {
           "type": "boolean",
           "description": "Whether or not the account has been deleted.  Deleted accounts will only be included in delta requests."
         }
       }
+    },
+    "PostAccountWrapper": {
+      "type": "object",
+      "required": ["account"],
+      "properties": {
+        "account": {
+          "$ref": "#/definitions/SaveAccount"
+        }
+      }
+    },
+    "SaveAccount": {
+      "type": "object",
+      "required": ["name", "type", "balance"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the account"
+        },
+        "type": {
+          "$ref": "#/definitions/AccountType"
+        },
+        "balance": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The current balance of the account in milliunits format"
+        }
+      }
+    },
+    "LoanAccountPeriodicValue": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "integer",
+        "format": "int64"
+      }
+    },
+    "AccountType": {
+      "type": "string",
+      "description": "The type of account",
+      "enum": [
+        "checking",
+        "savings",
+        "cash",
+        "creditCard",
+        "lineOfCredit",
+        "otherAsset",
+        "otherLiability",
+        "mortgage",
+        "autoLoan",
+        "studentLoan",
+        "personalLoan",
+        "medicalDebt",
+        "otherDebt"
+      ]
     },
     "CategoriesResponse": {
       "type": "object",
@@ -1896,16 +2041,7 @@
     },
     "Category": {
       "type": "object",
-      "required": [
-        "id",
-        "category_group_id",
-        "name",
-        "hidden",
-        "budgeted",
-        "activity",
-        "balance",
-        "deleted"
-      ],
+      "required": ["id", "category_group_id", "name", "hidden", "budgeted", "activity", "balance", "deleted"],
       "properties": {
         "id": {
           "type": "string",
@@ -1923,7 +2059,7 @@
           "type": "boolean"
         },
         "original_category_group_id": {
-          "description": "If category is hidden this is the id of the category group it originally belonged to before it was hidden.",
+          "description": "DEPRECATED: No longer used.  Value will always be null.",
           "type": "string",
           "format": "uuid"
         },
@@ -1947,8 +2083,23 @@
         },
         "goal_type": {
           "type": "string",
-          "enum": ["TB", "TBD", "MF", "NEED", null],
+          "enum": ["TB", "TBD", "MF", "NEED", "DEBT", null],
           "description": "The type of goal, if the category has a goal (TB='Target Category Balance', TBD='Target Category Balance by Date', MF='Monthly Funding', NEED='Plan Your Spending')"
+        },
+        "goal_day": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The day of the goal"
+        },
+        "goal_cadence": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The goal cadence"
+        },
+        "goal_cadence_frequency": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The goal cadence frequency"
         },
         "goal_creation_month": {
           "type": "string",
@@ -1963,12 +2114,32 @@
         "goal_target_month": {
           "type": "string",
           "format": "date",
-          "description": "The target month for the goal to be completed.  Only some goal types specify this date."
+          "description": "The original target month for the goal to be completed.  Only some goal types specify this date."
         },
         "goal_percentage_complete": {
           "type": "integer",
           "format": "int32",
           "description": "The percentage completion of the goal"
+        },
+        "goal_months_to_budget": {
+          "type": "integer",
+          "format": "int32",
+          "description": "The number of months, including the current month, left in the current goal period."
+        },
+        "goal_under_funded": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The amount of funding still needed in the current month to stay on track towards completing the goal within the current goal period.  This amount will generally correspond to the 'Underfunded' amount in the web and mobile clients except when viewing a category with a Needed for Spending Goal in a future month.  The web and mobile clients will ignore any funding from a prior goal period when viewing category with a Needed for Spending Goal in a future month."
+        },
+        "goal_overall_funded": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The total amount funded towards the goal within the current goal period."
+        },
+        "goal_overall_left": {
+          "type": "integer",
+          "format": "int64",
+          "description": "The amount of funding still needed to complete the goal within the current goal period."
         },
         "deleted": {
           "type": "boolean",
@@ -2148,12 +2319,17 @@
               "items": {
                 "$ref": "#/definitions/HybridTransaction"
               }
+            },
+            "server_knowledge": {
+              "type": "integer",
+              "format": "int64",
+              "description": "The knowledge of the server"
             }
           }
         }
       }
     },
-    "SaveTransactionWrapper": {
+    "PutTransactionWrapper": {
       "type": "object",
       "required": ["transaction"],
       "properties": {
@@ -2162,7 +2338,7 @@
         }
       }
     },
-    "SaveTransactionsWrapper": {
+    "PostTransactionsWrapper": {
       "type": "object",
       "properties": {
         "transaction": {
@@ -2176,23 +2352,32 @@
         }
       }
     },
-    "UpdateTransactionsWrapper": {
+    "SaveTransaction": {
+      "allOf": [
+        {
+          "required": ["account_id", "date", "amount"]
+        },
+        {
+          "$ref": "#/definitions/SaveTransactionWithOptionalFields"
+        }
+      ]
+    },
+    "PatchTransactionsWrapper": {
       "type": "object",
       "required": ["transactions"],
       "properties": {
         "transactions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/UpdateTransaction"
+            "$ref": "#/definitions/SaveTransactionWithId"
           }
         }
       }
     },
-    "UpdateTransaction": {
+    "SaveTransactionWithId": {
       "allOf": [
         {
           "type": "object",
-          "required": ["id"],
           "properties": {
             "id": {
               "type": "string"
@@ -2200,13 +2385,12 @@
           }
         },
         {
-          "$ref": "#/definitions/SaveTransaction"
+          "$ref": "#/definitions/SaveTransactionWithOptionalFields"
         }
       ]
     },
-    "SaveTransaction": {
+    "SaveTransactionWithOptionalFields": {
       "type": "object",
-      "required": ["account_id", "date", "amount"],
       "properties": {
         "account_id": {
           "type": "string",
@@ -2358,15 +2542,7 @@
     },
     "TransactionSummary": {
       "type": "object",
-      "required": [
-        "id",
-        "date",
-        "amount",
-        "cleared",
-        "approved",
-        "account_id",
-        "deleted"
-      ],
+      "required": ["id", "date", "amount", "cleared", "approved", "account_id", "deleted"],
       "properties": {
         "id": {
           "type": "string"
@@ -2425,7 +2601,20 @@
         },
         "import_id": {
           "type": "string",
-          "description": "If the Transaction was imported, this field is a unique (by account) import identifier.  If this transaction was imported through File Based Import or Direct Import and not through the API, the import_id will have the format: 'YNAB:[milliunit_amount]:[iso_date]:[occurrence]'.  For example, a transaction dated 2015-12-30 in the amount of -$294.23 USD would have an import_id of 'YNAB:-294230:2015-12-30:1'.  If a second transaction on the same account was imported and had the same date and same amount, its import_id would be 'YNAB:-294230:2015-12-30:2'."
+          "description": "If the transaction was imported, this field is a unique (by account) import identifier.  If this transaction was imported through File Based Import or Direct Import and not through the API, the import_id will have the format: 'YNAB:[milliunit_amount]:[iso_date]:[occurrence]'.  For example, a transaction dated 2015-12-30 in the amount of -$294.23 USD would have an import_id of 'YNAB:-294230:2015-12-30:1'.  If a second transaction on the same account was imported and had the same date and same amount, its import_id would be 'YNAB:-294230:2015-12-30:2'."
+        },
+        "import_payee_name": {
+          "type": "string",
+          "description": "If the transaction was imported, the payee name that was used when importing and before applying any payee rename rules"
+        },
+        "import_payee_name_original": {
+          "type": "string",
+          "description": "If the transaction was imported, the original payee name as it appeared on the statement"
+        },
+        "debt_transaction_type": {
+          "type": "string",
+          "enum": ["payment", "refund", "fee", "interest", "escrow", "balancedAdjustment", "credit", "charge", null],
+          "description": "If the transaction is a debt/loan account transaction, the type of transaction"
         },
         "deleted": {
           "type": "boolean",
@@ -2449,7 +2638,8 @@
               "type": "string"
             },
             "category_name": {
-              "type": "string"
+              "type": "string",
+              "description": "The name of the category.  If a split transaction, this will be 'Split'."
             },
             "subtransactions": {
               "type": "array",
@@ -2487,13 +2677,14 @@
               "type": "string"
             },
             "category_name": {
-              "type": "string"
+              "type": "string",
+              "description": "The name of the category.  If a split transaction, this will be 'Split'."
             }
           }
         }
       ]
     },
-    "SaveMonthCategoryWrapper": {
+    "PatchMonthCategoryWrapper": {
       "type": "object",
       "required": ["category"],
       "properties": {
@@ -2578,12 +2769,7 @@
     },
     "SubTransaction": {
       "type": "object",
-      "required": [
-        "id",
-        "transaction_id",
-        "amount",
-        "deleted"
-      ],
+      "required": ["id", "transaction_id", "amount", "deleted"],
       "properties": {
         "id": {
           "type": "string"
@@ -2617,6 +2803,10 @@
           "type": "string",
           "format": "uuid",
           "description": "If a transfer, the account_id which the subtransaction transfers to"
+        },
+        "transfer_transaction_id": {
+          "type": "string",
+          "description": "If a transfer, the id of transaction on the other side of the transfer"
         },
         "deleted": {
           "type": "boolean",
@@ -2664,15 +2854,7 @@
     },
     "ScheduledTransactionSummary": {
       "type": "object",
-      "required": [
-        "id",
-        "date_first",
-        "date_next",
-        "frequency",
-        "amount",
-        "account_id",
-        "deleted"
-      ],
+      "required": ["id", "date_first", "date_next", "frequency", "amount", "account_id", "deleted"],
       "properties": {
         "id": {
           "type": "string",
@@ -2758,7 +2940,8 @@
               "type": "string"
             },
             "category_name": {
-              "type": "string"
+              "type": "string",
+              "description": "The name of the category.  If a split scheduled transaction, this will be 'Split'."
             },
             "subtransactions": {
               "type": "array",
@@ -2773,12 +2956,7 @@
     },
     "ScheduledSubTransaction": {
       "type": "object",
-      "required": [
-        "id",
-        "scheduled_transaction_id",
-        "amount",
-        "deleted"
-      ],
+      "required": ["id", "scheduled_transaction_id", "amount", "deleted"],
       "properties": {
         "id": {
           "type": "string",
@@ -2867,7 +3045,7 @@
         "income": {
           "type": "integer",
           "format": "int64",
-          "description": "The total amount of transactions categorized to 'Inflow: To be Budgeted' in the month"
+          "description": "The total amount of transactions categorized to 'Inflow: Ready to Assign' in the month"
         },
         "budgeted": {
           "type": "integer",
@@ -2877,12 +3055,12 @@
         "activity": {
           "type": "integer",
           "format": "int64",
-          "description": "The total amount of transactions in the month, excluding those categorized to 'Inflow: To be Budgeted'"
+          "description": "The total amount of transactions in the month, excluding those categorized to 'Inflow: Ready to Assign'"
         },
         "to_be_budgeted": {
           "type": "integer",
           "format": "int64",
-          "description": "The available amount for 'To be Budgeted'"
+          "description": "The available amount for 'Ready to Assign'"
         },
         "age_of_money": {
           "type": "integer",

@@ -26,15 +26,17 @@ import com.youneedabudget.client.models.CategoriesResponse
 import com.youneedabudget.client.models.CategoriesResponseData
 import com.youneedabudget.client.models.CategoryResponse
 import com.youneedabudget.client.models.HybridTransactionsResponse
+import com.youneedabudget.client.models.PatchMonthCategoryWrapper
+import com.youneedabudget.client.models.PatchTransactionsWrapper
+import com.youneedabudget.client.models.PostAccountWrapper
+import com.youneedabudget.client.models.PostTransactionsWrapper
+import com.youneedabudget.client.models.PutTransactionWrapper
 import com.youneedabudget.client.models.SaveCategoryResponse
 import com.youneedabudget.client.models.SaveCategoryResponseData
-import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import com.youneedabudget.client.models.SaveSubTransaction
 import com.youneedabudget.client.models.SaveTransaction
-import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsResponse
 import com.youneedabudget.client.models.SaveTransactionsResponseData
-import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.SubTransaction
 import com.youneedabudget.client.models.TransactionDetail
 import com.youneedabudget.client.models.TransactionResponse
@@ -42,7 +44,6 @@ import com.youneedabudget.client.models.TransactionResponseData
 import com.youneedabudget.client.models.TransactionsImportResponse
 import com.youneedabudget.client.models.TransactionsResponse
 import com.youneedabudget.client.models.TransactionsResponseData
-import com.youneedabudget.client.models.UpdateTransactionsWrapper
 import io.kotest.matchers.collections.shouldContain
 import org.threeten.bp.LocalDate
 import java.util.UUID
@@ -85,6 +86,10 @@ class FakeBudgets(
 class FakeAccounts(
   private val fakeYnabServerDatabase: FakeYnabServerDatabase
 ) : AccountsApi {
+  override suspend fun createAccount(budgetId: String, data: PostAccountWrapper): AccountResponse {
+    TODO("Not yet implemented")
+  }
+
   override suspend fun getAccountById(budgetId: String, accountId: UUID): AccountResponse {
     TODO("Not yet implemented")
   }
@@ -107,7 +112,7 @@ class FakeTransactions(
 ) : TransactionsApi {
   override suspend fun createTransaction(
     budgetId: String,
-    data: SaveTransactionsWrapper
+    data: PostTransactionsWrapper
   ): SaveTransactionsResponse {
     require((data.transaction!!.importId?.length ?: 0) <= 36) {
       "import_id (${data.transaction!!.importId}) is too long (maximum is $MAX_IMPORT_ID_LENGTH characters)"
@@ -128,6 +133,13 @@ class FakeTransactions(
         null  // TODO: Fail on duplicate import ids
       )
     )
+  }
+
+  override suspend fun deleteTransaction(
+    budgetId: String,
+    transactionId: String
+  ): TransactionResponse {
+    TODO("Not yet implemented")
   }
 
   override suspend fun getTransactionById(
@@ -207,7 +219,7 @@ class FakeTransactions(
   override suspend fun updateTransaction(
     budgetId: String,
     transactionId: String,
-    data: SaveTransactionWrapper
+    data: PutTransactionWrapper
   ): TransactionResponse {
     val splitTransactionWithTransfer = (
       fakeYnabServerDatabase.getTransactionById(transactionId.toTransactionId())
@@ -304,7 +316,7 @@ class FakeTransactions(
 
   override suspend fun updateTransactions(
     budgetId: String,
-    data: UpdateTransactionsWrapper
+    data: PatchTransactionsWrapper
   ): SaveTransactionsResponse {
     TODO("Not yet implemented")
   }
@@ -340,7 +352,7 @@ class FakeCategories(private val fakeYnabServerDatabase: FakeYnabServerDatabase)
     budgetId: String,
     month: LocalDate,
     categoryId: String,
-    data: SaveMonthCategoryWrapper
+    data: PatchMonthCategoryWrapper
   ): SaveCategoryResponse {
     val category = fakeYnabServerDatabase.budgetToCategoryGroupsMap
       .getValue(budgetId.toBudgetId())
@@ -415,4 +427,5 @@ private fun SaveTransaction.FlagColorEnum.toRegularFlagColorEnum() = when (this)
   SaveTransaction.FlagColorEnum.GREEN -> TransactionDetail.FlagColorEnum.GREEN
   SaveTransaction.FlagColorEnum.BLUE -> TransactionDetail.FlagColorEnum.BLUE
   SaveTransaction.FlagColorEnum.PURPLE -> TransactionDetail.FlagColorEnum.PURPLE
+  SaveTransaction.FlagColorEnum.NONE -> TransactionDetail.FlagColorEnum.NONE
 }

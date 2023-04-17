@@ -15,10 +15,10 @@ import co.moelten.splity.database.UpdateField.values
 import co.moelten.splity.models.PublicSubTransaction
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
+import com.youneedabudget.client.models.PostTransactionsWrapper
+import com.youneedabudget.client.models.PutTransactionWrapper
 import com.youneedabudget.client.models.SaveSubTransaction
 import com.youneedabudget.client.models.SaveTransaction
-import com.youneedabudget.client.models.SaveTransactionWrapper
-import com.youneedabudget.client.models.SaveTransactionsWrapper
 import me.tatarka.inject.annotations.Inject
 import kotlin.math.absoluteValue
 
@@ -78,7 +78,7 @@ class ActionApplier(
 
     val response = ynab.transactions.createTransaction(
       toAccountAndBudget.budgetId.toString(),
-      SaveTransactionsWrapper(
+      PostTransactionsWrapper(
         SaveTransaction(
           accountId = toAccountAndBudget.accountId.plainUuid,
           date = fromTransaction.date,
@@ -122,7 +122,7 @@ class ActionApplier(
       val response = ynab.transactions.updateTransaction(
         complement.budgetId.toString(),
         complement.id.string,
-        SaveTransactionWrapper(
+        PutTransactionWrapper(
           SaveTransaction(
             accountId = complement.accountId.plainUuid,
             date = date,
@@ -157,7 +157,7 @@ class ActionApplier(
     val response = ynab.transactions.updateTransaction(
       complement.budgetId.toString(),
       complement.id.string,
-      SaveTransactionWrapper(
+      PutTransactionWrapper(
         complement.toSaveTransaction().copy(
           flagColor = SaveTransaction.FlagColorEnum.RED,
           approved = false
@@ -190,7 +190,7 @@ class ActionApplier(
     val firstResponse = ynab.transactions.updateTransaction(
       fromTransaction.budgetId.toString(),
       fromTransaction.id.string,
-      SaveTransactionWrapper(
+      PutTransactionWrapper(
         fromTransaction.toSaveTransaction().copy(
           flagColor = SaveTransaction.FlagColorEnum.RED,
           amount = amount,
@@ -212,7 +212,7 @@ class ActionApplier(
       val complementResponse = ynab.transactions.updateTransaction(
         complement.budgetId.toString(),
         complement.id.string,
-        SaveTransactionWrapper(
+        PutTransactionWrapper(
           complement.toSaveTransaction().copy(
             flagColor = SaveTransaction.FlagColorEnum.RED,
             approved = false,

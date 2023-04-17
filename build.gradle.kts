@@ -10,7 +10,7 @@ plugins {
   idea
 }
 
-group = "co.moelten"
+group = "com.ryanmoelter"
 version = "0.8.9-SNAPSHOT"
 
 repositories {

@@ -9,7 +9,7 @@ package com.youneedabudget.client.models
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
 import org.threeten.bp.LocalDate
-import java.util.*
+import java.util.UUID
 
 /**
  * @property id
@@ -25,13 +25,16 @@ import java.util.*
  * @property transferAccountId If a transfer transaction, the account to which it transfers
  * @property transferTransactionId If a transfer transaction, the id of transaction on the other side of the transfer
  * @property matchedTransactionId If transaction is matched, the id of the matched transaction
- * @property importId If the Transaction was imported, this field is a unique (by account) import identifier.  If this transaction was imported through File Based Import or Direct Import and not through the API, the import_id will have the format: &#39;YNAB:[milliunit_amount]:[iso_date]:[occurrence]&#39;.  For example, a transaction dated 2015-12-30 in the amount of -$294.23 USD would have an import_id of &#39;YNAB:-294230:2015-12-30:1&#39;.  If a second transaction on the same account was imported and had the same date and same amount, its import_id would be &#39;YNAB:-294230:2015-12-30:2&#39;.
+ * @property importId If the transaction was imported, this field is a unique (by account) import identifier.  If this transaction was imported through File Based Import or Direct Import and not through the API, the import_id will have the format: &#39;YNAB:[milliunit_amount]:[iso_date]:[occurrence]&#39;.  For example, a transaction dated 2015-12-30 in the amount of -$294.23 USD would have an import_id of &#39;YNAB:-294230:2015-12-30:1&#39;.  If a second transaction on the same account was imported and had the same date and same amount, its import_id would be &#39;YNAB:-294230:2015-12-30:2&#39;.
+ * @property importPayeeName If the transaction was imported, the payee name that was used when importing and before applying any payee rename rules
+ * @property importPayeeNameOriginal If the transaction was imported, the original payee name as it appeared on the statement
+ * @property debtTransactionType If the transaction is a debt/loan account transaction, the type of transaction
  * @property deleted Whether or not the transaction has been deleted.  Deleted transactions will only be included in delta requests.
  * @property type Whether the hybrid transaction represents a regular transaction or a subtransaction
  * @property parentTransactionId For subtransaction types, this is the id of the parent transaction.  For transaction types, this id will be always be null.
  * @property accountName
  * @property payeeName
- * @property categoryName
+ * @property categoryName The name of the category.  If a split transaction, this will be &#39;Split&#39;.
  */
 @JsonClass(generateAdapter = true)
 data class HybridTransaction(
@@ -52,6 +55,9 @@ data class HybridTransaction(
     @Json(name = "transfer_transaction_id") @field:Json(name = "transfer_transaction_id") var transferTransactionId: String? = null,
     @Json(name = "matched_transaction_id") @field:Json(name = "matched_transaction_id") var matchedTransactionId: String? = null,
     @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
+    @Json(name = "import_payee_name") @field:Json(name = "import_payee_name") var importPayeeName: String? = null,
+    @Json(name = "import_payee_name_original") @field:Json(name = "import_payee_name_original") var importPayeeNameOriginal: String? = null,
+    @Json(name = "debt_transaction_type") @field:Json(name = "debt_transaction_type") var debtTransactionType: HybridTransaction.DebtTransactionTypeEnum? = null,
     @Json(name = "parent_transaction_id") @field:Json(name = "parent_transaction_id") var parentTransactionId: String? = null,
     @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
     @Json(name = "category_name") @field:Json(name = "category_name") var categoryName: String? = null
@@ -77,7 +83,23 @@ data class HybridTransaction(
         @Json(name = "yellow") YELLOW("yellow"),
         @Json(name = "green") GREEN("green"),
         @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple")
+        @Json(name = "purple") PURPLE("purple"),
+        @Json(name = "") NONE("")
+    }
+    /**
+     * If the transaction is a debt/loan account transaction, the type of transaction
+     * Values: PAYMENT, REFUND, FEE, INTEREST, ESCROW, BALANCEDADJUSTMENT, CREDIT, CHARGE
+     */
+    @JsonClass(generateAdapter = false)
+    enum class DebtTransactionTypeEnum(val value: String) {
+        @Json(name = "payment") PAYMENT("payment"),
+        @Json(name = "refund") REFUND("refund"),
+        @Json(name = "fee") FEE("fee"),
+        @Json(name = "interest") INTEREST("interest"),
+        @Json(name = "escrow") ESCROW("escrow"),
+        @Json(name = "balancedAdjustment") BALANCEDADJUSTMENT("balancedAdjustment"),
+        @Json(name = "credit") CREDIT("credit"),
+        @Json(name = "charge") CHARGE("charge")
     }
     /**
      * Whether the hybrid transaction represents a regular transaction or a subtransaction

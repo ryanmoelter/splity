@@ -8,8 +8,8 @@ package com.youneedabudget.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import java.util.UUID
 import org.threeten.bp.LocalDate
+import java.util.UUID
 
 /**
  * @property id
@@ -26,7 +26,7 @@ import org.threeten.bp.LocalDate
  * @property deleted Whether or not the scheduled transaction has been deleted.  Deleted scheduled transactions will only be included in delta requests.
  * @property accountName
  * @property payeeName
- * @property categoryName
+ * @property categoryName The name of the category.  If a split scheduled transaction, this will be &#39;Split&#39;.
  * @property subtransactions If a split scheduled transaction, the subtransactions.
  */
 @JsonClass(generateAdapter = true)
@@ -78,6 +78,7 @@ data class ScheduledTransactionDetail(
         @Json(name = "yellow") YELLOW("yellow"),
         @Json(name = "green") GREEN("green"),
         @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple")
+        @Json(name = "purple") PURPLE("purple"),
+        @Json(name = "") NONE("")
     }
 }
