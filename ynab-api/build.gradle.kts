@@ -8,8 +8,8 @@ plugins {
   alias(libs.plugins.ksp)
 }
 
-group = "co.moelten"
-version = "0.2-SNAPSHOT"
+group = "com.ryanmoelter"
+version = "0.3-SNAPSHOT"
 
 repositories {
   mavenCentral()
