@@ -3,6 +3,7 @@ package co.moelten.splity
 import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toCategoryId
 import com.youneedabudget.client.models.Account
+import com.youneedabudget.client.models.AccountType
 import com.youneedabudget.client.models.Category
 import com.youneedabudget.client.models.CategoryGroupWithCategories
 import java.util.UUID.randomUUID
@@ -77,7 +78,7 @@ val firstNonCreditCardCategoryGroup = CategoryGroupWithCategories(
 val firstCreditCardAccountSapphire = Account(
   id = FIRST_CREDIT_CARD_ACCOUNT_SAPPHIRE_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_SAPPHIRE_NAME,
-  type = Account.TypeEnum.CREDITCARD,
+  type = AccountType.CREDITCARD,
   onBudget = true,
   closed = false,
   balance = 0,
@@ -91,7 +92,7 @@ val firstCreditCardAccountSapphire = Account(
 val firstCreditCardAccountFreedom = Account(
   id = FIRST_CREDIT_CARD_ACCOUNT_FREEDOM_ID.plainUuid,
   name = FIRST_CREDIT_CARD_CATEGORY_FREEDOM_NAME,
-  type = Account.TypeEnum.CREDITCARD,
+  type = AccountType.CREDITCARD,
   onBudget = true,
   closed = false,
   balance = 0,

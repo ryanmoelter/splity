@@ -5,9 +5,9 @@ import co.moelten.splity.database.ProcessedState
 import co.moelten.splity.database.Repository
 import co.moelten.splity.models.PublicTransactionDetail
 import com.youneedabudget.client.YnabClient
+import com.youneedabudget.client.models.PutTransactionWrapper
 import com.youneedabudget.client.models.SaveSubTransaction
 import com.youneedabudget.client.models.SaveTransaction
-import com.youneedabudget.client.models.SaveTransactionWrapper
 import com.youneedabudget.client.models.TransactionDetail.FlagColorEnum.PURPLE
 import me.tatarka.inject.annotations.Inject
 
@@ -96,7 +96,7 @@ class TransactionSplitter(
     val response = ynabClient.transactions.updateTransaction(
       budgetId = budgetId.plainUuid.toString(),
       transactionId = id.string,
-      data = SaveTransactionWrapper(
+      data = PutTransactionWrapper(
         toSaveTransaction().copy(
           categoryId = null,
           flagColor = SaveTransaction.FlagColorEnum.GREEN,

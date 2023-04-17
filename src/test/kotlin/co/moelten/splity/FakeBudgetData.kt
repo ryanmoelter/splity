@@ -4,6 +4,7 @@ import co.moelten.splity.database.toAccountId
 import co.moelten.splity.database.toBudgetId
 import co.moelten.splity.database.toPayeeId
 import com.youneedabudget.client.models.Account
+import com.youneedabudget.client.models.AccountType
 import com.youneedabudget.client.models.BudgetSummary
 
 val FROM_BUDGET_ID = "fa5b22c0-9ea4-4ea4-bb6f-bfac601a4bb0".toBudgetId()
@@ -17,7 +18,7 @@ val FROM_ACCOUNT_AND_BUDGET =
 val FROM_ACCOUNT = Account(
   id = FROM_ACCOUNT_ID.plainUuid,
   name = FROM_ACCOUNT_NAME,
-  type = Account.TypeEnum.CHECKING,
+  type = AccountType.CHECKING,
   onBudget = true,
   closed = false,
   balance = 0L,
@@ -39,7 +40,7 @@ val TO_ACCOUNT_AND_BUDGET =
 val TO_ACCOUNT = Account(
   id = TO_ACCOUNT_ID.plainUuid,
   name = TO_ACCOUNT_NAME,
-  type = Account.TypeEnum.CHECKING,
+  type = AccountType.CHECKING,
   onBudget = true,
   closed = false,
   balance = 0L,
@@ -56,7 +57,7 @@ val FROM_TRANSFER_SOURCE_ACCOUNT_PAYEE_ID = "11bcce60-549a-4545-be1d-cf06d5a4d06
 val FROM_TRANSFER_SOURCE_ACCOUNT = Account(
   id = FROM_TRANSFER_SOURCE_ACCOUNT_ID.plainUuid,
   name = FROM_TRANSFER_SOURCE_ACCOUNT_NAME,
-  type = Account.TypeEnum.CHECKING,
+  type = AccountType.CHECKING,
   onBudget = true,
   closed = false,
   balance = 0L,
