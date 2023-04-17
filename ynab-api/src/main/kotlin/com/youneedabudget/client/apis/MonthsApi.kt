@@ -6,7 +6,6 @@
 
 package com.youneedabudget.client.apis
 
-import com.youneedabudget.client.models.ErrorResponse
 import com.youneedabudget.client.models.MonthDetailResponse
 import com.youneedabudget.client.models.MonthSummariesResponse
 import org.threeten.bp.LocalDate
@@ -19,7 +18,7 @@ interface MonthsApi {
      * Single budget month
      * Returns a single budget month
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param month The budget month in ISO format (e.g. 2016-12-01) (\&quot;current\&quot; can also be used to specify the current calendar month (UTC)) (required)
      */
     @Headers(
@@ -34,7 +33,7 @@ interface MonthsApi {
      * List budget months
      * Returns all budget months
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
      */
     @Headers(

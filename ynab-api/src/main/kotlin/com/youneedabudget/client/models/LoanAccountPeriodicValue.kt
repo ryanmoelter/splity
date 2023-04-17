@@ -6,4 +6,4 @@
 
 package com.youneedabudget.client.models
 
-typealias SaveTransaction = SaveTransactionWithOptionalFields
+typealias LoanAccountPeriodicValue = Map<String, Long>

@@ -18,7 +18,7 @@ interface BudgetsApi {
      * Single budget
      * Returns a single budget with all related entities.  This resource is effectively a full budget export.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
      */
     @Headers(
@@ -33,7 +33,7 @@ interface BudgetsApi {
      * Budget Settings
      * Returns settings for a budget
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      */
     @Headers(
         "X-Operation-ID: getBudgetSettingsById"

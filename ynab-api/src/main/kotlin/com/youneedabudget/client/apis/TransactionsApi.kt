@@ -6,16 +6,16 @@
 
 package com.youneedabudget.client.apis
 
-import com.youneedabudget.client.models.ErrorResponse
 import com.youneedabudget.client.models.HybridTransactionsResponse
-import com.youneedabudget.client.models.SaveTransactionWrapper
+import com.youneedabudget.client.models.PatchTransactionsWrapper
+import com.youneedabudget.client.models.PostTransactionsWrapper
+import com.youneedabudget.client.models.PutTransactionWrapper
 import com.youneedabudget.client.models.SaveTransactionsResponse
-import com.youneedabudget.client.models.SaveTransactionsWrapper
 import com.youneedabudget.client.models.TransactionResponse
 import com.youneedabudget.client.models.TransactionsImportResponse
 import com.youneedabudget.client.models.TransactionsResponse
-import com.youneedabudget.client.models.UpdateTransactionsWrapper
 import org.threeten.bp.LocalDate
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.Headers
 import retrofit2.http.PATCH
@@ -28,7 +28,7 @@ interface TransactionsApi {
      * Create a single transaction or multiple transactions
      * Creates a single transaction or multiple transactions.  If you provide a body containing a `transaction` object, a single transaction will be created and if you provide a body containing a `transactions` array, multiple transactions will be created.  Scheduled transactions cannot be created on this endpoint.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param `data` The transaction or transactions to create.  To create a single transaction you can specify a value for the `transaction` object and to create multiple transactions you can specify an array of `transactions`.  It is expected that you will only provide a value for one of these objects. (required)
      */
     @Headers(
@@ -37,13 +37,28 @@ interface TransactionsApi {
     @POST("budgets/{budget_id}/transactions")
     suspend fun createTransaction(
         @retrofit2.http.Path("budget_id") budgetId: String,
-        @retrofit2.http.Body `data`: SaveTransactionsWrapper
+        @retrofit2.http.Body `data`: PostTransactionsWrapper
     ): SaveTransactionsResponse
+    /**
+     * Deletes an existing transaction
+     * Deletes a transaction
+     * The endpoint is owned by defaultname service owner
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
+     * @param transactionId The id of the transaction (required)
+     */
+    @Headers(
+        "X-Operation-ID: deleteTransaction"
+    )
+    @DELETE("budgets/{budget_id}/transactions/{transaction_id}")
+    suspend fun deleteTransaction(
+        @retrofit2.http.Path("budget_id") budgetId: String,
+        @retrofit2.http.Path("transaction_id") transactionId: String
+    ): TransactionResponse
     /**
      * Single transaction
      * Returns a single transaction
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param transactionId The id of the transaction (required)
      */
     @Headers(
@@ -58,7 +73,7 @@ interface TransactionsApi {
      * List transactions
      * Returns budget transactions
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param sinceDate If specified, only transactions on or after this date will be included.  The date should be ISO formatted (e.g. 2016-12-30). (optional)
      * @param type If specified, only transactions of the specified type will be included. \&quot;uncategorized\&quot; and \&quot;unapproved\&quot; are currently supported. (optional)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
@@ -77,7 +92,7 @@ interface TransactionsApi {
      * List account transactions
      * Returns all transactions for a specified account
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param accountId The id of the account (required)
      * @param sinceDate If specified, only transactions on or after this date will be included.  The date should be ISO formatted (e.g. 2016-12-30). (optional)
      * @param type If specified, only transactions of the specified type will be included. \&quot;uncategorized\&quot; and \&quot;unapproved\&quot; are currently supported. (optional)
@@ -98,7 +113,7 @@ interface TransactionsApi {
      * List category transactions
      * Returns all transactions for a specified category
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param categoryId The id of the category (required)
      * @param sinceDate If specified, only transactions on or after this date will be included.  The date should be ISO formatted (e.g. 2016-12-30). (optional)
      * @param type If specified, only transactions of the specified type will be included. \&quot;uncategorized\&quot; and \&quot;unapproved\&quot; are currently supported. (optional)
@@ -119,7 +134,7 @@ interface TransactionsApi {
      * List payee transactions
      * Returns all transactions for a specified payee
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param payeeId The id of the payee (required)
      * @param sinceDate If specified, only transactions on or after this date will be included.  The date should be ISO formatted (e.g. 2016-12-30). (optional)
      * @param type If specified, only transactions of the specified type will be included. \&quot;uncategorized\&quot; and \&quot;unapproved\&quot; are currently supported. (optional)
@@ -138,9 +153,9 @@ interface TransactionsApi {
     ): HybridTransactionsResponse
     /**
      * Import transactions
-     * Imports transactions.
+     * Imports available transactions on all linked accounts for the given budget.  Linked accounts allow transactions to be imported directly from a specified financial institution and this endpoint initiates that import.  Sending a request to this endpoint is the equivalent of clicking \"Import\" on each account in the web application or tapping the \"New Transactions\" banner in the mobile applications.  The response for this endpoint contains the transaction ids that have been imported.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      */
     @Headers(
         "X-Operation-ID: importTransactions"
@@ -151,9 +166,9 @@ interface TransactionsApi {
     ): TransactionsImportResponse
     /**
      * Updates an existing transaction
-     * Updates a transaction
+     * Updates a single transaction
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param transactionId The id of the transaction (required)
      * @param `data` The transaction to update (required)
      */
@@ -164,13 +179,13 @@ interface TransactionsApi {
     suspend fun updateTransaction(
         @retrofit2.http.Path("budget_id") budgetId: String,
         @retrofit2.http.Path("transaction_id") transactionId: String,
-        @retrofit2.http.Body `data`: SaveTransactionWrapper
+        @retrofit2.http.Body `data`: PutTransactionWrapper
     ): TransactionResponse
     /**
      * Update multiple transactions
      * Updates multiple transactions, by `id` or `import_id`.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param `data` The transactions to update. Each transaction must have either an `id` or `import_id` specified. If `id` is specified as null an `import_id` value can be provided which will allow transaction(s) to be updated by their `import_id`. If an `id` is specified, it will always be used for lookup. (required)
      */
     @Headers(
@@ -179,6 +194,6 @@ interface TransactionsApi {
     @PATCH("budgets/{budget_id}/transactions")
     suspend fun updateTransactions(
         @retrofit2.http.Path("budget_id") budgetId: String,
-        @retrofit2.http.Body `data`: UpdateTransactionsWrapper
+        @retrofit2.http.Body `data`: PatchTransactionsWrapper
     ): SaveTransactionsResponse
 }

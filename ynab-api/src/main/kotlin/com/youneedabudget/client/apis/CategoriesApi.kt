@@ -8,8 +8,8 @@ package com.youneedabudget.client.apis
 
 import com.youneedabudget.client.models.CategoriesResponse
 import com.youneedabudget.client.models.CategoryResponse
+import com.youneedabudget.client.models.PatchMonthCategoryWrapper
 import com.youneedabudget.client.models.SaveCategoryResponse
-import com.youneedabudget.client.models.SaveMonthCategoryWrapper
 import org.threeten.bp.LocalDate
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -21,7 +21,7 @@ interface CategoriesApi {
      * List categories
      * Returns all categories grouped by category group.  Amounts (budgeted, activity, balance, etc.) are specific to the current budget month (UTC).
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
      */
     @Headers(
@@ -36,7 +36,7 @@ interface CategoriesApi {
      * Single category
      * Returns a single category.  Amounts (budgeted, activity, balance, etc.) are specific to the current budget month (UTC).
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param categoryId The id of the category (required)
      */
     @Headers(
@@ -51,7 +51,7 @@ interface CategoriesApi {
      * Single category for a specific budget month
      * Returns a single category for a specific budget month.  Amounts (budgeted, activity, balance, etc.) are specific to the current budget month (UTC).
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param month The budget month in ISO format (e.g. 2016-12-01) (\&quot;current\&quot; can also be used to specify the current calendar month (UTC)) (required)
      * @param categoryId The id of the category (required)
      */
@@ -68,7 +68,7 @@ interface CategoriesApi {
      * Update a category for a specific month
      * Update a category for a specific month.  Only `budgeted` amount can be updated.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param month The budget month in ISO format (e.g. 2016-12-01) (\&quot;current\&quot; can also be used to specify the current calendar month (UTC)) (required)
      * @param categoryId The id of the category (required)
      * @param `data` The category to update.  Only `budgeted` amount can be updated and any other fields specified will be ignored. (required)
@@ -81,6 +81,6 @@ interface CategoriesApi {
         @retrofit2.http.Path("budget_id") budgetId: String,
         @retrofit2.http.Path("month") month: LocalDate,
         @retrofit2.http.Path("category_id") categoryId: String,
-        @retrofit2.http.Body `data`: SaveMonthCategoryWrapper
+        @retrofit2.http.Body `data`: PatchMonthCategoryWrapper
     ): SaveCategoryResponse
 }

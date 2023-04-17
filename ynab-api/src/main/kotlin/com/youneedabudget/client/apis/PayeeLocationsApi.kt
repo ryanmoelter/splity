@@ -6,7 +6,6 @@
 
 package com.youneedabudget.client.apis
 
-import com.youneedabudget.client.models.ErrorResponse
 import com.youneedabudget.client.models.PayeeLocationResponse
 import com.youneedabudget.client.models.PayeeLocationsResponse
 import retrofit2.http.GET
@@ -18,7 +17,7 @@ interface PayeeLocationsApi {
      * Single payee location
      * Returns a single payee location
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param payeeLocationId id of payee location (required)
      */
     @Headers(
@@ -33,7 +32,7 @@ interface PayeeLocationsApi {
      * List payee locations
      * Returns all payee locations
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      */
     @Headers(
         "X-Operation-ID: getPayeeLocations"
@@ -44,9 +43,9 @@ interface PayeeLocationsApi {
     ): PayeeLocationsResponse
     /**
      * List locations for a payee
-     * Returns all payee locations for the specified payee
+     * Returns all payee locations for a specified payee
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param payeeId id of payee (required)
      */
     @Headers(

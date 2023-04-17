@@ -8,8 +8,8 @@ package com.youneedabudget.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import java.util.UUID
 import org.threeten.bp.LocalDate
+import java.util.UUID
 
 /**
  * @property id
@@ -70,6 +70,7 @@ data class ScheduledTransactionSummary(
         @Json(name = "yellow") YELLOW("yellow"),
         @Json(name = "green") GREEN("green"),
         @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple")
+        @Json(name = "purple") PURPLE("purple"),
+        @Json(name = "") NONE("")
     }
 }

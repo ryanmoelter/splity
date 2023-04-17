@@ -8,12 +8,13 @@ package com.youneedabudget.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import org.threeten.bp.ZonedDateTime
 import java.util.UUID
 
 /**
  * @property id
  * @property name
- * @property type The type of account. Note: payPal, merchantAccount, investmentAccount, and mortgage types have been deprecated and will be removed in the future.
+ * @property type
  * @property onBudget Whether this account is on budget or not
  * @property closed Whether this account is closed or not
  * @property note
@@ -21,13 +22,20 @@ import java.util.UUID
  * @property clearedBalance The current cleared balance of the account in milliunits format
  * @property unclearedBalance The current uncleared balance of the account in milliunits format
  * @property transferPayeeId The payee id which should be used when transferring to this account
+ * @property directImportLinked Whether or not the account is linked to a financial institution for automatic transaction import.
+ * @property directImportInError If an account linked to a financial institution (direct_import_linked&#x3D;true) and the linked connection is not in a healthy state, this will be true.
+ * @property lastReconciledAt A date/time specifying when the account was last reconciled.
+ * @property debtOriginalBalance The original debt/loan account balance, specified in milliunits format.
+ * @property debtInterestRates The debt/loan account interest rate(s), by effective date.
+ * @property debtMinimumPayments The minimum payment amount(s) for the debt/loan account, by effective date.  The amounts are specified in milliunits format.
+ * @property debtEscrowAmounts The escrow value(s) for the debt/loan account, by effective date.  The amounts are specified in milliunits format.
  * @property deleted Whether or not the account has been deleted.  Deleted accounts will only be included in delta requests.
  */
 @JsonClass(generateAdapter = true)
 data class Account(
     @Json(name = "id") @field:Json(name = "id") var id: UUID,
     @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "type") @field:Json(name = "type") var type: Account.TypeEnum,
+    @Json(name = "type") @field:Json(name = "type") var type: AccountType,
     @Json(name = "on_budget") @field:Json(name = "on_budget") var onBudget: Boolean,
     @Json(name = "closed") @field:Json(name = "closed") var closed: Boolean,
     @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
@@ -35,24 +43,12 @@ data class Account(
     @Json(name = "uncleared_balance") @field:Json(name = "uncleared_balance") var unclearedBalance: Long,
     @Json(name = "transfer_payee_id") @field:Json(name = "transfer_payee_id") var transferPayeeId: UUID,
     @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "note") @field:Json(name = "note") var note: String? = null
-) {
-    /**
-     * The type of account. Note: payPal, merchantAccount, investmentAccount, and mortgage types have been deprecated and will be removed in the future.
-     * Values: CHECKING, SAVINGS, CASH, CREDITCARD, LINEOFCREDIT, OTHERASSET, OTHERLIABILITY, PAYPAL, MERCHANTACCOUNT, INVESTMENTACCOUNT, MORTGAGE
-     */
-    @JsonClass(generateAdapter = false)
-    enum class TypeEnum(val value: String) {
-        @Json(name = "checking") CHECKING("checking"),
-        @Json(name = "savings") SAVINGS("savings"),
-        @Json(name = "cash") CASH("cash"),
-        @Json(name = "creditCard") CREDITCARD("creditCard"),
-        @Json(name = "lineOfCredit") LINEOFCREDIT("lineOfCredit"),
-        @Json(name = "otherAsset") OTHERASSET("otherAsset"),
-        @Json(name = "otherLiability") OTHERLIABILITY("otherLiability"),
-        @Json(name = "payPal") PAYPAL("payPal"),
-        @Json(name = "merchantAccount") MERCHANTACCOUNT("merchantAccount"),
-        @Json(name = "investmentAccount") INVESTMENTACCOUNT("investmentAccount"),
-        @Json(name = "mortgage") MORTGAGE("mortgage")
-    }
-}
+    @Json(name = "note") @field:Json(name = "note") var note: String? = null,
+    @Json(name = "direct_import_linked") @field:Json(name = "direct_import_linked") var directImportLinked: Boolean? = null,
+    @Json(name = "direct_import_in_error") @field:Json(name = "direct_import_in_error") var directImportInError: Boolean? = null,
+    @Json(name = "last_reconciled_at") @field:Json(name = "last_reconciled_at") var lastReconciledAt: ZonedDateTime? = null,
+    @Json(name = "debt_original_balance") @field:Json(name = "debt_original_balance") var debtOriginalBalance: Long? = null,
+    @Json(name = "debt_interest_rates") @field:Json(name = "debt_interest_rates") var debtInterestRates: LoanAccountPeriodicValue? = null,
+    @Json(name = "debt_minimum_payments") @field:Json(name = "debt_minimum_payments") var debtMinimumPayments: LoanAccountPeriodicValue? = null,
+    @Json(name = "debt_escrow_amounts") @field:Json(name = "debt_escrow_amounts") var debtEscrowAmounts: LoanAccountPeriodicValue? = null
+)

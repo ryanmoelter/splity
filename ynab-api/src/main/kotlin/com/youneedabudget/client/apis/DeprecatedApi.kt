@@ -8,7 +8,6 @@ package com.youneedabudget.client.apis
 
 import com.youneedabudget.client.models.BulkResponse
 import com.youneedabudget.client.models.BulkTransactions
-import com.youneedabudget.client.models.ErrorResponse
 import retrofit2.http.Headers
 import retrofit2.http.POST
 
@@ -18,7 +17,7 @@ interface DeprecatedApi {
      * Bulk create transactions
      * Creates multiple transactions.  Although this endpoint is still supported, it is recommended to use 'POST /budgets/{budget_id}/transactions' to create multiple transactions.
      * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget (\&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.youneedabudget.com/#oauth-default-budget) (required)
+     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
      * @param transactions The list of transactions to create (required)
      */
     @Headers(
