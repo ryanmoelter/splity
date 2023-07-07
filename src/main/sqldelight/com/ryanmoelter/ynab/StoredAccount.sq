@@ -1,7 +1,7 @@
-import co.moelten.splity.database.AccountId;
-import co.moelten.splity.database.BudgetId;
-import co.moelten.splity.database.PayeeId;
-import com.youneedabudget.client.models.AccountType;
+import com.ryanmoelter.splity.database.AccountId;
+import com.ryanmoelter.splity.database.BudgetId;
+import com.ryanmoelter.splity.database.PayeeId;
+import com.ynab.client.models.AccountType;
 import kotlin.Boolean;
 
 CREATE TABLE storedAccount (

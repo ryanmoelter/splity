@@ -1,7 +1,7 @@
 {
-  "invokerPackage": "com.youneedabudget.client",
-  "apiPackage": "com.youneedabudget.client.api",
-  "modelPackage": "com.youneedabudget.client.model",
+  "invokerPackage": "com.ynab.client",
+  "apiPackage": "com.ynab.client.api",
+  "modelPackage": "com.ynab.client.model",
   "library": "retrofit2",
   "dateLibrary": "java8",
   "java8": true

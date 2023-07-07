@@ -43,7 +43,7 @@ tasks.withType<Test> {
 }
 
 application {
-  mainClass.set("co.moelten.splity.SplityKt")
+  mainClass.set("com.ryanmoelter.splity.SplityKt")
 }
 
 val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks

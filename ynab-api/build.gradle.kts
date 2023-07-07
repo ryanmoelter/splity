@@ -36,7 +36,7 @@ dependencies {
 
 generateSwagger {
   platform = "kotlin-coroutines"
-  packageName = "com.youneedabudget.client"
+  packageName = "com.ynab.client"
   inputFile = file("./ynab.json")
   outputDir = file("./src/main/kotlin/")
 }
