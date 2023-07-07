@@ -1,4 +1,4 @@
-import co.moelten.splity.database.BudgetId;
+import com.ryanmoelter.splity.database.BudgetId;
 import org.threeten.bp.LocalDate;
 
 CREATE TABLE storedBudget (

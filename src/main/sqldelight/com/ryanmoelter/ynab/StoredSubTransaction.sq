@@ -1,10 +1,10 @@
-import co.moelten.splity.database.AccountId;
-import co.moelten.splity.database.BudgetId;
-import co.moelten.splity.database.CategoryId;
-import co.moelten.splity.database.PayeeId;
-import co.moelten.splity.database.ProcessedState;
-import co.moelten.splity.database.SubTransactionId;
-import co.moelten.splity.database.TransactionId;
+import com.ryanmoelter.splity.database.AccountId;
+import com.ryanmoelter.splity.database.BudgetId;
+import com.ryanmoelter.splity.database.CategoryId;
+import com.ryanmoelter.splity.database.PayeeId;
+import com.ryanmoelter.splity.database.ProcessedState;
+import com.ryanmoelter.splity.database.SubTransactionId;
+import com.ryanmoelter.splity.database.TransactionId;
 
 CREATE TABLE storedSubTransaction (
   id TEXT AS SubTransactionId PRIMARY KEY NOT NULL,
