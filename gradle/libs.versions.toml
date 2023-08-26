@@ -1,7 +1,7 @@
 [versions]
-kotlin = "1.9.0"
+kotlin = "1.9.10"
 coroutines = "1.7.3"
-ksp = "1.9.0-1.0.13"
+ksp = "1.9.10-1.0.13"
 inject = "0.6.1"
 hoplite = "2.7.5"
 sqldelight = "1.5.5"
@@ -35,7 +35,7 @@ hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "ho
 # Database
 sqldelight-driver-jvm = { module = "com.squareup.sqldelight:sqlite-driver", version.ref = "sqldelight" }
 sqldelight-coroutines-extensions = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
-uuid = { module = "com.benasher44:uuid", version = "0.8.0" }
+uuid = { module = "com.benasher44:uuid", version = "0.8.1" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
 # API
