@@ -15,7 +15,7 @@ kotest = "5.7.2"
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqldelight" }
-spotless = { id = "com.diffplug.spotless", version = "6.21.0" }
+spotless = { id = "com.diffplug.spotless", version = "6.22.0" }
 yelp-codegen = { id = "com.yelp.codegen.plugin", version = "1.4.1" }
 
 [libraries]
