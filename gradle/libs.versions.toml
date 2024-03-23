@@ -8,7 +8,7 @@ sqldelight = "1.5.5"
 datetime = "0.5.0"
 moshi = "1.15.1"
 okhttp = "4.12.0"
-retrofit = "2.9.0"
+retrofit = "2.10.0"
 kotest = "5.8.1"
 
 [plugins]
