@@ -11,14 +11,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4.1.1
+    - uses: actions/checkout@v4.1.4
     - name: Set up our JDK environment
       uses: actions/setup-java@v4.2.1
       with:
         distribution: 'zulu'
         java-version: '11'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@v3.3.1
+      uses: gradle/gradle-build-action@v3.3.2
       with:
         arguments: assemble
 
