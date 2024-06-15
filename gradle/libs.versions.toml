@@ -2,7 +2,7 @@
 kotlin = "1.9.24"
 coroutines = "1.8.1"
 ksp = "1.9.24-1.0.20"
-inject = "0.6.3"
+inject = "0.7.1"
 hoplite = "2.7.5"
 sqldelight = "1.5.5"
 datetime = "0.6.0"
