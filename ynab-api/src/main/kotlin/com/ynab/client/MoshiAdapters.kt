@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:filename")
+
 package com.ynab.client
 
 import com.squareup.moshi.FromJson

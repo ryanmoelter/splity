@@ -14,5 +14,6 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class TransactionsImportResponseData(
-    @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds: List<String>
+  @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds:
+    List<String>,
 )

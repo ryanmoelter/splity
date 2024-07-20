@@ -4,7 +4,7 @@ plugins {
   java
   application
   alias(libs.plugins.kotlin.jvm)
-  alias(libs.plugins.spotless)
+  alias(libs.plugins.kotlinter)
   alias(libs.plugins.sqldelight)
   alias(libs.plugins.ksp)
   idea
@@ -67,18 +67,22 @@ sqldelight {
   }
 }
 
-spotless {
-  format("misc") {
-    target("*.gradle.kts", "*.md", ".gitignore")
+kotlinter {
+  failBuildWhenCannotAutoFormat = true
+}
 
-    trimTrailingWhitespace()
-    indentWithSpaces(2)
-    endWithNewline()
-  }
-  kotlin {
-    trimTrailingWhitespace()
-    endWithNewline()
-  }
+tasks.formatKotlinMain {
+  exclude { it.file.path.contains("generated/") }
+}
+tasks.formatKotlinTest {
+  exclude { it.file.path.contains("generated/") }
+}
+
+tasks.lintKotlinMain {
+  exclude { it.file.path.contains("generated/") }
+}
+tasks.lintKotlinTest {
+  exclude { it.file.path.contains("generated/") }
 }
 
 task("createProperties") {
@@ -105,6 +109,7 @@ idea {
       sourceDirs + file("build/generated/ksp/main/kotlin") // or tasks["kspKotlin"].destination
     testSourceDirs = testSourceDirs + file("build/generated/ksp/test/kotlin")
     generatedSourceDirs =
-      generatedSourceDirs + file("build/generated/ksp/main/kotlin") + file("build/generated/ksp/test/kotlin")
+      generatedSourceDirs + file("build/generated/ksp/main/kotlin") +
+      file("build/generated/ksp/test/kotlin")
   }
 }

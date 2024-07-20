@@ -14,5 +14,6 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BulkTransactions(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<SaveTransaction>
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<SaveTransaction>,
 )

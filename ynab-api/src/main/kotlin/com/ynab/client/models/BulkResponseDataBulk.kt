@@ -15,6 +15,9 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BulkResponseDataBulk(
-    @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds: List<String>,
-    @Json(name = "duplicate_import_ids") @field:Json(name = "duplicate_import_ids") var duplicateImportIds: List<String>
+  @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds:
+    List<String>,
+  @Json(
+    name = "duplicate_import_ids",
+  ) @field:Json(name = "duplicate_import_ids") var duplicateImportIds: List<String>,
 )

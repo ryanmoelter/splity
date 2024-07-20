@@ -15,6 +15,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class CategoriesResponseData(
-    @Json(name = "category_groups") @field:Json(name = "category_groups") var categoryGroups: List<CategoryGroupWithCategories>,
-    @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long
+  @Json(name = "category_groups") @field:Json(name = "category_groups") var categoryGroups:
+    List<CategoryGroupWithCategories>,
+  @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long,
 )

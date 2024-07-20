@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class MonthSummariesResponse(
-    @Json(name = "data") @field:Json(name = "data") var `data`: MonthSummariesResponseData
+  @Json(name = "data") @field:Json(name = "data") var `data`: MonthSummariesResponseData,
 )

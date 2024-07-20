@@ -15,5 +15,5 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class User(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
 )

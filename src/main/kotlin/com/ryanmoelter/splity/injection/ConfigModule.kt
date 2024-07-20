@@ -21,10 +21,11 @@ interface ConfigModule {
 
 @Component
 abstract class RealConfigModule : ConfigModule {
-
-  override fun config(): Config = ConfigLoaderBuilder.default()
-    .addDecoder(DateDecoder())
-    .addSource(PropertySource.resource("/version.properties"))
-    .build()
-    .loadConfigOrThrow("./config.yaml")
+  override fun config(): Config =
+    ConfigLoaderBuilder
+      .default()
+      .addDecoder(DateDecoder())
+      .addSource(PropertySource.resource("/version.properties"))
+      .build()
+      .loadConfigOrThrow("./config.yaml")
 }

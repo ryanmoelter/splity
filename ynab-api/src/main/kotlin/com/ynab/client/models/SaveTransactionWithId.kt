@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.LocalDate
 import java.util.UUID
+import org.threeten.bp.LocalDate
 
 /**
  * @property accountId
@@ -28,42 +28,68 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class SaveTransactionWithId(
-    @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID? = null,
-    @Json(name = "date") @field:Json(name = "date") var date: LocalDate? = null,
-    @Json(name = "amount") @field:Json(name = "amount") var amount: Long? = null,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
-    @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
-    @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
-    @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
-    @Json(name = "cleared") @field:Json(name = "cleared") var cleared: SaveTransactionWithId.ClearedEnum? = null,
-    @Json(name = "approved") @field:Json(name = "approved") var approved: Boolean? = null,
-    @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor: SaveTransactionWithId.FlagColorEnum? = null,
-    @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
-    @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions: List<SaveSubTransaction>? = null,
-    @Json(name = "id") @field:Json(name = "id") var id: String? = null
+  @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID? = null,
+  @Json(name = "date") @field:Json(name = "date") var date: LocalDate? = null,
+  @Json(name = "amount") @field:Json(name = "amount") var amount: Long? = null,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
+  @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
+  @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
+  @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
+  @Json(name = "cleared") @field:Json(name = "cleared") var cleared:
+    SaveTransactionWithId.ClearedEnum? = null,
+  @Json(name = "approved") @field:Json(name = "approved") var approved: Boolean? = null,
+  @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor:
+    SaveTransactionWithId.FlagColorEnum? = null,
+  @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
+  @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions:
+    List<SaveSubTransaction>? = null,
+  @Json(name = "id") @field:Json(name = "id") var id: String? = null,
 ) {
-    /**
-     * The cleared status of the transaction
-     * Values: CLEARED, UNCLEARED, RECONCILED
-     */
-    @JsonClass(generateAdapter = false)
-    enum class ClearedEnum(val value: String) {
-        @Json(name = "cleared") CLEARED("cleared"),
-        @Json(name = "uncleared") UNCLEARED("uncleared"),
-        @Json(name = "reconciled") RECONCILED("reconciled")
-    }
-    /**
-     * The transaction flag
-     * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
-     */
-    @JsonClass(generateAdapter = false)
-    enum class FlagColorEnum(val value: String) {
-        @Json(name = "red") RED("red"),
-        @Json(name = "orange") ORANGE("orange"),
-        @Json(name = "yellow") YELLOW("yellow"),
-        @Json(name = "green") GREEN("green"),
-        @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple"),
-        @Json(name = "") NONE("")
-    }
+  /**
+   * The cleared status of the transaction
+   * Values: CLEARED, UNCLEARED, RECONCILED
+   */
+  @JsonClass(generateAdapter = false)
+  enum class ClearedEnum(
+    val value: String,
+  ) {
+    @Json(name = "cleared")
+    CLEARED("cleared"),
+
+    @Json(name = "uncleared")
+    UNCLEARED("uncleared"),
+
+    @Json(name = "reconciled")
+    RECONCILED("reconciled"),
+  }
+
+  /**
+   * The transaction flag
+   * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
+   */
+  @JsonClass(generateAdapter = false)
+  enum class FlagColorEnum(
+    val value: String,
+  ) {
+    @Json(name = "red")
+    RED("red"),
+
+    @Json(name = "orange")
+    ORANGE("orange"),
+
+    @Json(name = "yellow")
+    YELLOW("yellow"),
+
+    @Json(name = "green")
+    GREEN("green"),
+
+    @Json(name = "blue")
+    BLUE("blue"),
+
+    @Json(name = "purple")
+    PURPLE("purple"),
+
+    @Json(name = "")
+    NONE(""),
+  }
 }

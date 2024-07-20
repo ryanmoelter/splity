@@ -15,6 +15,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BudgetSummaryResponseData(
-    @Json(name = "budgets") @field:Json(name = "budgets") var budgets: List<BudgetSummary>,
-    @Json(name = "default_budget") @field:Json(name = "default_budget") var defaultBudget: BudgetSummary? = null
+  @Json(name = "budgets") @field:Json(name = "budgets") var budgets: List<BudgetSummary>,
+  @Json(name = "default_budget") @field:Json(name = "default_budget") var defaultBudget:
+    BudgetSummary? = null,
 )

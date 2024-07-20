@@ -16,7 +16,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class SaveAccount(
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "type") @field:Json(name = "type") var type: AccountType,
-    @Json(name = "balance") @field:Json(name = "balance") var balance: Long
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "type") @field:Json(name = "type") var type: AccountType,
+  @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
 )

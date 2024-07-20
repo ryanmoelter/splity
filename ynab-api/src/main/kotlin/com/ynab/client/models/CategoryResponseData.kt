@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class CategoryResponseData(
-    @Json(name = "category") @field:Json(name = "category") var category: Category
+  @Json(name = "category") @field:Json(name = "category") var category: Category,
 )

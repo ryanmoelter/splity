@@ -22,12 +22,16 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class ScheduledSubTransaction(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "scheduled_transaction_id") @field:Json(name = "scheduled_transaction_id") var scheduledTransactionId: UUID,
-    @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
-    @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
-    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(
+    name = "scheduled_transaction_id",
+  ) @field:Json(name = "scheduled_transaction_id") var scheduledTransactionId: UUID,
+  @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
+  @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
+  @Json(
+    name = "transfer_account_id",
+  ) @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null,
 )

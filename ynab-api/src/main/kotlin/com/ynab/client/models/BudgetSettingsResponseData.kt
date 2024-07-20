@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BudgetSettingsResponseData(
-    @Json(name = "settings") @field:Json(name = "settings") var settings: BudgetSettings
+  @Json(name = "settings") @field:Json(name = "settings") var settings: BudgetSettings,
 )

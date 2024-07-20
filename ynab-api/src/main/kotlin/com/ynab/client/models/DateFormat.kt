@@ -15,5 +15,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class DateFormat(
-    @Json(name = "format") @field:Json(name = "format") var format: String
+  @Json(name = "format") @field:Json(name = "format") var format: String,
 )

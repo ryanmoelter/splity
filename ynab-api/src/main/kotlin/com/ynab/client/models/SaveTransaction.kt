@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.LocalDate
 import java.util.UUID
+import org.threeten.bp.LocalDate
 
 /**
  * @property accountId
@@ -38,30 +38,54 @@ data class SaveTransaction(
   @Json(name = "approved") @field:Json(name = "approved") var approved: Boolean? = null,
   @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor: FlagColorEnum? = null,
   @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
-  @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions: List<SaveSubTransaction>? = null
+  @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions:
+    List<SaveSubTransaction>? = null,
 ) {
   /**
    * The cleared status of the transaction
    * Values: CLEARED, UNCLEARED, RECONCILED
    */
   @JsonClass(generateAdapter = false)
-  enum class ClearedEnum(val value: String) {
-    @Json(name = "cleared") CLEARED("cleared"),
-    @Json(name = "uncleared") UNCLEARED("uncleared"),
-    @Json(name = "reconciled") RECONCILED("reconciled")
+  enum class ClearedEnum(
+    val value: String,
+  ) {
+    @Json(name = "cleared")
+    CLEARED("cleared"),
+
+    @Json(name = "uncleared")
+    UNCLEARED("uncleared"),
+
+    @Json(name = "reconciled")
+    RECONCILED("reconciled"),
   }
+
   /**
    * The transaction flag
    * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
    */
   @JsonClass(generateAdapter = false)
-  enum class FlagColorEnum(val value: String) {
-    @Json(name = "red") RED("red"),
-    @Json(name = "orange") ORANGE("orange"),
-    @Json(name = "yellow") YELLOW("yellow"),
-    @Json(name = "green") GREEN("green"),
-    @Json(name = "blue") BLUE("blue"),
-    @Json(name = "purple") PURPLE("purple"),
-    @Json(name = "") NONE("")
+  enum class FlagColorEnum(
+    val value: String,
+  ) {
+    @Json(name = "red")
+    RED("red"),
+
+    @Json(name = "orange")
+    ORANGE("orange"),
+
+    @Json(name = "yellow")
+    YELLOW("yellow"),
+
+    @Json(name = "green")
+    GREEN("green"),
+
+    @Json(name = "blue")
+    BLUE("blue"),
+
+    @Json(name = "purple")
+    PURPLE("purple"),
+
+    @Json(name = "")
+    NONE(""),
   }
 }

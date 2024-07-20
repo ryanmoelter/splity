@@ -14,5 +14,6 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class PatchTransactionsWrapper(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<SaveTransactionWithId>
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<SaveTransactionWithId>,
 )

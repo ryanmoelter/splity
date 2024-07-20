@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class HybridTransactionsResponse(
-    @Json(name = "data") @field:Json(name = "data") var `data`: HybridTransactionsResponseData
+  @Json(name = "data") @field:Json(name = "data") var `data`: HybridTransactionsResponseData,
 )

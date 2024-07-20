@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.LocalDate
 import java.util.UUID
+import org.threeten.bp.LocalDate
 
 /**
  * @property id
@@ -38,76 +38,140 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class HybridTransaction(
-    @Json(name = "id") @field:Json(name = "id") var id: String,
-    @Json(name = "date") @field:Json(name = "date") var date: LocalDate,
-    @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
-    @Json(name = "cleared") @field:Json(name = "cleared") var cleared: HybridTransaction.ClearedEnum,
-    @Json(name = "approved") @field:Json(name = "approved") var approved: Boolean,
-    @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "type") @field:Json(name = "type") var type: HybridTransaction.TypeEnum,
-    @Json(name = "account_name") @field:Json(name = "account_name") var accountName: String,
-    @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
-    @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor: HybridTransaction.FlagColorEnum? = null,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
-    @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
-    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null,
-    @Json(name = "transfer_transaction_id") @field:Json(name = "transfer_transaction_id") var transferTransactionId: String? = null,
-    @Json(name = "matched_transaction_id") @field:Json(name = "matched_transaction_id") var matchedTransactionId: String? = null,
-    @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
-    @Json(name = "import_payee_name") @field:Json(name = "import_payee_name") var importPayeeName: String? = null,
-    @Json(name = "import_payee_name_original") @field:Json(name = "import_payee_name_original") var importPayeeNameOriginal: String? = null,
-    @Json(name = "debt_transaction_type") @field:Json(name = "debt_transaction_type") var debtTransactionType: HybridTransaction.DebtTransactionTypeEnum? = null,
-    @Json(name = "parent_transaction_id") @field:Json(name = "parent_transaction_id") var parentTransactionId: String? = null,
-    @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
-    @Json(name = "category_name") @field:Json(name = "category_name") var categoryName: String? = null
+  @Json(name = "id") @field:Json(name = "id") var id: String,
+  @Json(name = "date") @field:Json(name = "date") var date: LocalDate,
+  @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
+  @Json(name = "cleared") @field:Json(name = "cleared") var cleared: HybridTransaction.ClearedEnum,
+  @Json(name = "approved") @field:Json(name = "approved") var approved: Boolean,
+  @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "type") @field:Json(name = "type") var type: HybridTransaction.TypeEnum,
+  @Json(name = "account_name") @field:Json(name = "account_name") var accountName: String,
+  @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
+  @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor:
+    HybridTransaction.FlagColorEnum? = null,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
+  @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
+  @Json(
+    name = "transfer_account_id",
+  ) @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null,
+  @Json(
+    name = "transfer_transaction_id",
+  ) @field:Json(name = "transfer_transaction_id") var transferTransactionId: String? = null,
+  @Json(
+    name = "matched_transaction_id",
+  ) @field:Json(name = "matched_transaction_id") var matchedTransactionId: String? = null,
+  @Json(name = "import_id") @field:Json(name = "import_id") var importId: String? = null,
+  @Json(name = "import_payee_name") @field:Json(name = "import_payee_name") var importPayeeName:
+    String? = null,
+  @Json(
+    name = "import_payee_name_original",
+  ) @field:Json(name = "import_payee_name_original") var importPayeeNameOriginal: String? = null,
+  @Json(
+    name = "debt_transaction_type",
+  ) @field:Json(name = "debt_transaction_type") var debtTransactionType:
+    HybridTransaction.DebtTransactionTypeEnum? = null,
+  @Json(
+    name = "parent_transaction_id",
+  ) @field:Json(name = "parent_transaction_id") var parentTransactionId: String? = null,
+  @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
+  @Json(
+    name = "category_name",
+  ) @field:Json(name = "category_name") var categoryName: String? = null,
 ) {
-    /**
-     * The cleared status of the transaction
-     * Values: CLEARED, UNCLEARED, RECONCILED
-     */
-    @JsonClass(generateAdapter = false)
-    enum class ClearedEnum(val value: String) {
-        @Json(name = "cleared") CLEARED("cleared"),
-        @Json(name = "uncleared") UNCLEARED("uncleared"),
-        @Json(name = "reconciled") RECONCILED("reconciled")
-    }
-    /**
-     * The transaction flag
-     * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
-     */
-    @JsonClass(generateAdapter = false)
-    enum class FlagColorEnum(val value: String) {
-        @Json(name = "red") RED("red"),
-        @Json(name = "orange") ORANGE("orange"),
-        @Json(name = "yellow") YELLOW("yellow"),
-        @Json(name = "green") GREEN("green"),
-        @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple"),
-        @Json(name = "") NONE("")
-    }
-    /**
-     * If the transaction is a debt/loan account transaction, the type of transaction
-     * Values: PAYMENT, REFUND, FEE, INTEREST, ESCROW, BALANCEDADJUSTMENT, CREDIT, CHARGE
-     */
-    @JsonClass(generateAdapter = false)
-    enum class DebtTransactionTypeEnum(val value: String) {
-        @Json(name = "payment") PAYMENT("payment"),
-        @Json(name = "refund") REFUND("refund"),
-        @Json(name = "fee") FEE("fee"),
-        @Json(name = "interest") INTEREST("interest"),
-        @Json(name = "escrow") ESCROW("escrow"),
-        @Json(name = "balancedAdjustment") BALANCEDADJUSTMENT("balancedAdjustment"),
-        @Json(name = "credit") CREDIT("credit"),
-        @Json(name = "charge") CHARGE("charge")
-    }
-    /**
-     * Whether the hybrid transaction represents a regular transaction or a subtransaction
-     * Values: TRANSACTION, SUBTRANSACTION
-     */
-    @JsonClass(generateAdapter = false)
-    enum class TypeEnum(val value: String) {
-        @Json(name = "transaction") TRANSACTION("transaction"),
-        @Json(name = "subtransaction") SUBTRANSACTION("subtransaction")
-    }
+  /**
+   * The cleared status of the transaction
+   * Values: CLEARED, UNCLEARED, RECONCILED
+   */
+  @JsonClass(generateAdapter = false)
+  enum class ClearedEnum(
+    val value: String,
+  ) {
+    @Json(name = "cleared")
+    CLEARED("cleared"),
+
+    @Json(name = "uncleared")
+    UNCLEARED("uncleared"),
+
+    @Json(name = "reconciled")
+    RECONCILED("reconciled"),
+  }
+
+  /**
+   * The transaction flag
+   * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
+   */
+  @JsonClass(generateAdapter = false)
+  enum class FlagColorEnum(
+    val value: String,
+  ) {
+    @Json(name = "red")
+    RED("red"),
+
+    @Json(name = "orange")
+    ORANGE("orange"),
+
+    @Json(name = "yellow")
+    YELLOW("yellow"),
+
+    @Json(name = "green")
+    GREEN("green"),
+
+    @Json(name = "blue")
+    BLUE("blue"),
+
+    @Json(name = "purple")
+    PURPLE("purple"),
+
+    @Json(name = "")
+    NONE(""),
+  }
+
+  /**
+   * If the transaction is a debt/loan account transaction, the type of transaction
+   * Values: PAYMENT, REFUND, FEE, INTEREST, ESCROW, BALANCEDADJUSTMENT, CREDIT, CHARGE
+   */
+  @JsonClass(generateAdapter = false)
+  enum class DebtTransactionTypeEnum(
+    val value: String,
+  ) {
+    @Json(name = "payment")
+    PAYMENT("payment"),
+
+    @Json(name = "refund")
+    REFUND("refund"),
+
+    @Json(name = "fee")
+    FEE("fee"),
+
+    @Json(name = "interest")
+    INTEREST("interest"),
+
+    @Json(name = "escrow")
+    ESCROW("escrow"),
+
+    @Json(name = "balancedAdjustment")
+    BALANCEDADJUSTMENT("balancedAdjustment"),
+
+    @Json(name = "credit")
+    CREDIT("credit"),
+
+    @Json(name = "charge")
+    CHARGE("charge"),
+  }
+
+  /**
+   * Whether the hybrid transaction represents a regular transaction or a subtransaction
+   * Values: TRANSACTION, SUBTRANSACTION
+   */
+  @JsonClass(generateAdapter = false)
+  enum class TypeEnum(
+    val value: String,
+  ) {
+    @Json(name = "transaction")
+    TRANSACTION("transaction"),
+
+    @Json(name = "subtransaction")
+    SUBTRANSACTION("subtransaction"),
+  }
 }

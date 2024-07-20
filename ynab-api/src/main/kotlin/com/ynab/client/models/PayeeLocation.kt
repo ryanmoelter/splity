@@ -19,9 +19,9 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class PayeeLocation(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID,
-    @Json(name = "latitude") @field:Json(name = "latitude") var latitude: String,
-    @Json(name = "longitude") @field:Json(name = "longitude") var longitude: String,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID,
+  @Json(name = "latitude") @field:Json(name = "latitude") var latitude: String,
+  @Json(name = "longitude") @field:Json(name = "longitude") var longitude: String,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
 )

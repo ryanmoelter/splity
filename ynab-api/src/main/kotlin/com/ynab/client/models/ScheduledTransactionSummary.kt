@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.LocalDate
 import java.util.UUID
+import org.threeten.bp.LocalDate
 
 /**
  * @property id
@@ -27,50 +27,97 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class ScheduledTransactionSummary(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "date_first") @field:Json(name = "date_first") var dateFirst: LocalDate,
-    @Json(name = "date_next") @field:Json(name = "date_next") var dateNext: LocalDate,
-    @Json(name = "frequency") @field:Json(name = "frequency") var frequency: ScheduledTransactionSummary.FrequencyEnum,
-    @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
-    @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
-    @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor: ScheduledTransactionSummary.FlagColorEnum? = null,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
-    @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
-    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "date_first") @field:Json(name = "date_first") var dateFirst: LocalDate,
+  @Json(name = "date_next") @field:Json(name = "date_next") var dateNext: LocalDate,
+  @Json(name = "frequency") @field:Json(name = "frequency") var frequency:
+    ScheduledTransactionSummary.FrequencyEnum,
+  @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
+  @Json(name = "account_id") @field:Json(name = "account_id") var accountId: UUID,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
+  @Json(name = "flag_color") @field:Json(name = "flag_color") var flagColor:
+    ScheduledTransactionSummary.FlagColorEnum? = null,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
+  @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
+  @Json(
+    name = "transfer_account_id",
+  ) @field:Json(name = "transfer_account_id") var transferAccountId: UUID? = null,
 ) {
-    /**
-     * Values: NEVER, DAILY, WEEKLY, EVERYOTHERWEEK, TWICEAMONTH, EVERY4WEEKS, MONTHLY, EVERYOTHERMONTH, EVERY3MONTHS, EVERY4MONTHS, TWICEAYEAR, YEARLY, EVERYOTHERYEAR
-     */
-    @JsonClass(generateAdapter = false)
-    enum class FrequencyEnum(val value: String) {
-        @Json(name = "never") NEVER("never"),
-        @Json(name = "daily") DAILY("daily"),
-        @Json(name = "weekly") WEEKLY("weekly"),
-        @Json(name = "everyOtherWeek") EVERYOTHERWEEK("everyOtherWeek"),
-        @Json(name = "twiceAMonth") TWICEAMONTH("twiceAMonth"),
-        @Json(name = "every4Weeks") EVERY4WEEKS("every4Weeks"),
-        @Json(name = "monthly") MONTHLY("monthly"),
-        @Json(name = "everyOtherMonth") EVERYOTHERMONTH("everyOtherMonth"),
-        @Json(name = "every3Months") EVERY3MONTHS("every3Months"),
-        @Json(name = "every4Months") EVERY4MONTHS("every4Months"),
-        @Json(name = "twiceAYear") TWICEAYEAR("twiceAYear"),
-        @Json(name = "yearly") YEARLY("yearly"),
-        @Json(name = "everyOtherYear") EVERYOTHERYEAR("everyOtherYear")
-    }
-    /**
-     * The scheduled transaction flag
-     * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
-     */
-    @JsonClass(generateAdapter = false)
-    enum class FlagColorEnum(val value: String) {
-        @Json(name = "red") RED("red"),
-        @Json(name = "orange") ORANGE("orange"),
-        @Json(name = "yellow") YELLOW("yellow"),
-        @Json(name = "green") GREEN("green"),
-        @Json(name = "blue") BLUE("blue"),
-        @Json(name = "purple") PURPLE("purple"),
-        @Json(name = "") NONE("")
-    }
+  /**
+   * Values: NEVER, DAILY, WEEKLY, EVERYOTHERWEEK, TWICEAMONTH, EVERY4WEEKS, MONTHLY, EVERYOTHERMONTH, EVERY3MONTHS, EVERY4MONTHS, TWICEAYEAR, YEARLY, EVERYOTHERYEAR
+   */
+  @JsonClass(generateAdapter = false)
+  enum class FrequencyEnum(
+    val value: String,
+  ) {
+    @Json(name = "never")
+    NEVER("never"),
+
+    @Json(name = "daily")
+    DAILY("daily"),
+
+    @Json(name = "weekly")
+    WEEKLY("weekly"),
+
+    @Json(name = "everyOtherWeek")
+    EVERYOTHERWEEK("everyOtherWeek"),
+
+    @Json(name = "twiceAMonth")
+    TWICEAMONTH("twiceAMonth"),
+
+    @Json(name = "every4Weeks")
+    EVERY4WEEKS("every4Weeks"),
+
+    @Json(name = "monthly")
+    MONTHLY("monthly"),
+
+    @Json(name = "everyOtherMonth")
+    EVERYOTHERMONTH("everyOtherMonth"),
+
+    @Json(name = "every3Months")
+    EVERY3MONTHS("every3Months"),
+
+    @Json(name = "every4Months")
+    EVERY4MONTHS("every4Months"),
+
+    @Json(name = "twiceAYear")
+    TWICEAYEAR("twiceAYear"),
+
+    @Json(name = "yearly")
+    YEARLY("yearly"),
+
+    @Json(name = "everyOtherYear")
+    EVERYOTHERYEAR("everyOtherYear"),
+  }
+
+  /**
+   * The scheduled transaction flag
+   * Values: RED, ORANGE, YELLOW, GREEN, BLUE, PURPLE
+   */
+  @JsonClass(generateAdapter = false)
+  enum class FlagColorEnum(
+    val value: String,
+  ) {
+    @Json(name = "red")
+    RED("red"),
+
+    @Json(name = "orange")
+    ORANGE("orange"),
+
+    @Json(name = "yellow")
+    YELLOW("yellow"),
+
+    @Json(name = "green")
+    GREEN("green"),
+
+    @Json(name = "blue")
+    BLUE("blue"),
+
+    @Json(name = "purple")
+    PURPLE("purple"),
+
+    @Json(name = "")
+    NONE(""),
+  }
 }

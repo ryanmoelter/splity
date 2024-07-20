@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class SaveMonthCategory(
-    @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long
+  @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long,
 )

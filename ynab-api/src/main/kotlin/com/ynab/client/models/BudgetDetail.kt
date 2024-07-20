@@ -8,9 +8,9 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import java.util.UUID
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZonedDateTime
-import java.util.UUID
 
 /**
  * @property id
@@ -33,21 +33,37 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class BudgetDetail(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "last_modified_on") @field:Json(name = "last_modified_on") var lastModifiedOn: ZonedDateTime? = null,
-    @Json(name = "first_month") @field:Json(name = "first_month") var firstMonth: LocalDate? = null,
-    @Json(name = "last_month") @field:Json(name = "last_month") var lastMonth: LocalDate? = null,
-    @Json(name = "date_format") @field:Json(name = "date_format") var dateFormat: DateFormat? = null,
-    @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat: CurrencyFormat? = null,
-    @Json(name = "accounts") @field:Json(name = "accounts") var accounts: List<Account>? = null,
-    @Json(name = "payees") @field:Json(name = "payees") var payees: List<Payee>? = null,
-    @Json(name = "payee_locations") @field:Json(name = "payee_locations") var payeeLocations: List<PayeeLocation>? = null,
-    @Json(name = "category_groups") @field:Json(name = "category_groups") var categoryGroups: List<CategoryGroup>? = null,
-    @Json(name = "categories") @field:Json(name = "categories") var categories: List<Category>? = null,
-    @Json(name = "months") @field:Json(name = "months") var months: List<MonthDetail>? = null,
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<TransactionSummary>? = null,
-    @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions: List<SubTransaction>? = null,
-    @Json(name = "scheduled_transactions") @field:Json(name = "scheduled_transactions") var scheduledTransactions: List<ScheduledTransactionSummary>? = null,
-    @Json(name = "scheduled_subtransactions") @field:Json(name = "scheduled_subtransactions") var scheduledSubtransactions: List<ScheduledSubTransaction>? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "last_modified_on") @field:Json(name = "last_modified_on") var lastModifiedOn:
+    ZonedDateTime? = null,
+  @Json(name = "first_month") @field:Json(name = "first_month") var firstMonth: LocalDate? = null,
+  @Json(name = "last_month") @field:Json(name = "last_month") var lastMonth: LocalDate? = null,
+  @Json(
+    name = "date_format",
+  ) @field:Json(name = "date_format") var dateFormat: DateFormat? = null,
+  @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat:
+    CurrencyFormat? = null,
+  @Json(name = "accounts") @field:Json(name = "accounts") var accounts: List<Account>? = null,
+  @Json(name = "payees") @field:Json(name = "payees") var payees: List<Payee>? = null,
+  @Json(name = "payee_locations") @field:Json(name = "payee_locations") var payeeLocations:
+    List<PayeeLocation>? = null,
+  @Json(name = "category_groups") @field:Json(name = "category_groups") var categoryGroups:
+    List<CategoryGroup>? = null,
+  @Json(
+    name = "categories",
+  ) @field:Json(name = "categories") var categories: List<Category>? = null,
+  @Json(name = "months") @field:Json(name = "months") var months: List<MonthDetail>? = null,
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<TransactionSummary>? = null,
+  @Json(name = "subtransactions") @field:Json(name = "subtransactions") var subtransactions:
+    List<SubTransaction>? = null,
+  @Json(
+    name = "scheduled_transactions",
+  ) @field:Json(name = "scheduled_transactions") var scheduledTransactions:
+    List<ScheduledTransactionSummary>? = null,
+  @Json(
+    name = "scheduled_subtransactions",
+  ) @field:Json(name = "scheduled_subtransactions") var scheduledSubtransactions:
+    List<ScheduledSubTransaction>? = null,
 )

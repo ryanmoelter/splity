@@ -8,13 +8,13 @@ import com.ryanmoelter.splity.fakeConfig
 
 fun createFakeSplityComponent(
   serverDatabase: FakeYnabServerDatabase,
-  config: Config = fakeConfig
+  config: Config = fakeConfig,
 ): SplityComponent {
   val sentryModule = SentryModule::class.create()
   return SplityComponent::class.create(
     databaseModule = FakeDatabaseModule::class.create(),
     configModule = FakeConfigModule::class.create(config),
     apiModule = FakeApiModule::class.create(sentryModule, serverDatabase),
-    sentryModule
+    sentryModule,
   )
 }
