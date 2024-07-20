@@ -2,6 +2,7 @@ package com.ryanmoelter.splity
 
 import io.sentry.Sentry
 import io.sentry.SpanStatus
+import io.sentry.TransactionOptions
 
 interface SentryWrapper {
   fun doInTransaction(
@@ -39,7 +40,13 @@ class SentryWrapperImpl(
     name: String,
     action: () -> Unit
   ) {
-    val transaction = Sentry.startTransaction(name, operation, true)
+    val transaction = Sentry.startTransaction(
+      name,
+      operation,
+      TransactionOptions().apply {
+        isBindToScope = true
+      }
+    )
     try {
       action().also { transaction.status = SpanStatus.OK }
     } catch (e: Throwable) {
