@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.LocalDate
 import java.util.UUID
+import org.threeten.bp.LocalDate
 
 /**
  * @property id
@@ -37,39 +37,68 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class Category(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "category_group_id") @field:Json(name = "category_group_id") var categoryGroupId: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "hidden") @field:Json(name = "hidden") var hidden: Boolean,
-    @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long,
-    @Json(name = "activity") @field:Json(name = "activity") var activity: Long,
-    @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "original_category_group_id") @field:Json(name = "original_category_group_id") var originalCategoryGroupId: UUID? = null,
-    @Json(name = "note") @field:Json(name = "note") var note: String? = null,
-    @Json(name = "goal_type") @field:Json(name = "goal_type") var goalType: Category.GoalTypeEnum? = null,
-    @Json(name = "goal_day") @field:Json(name = "goal_day") var goalDay: Int? = null,
-    @Json(name = "goal_cadence") @field:Json(name = "goal_cadence") var goalCadence: Int? = null,
-    @Json(name = "goal_cadence_frequency") @field:Json(name = "goal_cadence_frequency") var goalCadenceFrequency: Int? = null,
-    @Json(name = "goal_creation_month") @field:Json(name = "goal_creation_month") var goalCreationMonth: LocalDate? = null,
-    @Json(name = "goal_target") @field:Json(name = "goal_target") var goalTarget: Long? = null,
-    @Json(name = "goal_target_month") @field:Json(name = "goal_target_month") var goalTargetMonth: LocalDate? = null,
-    @Json(name = "goal_percentage_complete") @field:Json(name = "goal_percentage_complete") var goalPercentageComplete: Int? = null,
-    @Json(name = "goal_months_to_budget") @field:Json(name = "goal_months_to_budget") var goalMonthsToBudget: Int? = null,
-    @Json(name = "goal_under_funded") @field:Json(name = "goal_under_funded") var goalUnderFunded: Long? = null,
-    @Json(name = "goal_overall_funded") @field:Json(name = "goal_overall_funded") var goalOverallFunded: Long? = null,
-    @Json(name = "goal_overall_left") @field:Json(name = "goal_overall_left") var goalOverallLeft: Long? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "category_group_id") @field:Json(name = "category_group_id") var categoryGroupId:
+    UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "hidden") @field:Json(name = "hidden") var hidden: Boolean,
+  @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long,
+  @Json(name = "activity") @field:Json(name = "activity") var activity: Long,
+  @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(
+    name = "original_category_group_id",
+  ) @field:Json(name = "original_category_group_id") var originalCategoryGroupId: UUID? = null,
+  @Json(name = "note") @field:Json(name = "note") var note: String? = null,
+  @Json(
+    name = "goal_type",
+  ) @field:Json(name = "goal_type") var goalType: Category.GoalTypeEnum? = null,
+  @Json(name = "goal_day") @field:Json(name = "goal_day") var goalDay: Int? = null,
+  @Json(name = "goal_cadence") @field:Json(name = "goal_cadence") var goalCadence: Int? = null,
+  @Json(
+    name = "goal_cadence_frequency",
+  ) @field:Json(name = "goal_cadence_frequency") var goalCadenceFrequency: Int? = null,
+  @Json(
+    name = "goal_creation_month",
+  ) @field:Json(name = "goal_creation_month") var goalCreationMonth: LocalDate? = null,
+  @Json(name = "goal_target") @field:Json(name = "goal_target") var goalTarget: Long? = null,
+  @Json(name = "goal_target_month") @field:Json(name = "goal_target_month") var goalTargetMonth:
+    LocalDate? = null,
+  @Json(
+    name = "goal_percentage_complete",
+  ) @field:Json(name = "goal_percentage_complete") var goalPercentageComplete: Int? = null,
+  @Json(
+    name = "goal_months_to_budget",
+  ) @field:Json(name = "goal_months_to_budget") var goalMonthsToBudget: Int? = null,
+  @Json(name = "goal_under_funded") @field:Json(name = "goal_under_funded") var goalUnderFunded:
+    Long? = null,
+  @Json(
+    name = "goal_overall_funded",
+  ) @field:Json(name = "goal_overall_funded") var goalOverallFunded: Long? = null,
+  @Json(name = "goal_overall_left") @field:Json(name = "goal_overall_left") var goalOverallLeft:
+    Long? = null,
 ) {
-    /**
-     * The type of goal, if the category has a goal (TB='Target Category Balance', TBD='Target Category Balance by Date', MF='Monthly Funding', NEED='Plan Your Spending')
-     * Values: TB, TBD, MF, NEED, DEBT
-     */
-    @JsonClass(generateAdapter = false)
-    enum class GoalTypeEnum(val value: String) {
-        @Json(name = "TB") TB("TB"),
-        @Json(name = "TBD") TBD("TBD"),
-        @Json(name = "MF") MF("MF"),
-        @Json(name = "NEED") NEED("NEED"),
-        @Json(name = "DEBT") DEBT("DEBT")
-    }
+  /**
+   * The type of goal, if the category has a goal (TB='Target Category Balance', TBD='Target Category Balance by Date', MF='Monthly Funding', NEED='Plan Your Spending')
+   * Values: TB, TBD, MF, NEED, DEBT
+   */
+  @JsonClass(generateAdapter = false)
+  enum class GoalTypeEnum(
+    val value: String,
+  ) {
+    @Json(name = "TB")
+    TB("TB"),
+
+    @Json(name = "TBD")
+    TBD("TBD"),
+
+    @Json(name = "MF")
+    MF("MF"),
+
+    @Json(name = "NEED")
+    NEED("NEED"),
+
+    @Json(name = "DEBT")
+    DEBT("DEBT"),
+  }
 }

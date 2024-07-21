@@ -22,12 +22,13 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class CurrencyFormat(
-    @Json(name = "iso_code") @field:Json(name = "iso_code") var isoCode: String,
-    @Json(name = "example_format") @field:Json(name = "example_format") var exampleFormat: String,
-    @Json(name = "decimal_digits") @field:Json(name = "decimal_digits") var decimalDigits: Int,
-    @Json(name = "decimal_separator") @field:Json(name = "decimal_separator") var decimalSeparator: String,
-    @Json(name = "symbol_first") @field:Json(name = "symbol_first") var symbolFirst: Boolean,
-    @Json(name = "group_separator") @field:Json(name = "group_separator") var groupSeparator: String,
-    @Json(name = "currency_symbol") @field:Json(name = "currency_symbol") var currencySymbol: String,
-    @Json(name = "display_symbol") @field:Json(name = "display_symbol") var displaySymbol: Boolean
+  @Json(name = "iso_code") @field:Json(name = "iso_code") var isoCode: String,
+  @Json(name = "example_format") @field:Json(name = "example_format") var exampleFormat: String,
+  @Json(name = "decimal_digits") @field:Json(name = "decimal_digits") var decimalDigits: Int,
+  @Json(name = "decimal_separator") @field:Json(name = "decimal_separator") var decimalSeparator:
+    String,
+  @Json(name = "symbol_first") @field:Json(name = "symbol_first") var symbolFirst: Boolean,
+  @Json(name = "group_separator") @field:Json(name = "group_separator") var groupSeparator: String,
+  @Json(name = "currency_symbol") @field:Json(name = "currency_symbol") var currencySymbol: String,
+  @Json(name = "display_symbol") @field:Json(name = "display_symbol") var displaySymbol: Boolean,
 )

@@ -28,7 +28,6 @@ interface DatabaseModule {
   @Provides
   @DatabaseSingleton
   fun database(sqlDriver: SqlDriver): Database {
-
     try {
       Database.Schema.create(sqlDriver)
     } catch (error: Throwable) {
@@ -38,72 +37,79 @@ interface DatabaseModule {
 
     return Database(
       sqlDriver,
-      storedAccountAdapter = StoredAccount.Adapter(
-        idAdapter = accountIdAdapter,
-        typeAdapter = EnumColumnAdapter(),
-        transferPayeeIdAdapter = payeeIdAdapter,
-        budgetIdAdapter = budgetIdAdapter
-      ),
-      storedBudgetAdapter = StoredBudget.Adapter(
-        idAdapter = budgetIdAdapter,
-        lastModifiedOnAdapter = localDateAdapter
-      ),
-      storedTransactionAdapter = StoredTransaction.Adapter(
-        idAdapter = transactionIdAdapter,
-        dateAdapter = localDateAdapter,
-        clearedAdapter = EnumColumnAdapter(),
-        accountIdAdapter = accountIdAdapter,
-        flagColorAdapter = EnumColumnAdapter(),
-        payeeIdAdapter = payeeIdAdapter,
-        categoryIdAdapter = categoryIdAdapter,
-        transferAccountIdAdapter = accountIdAdapter,
-        transferTransactionIdAdapter = transactionIdAdapter,
-        matchedTransactionIdAdapter = transactionIdAdapter,
-        budgetIdAdapter = budgetIdAdapter,
-        processedStateAdapter = EnumColumnAdapter()
-      ),
-      storedSubTransactionAdapter = StoredSubTransaction.Adapter(
-        idAdapter = subTransactionIdAdapter,
-        transactionIdAdapter = transactionIdAdapter,
-        payeeIdAdapter = payeeIdAdapter,
-        categoryIdAdapter = categoryIdAdapter,
-        transferAccountIdAdapter = accountIdAdapter,
-        transferTransactionIdAdapter = transactionIdAdapter,
-        accountIdAdapter = accountIdAdapter,
-        budgetIdAdapter = budgetIdAdapter,
-        processedStateAdapter = EnumColumnAdapter()
-      ),
-      syncDataAdapter = SyncData.Adapter(
-        firstBudgetIdAdapter = budgetIdAdapter,
-        firstAccountIdAdapter = accountIdAdapter,
-        firstAccountPayeeIdAdapter = payeeIdAdapter,
-        secondBudgetIdAdapter = budgetIdAdapter,
-        secondAccountIdAdapter = accountIdAdapter,
-        secondAccountPayeeIdAdapter = payeeIdAdapter
-      ),
-      replacedTransactionAdapter = ReplacedTransaction.Adapter(
-        idAdapter = transactionIdAdapter,
-        dateAdapter = localDateAdapter,
-        clearedAdapter = EnumColumnAdapter(),
-        accountIdAdapter = accountIdAdapter,
-        flagColorAdapter = EnumColumnAdapter(),
-        payeeIdAdapter = payeeIdAdapter,
-        categoryIdAdapter = categoryIdAdapter,
-        transferAccountIdAdapter = accountIdAdapter,
-        transferTransactionIdAdapter = transactionIdAdapter,
-        matchedTransactionIdAdapter = transactionIdAdapter,
-        budgetIdAdapter = budgetIdAdapter
-      ),
-      replacedSubTransactionAdapter = ReplacedSubTransaction.Adapter(
-        idAdapter = subTransactionIdAdapter,
-        transactionIdAdapter = transactionIdAdapter,
-        payeeIdAdapter = payeeIdAdapter,
-        categoryIdAdapter = categoryIdAdapter,
-        transferAccountIdAdapter = accountIdAdapter,
-        transferTransactionIdAdapter = transactionIdAdapter,
-        accountIdAdapter = accountIdAdapter,
-        budgetIdAdapter = budgetIdAdapter
-      ),
+      storedAccountAdapter =
+        StoredAccount.Adapter(
+          idAdapter = accountIdAdapter,
+          typeAdapter = EnumColumnAdapter(),
+          transferPayeeIdAdapter = payeeIdAdapter,
+          budgetIdAdapter = budgetIdAdapter,
+        ),
+      storedBudgetAdapter =
+        StoredBudget.Adapter(
+          idAdapter = budgetIdAdapter,
+          lastModifiedOnAdapter = localDateAdapter,
+        ),
+      storedTransactionAdapter =
+        StoredTransaction.Adapter(
+          idAdapter = transactionIdAdapter,
+          dateAdapter = localDateAdapter,
+          clearedAdapter = EnumColumnAdapter(),
+          accountIdAdapter = accountIdAdapter,
+          flagColorAdapter = EnumColumnAdapter(),
+          payeeIdAdapter = payeeIdAdapter,
+          categoryIdAdapter = categoryIdAdapter,
+          transferAccountIdAdapter = accountIdAdapter,
+          transferTransactionIdAdapter = transactionIdAdapter,
+          matchedTransactionIdAdapter = transactionIdAdapter,
+          budgetIdAdapter = budgetIdAdapter,
+          processedStateAdapter = EnumColumnAdapter(),
+        ),
+      storedSubTransactionAdapter =
+        StoredSubTransaction.Adapter(
+          idAdapter = subTransactionIdAdapter,
+          transactionIdAdapter = transactionIdAdapter,
+          payeeIdAdapter = payeeIdAdapter,
+          categoryIdAdapter = categoryIdAdapter,
+          transferAccountIdAdapter = accountIdAdapter,
+          transferTransactionIdAdapter = transactionIdAdapter,
+          accountIdAdapter = accountIdAdapter,
+          budgetIdAdapter = budgetIdAdapter,
+          processedStateAdapter = EnumColumnAdapter(),
+        ),
+      syncDataAdapter =
+        SyncData.Adapter(
+          firstBudgetIdAdapter = budgetIdAdapter,
+          firstAccountIdAdapter = accountIdAdapter,
+          firstAccountPayeeIdAdapter = payeeIdAdapter,
+          secondBudgetIdAdapter = budgetIdAdapter,
+          secondAccountIdAdapter = accountIdAdapter,
+          secondAccountPayeeIdAdapter = payeeIdAdapter,
+        ),
+      replacedTransactionAdapter =
+        ReplacedTransaction.Adapter(
+          idAdapter = transactionIdAdapter,
+          dateAdapter = localDateAdapter,
+          clearedAdapter = EnumColumnAdapter(),
+          accountIdAdapter = accountIdAdapter,
+          flagColorAdapter = EnumColumnAdapter(),
+          payeeIdAdapter = payeeIdAdapter,
+          categoryIdAdapter = categoryIdAdapter,
+          transferAccountIdAdapter = accountIdAdapter,
+          transferTransactionIdAdapter = transactionIdAdapter,
+          matchedTransactionIdAdapter = transactionIdAdapter,
+          budgetIdAdapter = budgetIdAdapter,
+        ),
+      replacedSubTransactionAdapter =
+        ReplacedSubTransaction.Adapter(
+          idAdapter = subTransactionIdAdapter,
+          transactionIdAdapter = transactionIdAdapter,
+          payeeIdAdapter = payeeIdAdapter,
+          categoryIdAdapter = categoryIdAdapter,
+          transferAccountIdAdapter = accountIdAdapter,
+          transferTransactionIdAdapter = transactionIdAdapter,
+          accountIdAdapter = accountIdAdapter,
+          budgetIdAdapter = budgetIdAdapter,
+        ),
     )
   }
 }

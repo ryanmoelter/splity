@@ -13,14 +13,23 @@ import me.tatarka.inject.annotations.Scope
 annotation class ApiSingleton
 
 @ApiSingleton
-abstract class ApiModule(@Component val sentryModule: SentryModule) {
+abstract class ApiModule(
+  @Component val sentryModule: SentryModule,
+) {
   @Provides
   @ApiSingleton
-  abstract fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient
+  abstract fun ynabApi(
+    config: Config,
+    sentry: SentryWrapper,
+  ): YnabClient
 }
 
 @Component
-abstract class RealApiModule(sentryModule: SentryModule) : ApiModule(sentryModule) {
-  override fun ynabApi(config: Config, sentry: SentryWrapper): YnabClient =
-    YnabClientImpl(config.ynabToken, sentry::doInImmediateSpan)
+abstract class RealApiModule(
+  sentryModule: SentryModule,
+) : ApiModule(sentryModule) {
+  override fun ynabApi(
+    config: Config,
+    sentry: SentryWrapper,
+  ): YnabClient = YnabClientImpl(config.ynabToken, sentry::doInImmediateSpan)
 }

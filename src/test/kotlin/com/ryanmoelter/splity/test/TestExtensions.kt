@@ -42,12 +42,12 @@ fun Database.addReplacedTransactions(vararg transactions: PublicTransactionDetai
 
 fun Database.getAllTransactions(): List<PublicTransactionDetail> =
   storedTransactionQueries.getAll().executeAsList().toPublicTransactionList(
-    storedSubTransactionQueries.getAll().executeAsList()
+    storedSubTransactionQueries.getAll().executeAsList(),
   )
 
 fun Database.getAllReplacedTransactions(): List<PublicTransactionDetail> =
   replacedTransactionQueries.getAll().executeAsList().toPublicTransactionList(
-    replacedSubTransactionQueries.getAll().executeAsList()
+    replacedSubTransactionQueries.getAll().executeAsList(),
   )
 
 fun FakeYnabServerDatabase.syncServerKnowledge(localDatabase: Database) {
@@ -57,54 +57,58 @@ fun FakeYnabServerDatabase.syncServerKnowledge(localDatabase: Database) {
 fun FakeYnabServerDatabase.syncServerKnowledge(setUpLocalDatabase: Setup<Database>) {
   setUpLocalDatabase {
     syncDataQueries.replaceOnly(
-      syncDataQueries.getOnly().executeAsOne()
+      syncDataQueries
+        .getOnly()
+        .executeAsOne()
         .copy(
           firstServerKnowledge = currentServerKnowledge,
-          secondServerKnowledge = currentServerKnowledge
-        )
+          secondServerKnowledge = currentServerKnowledge,
+        ),
     )
   }
 }
 
 fun List<ReplacedTransaction>.toPublicTransactionList(
-  replacedSubTransactions: List<ReplacedSubTransaction>
+  replacedSubTransactions: List<ReplacedSubTransaction>,
 ): List<PublicTransactionDetail> {
-  val subTransactionMap = buildMap<TransactionId, List<ReplacedSubTransaction>> {
-    replacedSubTransactions.forEach { replacedSubTransaction ->
-      put(
-        replacedSubTransaction.transactionId,
-        (get(replacedSubTransaction.transactionId) ?: emptyList()) + replacedSubTransaction
-      )
+  val subTransactionMap =
+    buildMap<TransactionId, List<ReplacedSubTransaction>> {
+      replacedSubTransactions.forEach { replacedSubTransaction ->
+        put(
+          replacedSubTransaction.transactionId,
+          (get(replacedSubTransaction.transactionId) ?: emptyList()) + replacedSubTransaction,
+        )
+      }
     }
-  }
 
   return map { replacedTransaction ->
     replacedTransaction.toPublicTransactionDetail(
-      subTransactionMap[replacedTransaction.id] ?: emptyList()
+      subTransactionMap[replacedTransaction.id] ?: emptyList(),
     )
   }
 }
 
-fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction = ReplacedTransaction(
-  id = id,
-  date = date,
-  amount = amount,
-  cleared = cleared,
-  approved = approved,
-  accountId = accountId,
-  accountName = accountName,
-  memo = memo,
-  flagColor = flagColor,
-  payeeId = payeeId,
-  categoryId = categoryId,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  matchedTransactionId = matchedTransactionId,
-  importId = importId,
-  payeeName = payeeName,
-  categoryName = categoryName,
-  budgetId = budgetId
-)
+fun PublicTransactionDetail.toReplacedTransaction(): ReplacedTransaction =
+  ReplacedTransaction(
+    id = id,
+    date = date,
+    amount = amount,
+    cleared = cleared,
+    approved = approved,
+    accountId = accountId,
+    accountName = accountName,
+    memo = memo,
+    flagColor = flagColor,
+    payeeId = payeeId,
+    categoryId = categoryId,
+    transferAccountId = transferAccountId,
+    transferTransactionId = transferTransactionId,
+    matchedTransactionId = matchedTransactionId,
+    importId = importId,
+    payeeName = payeeName,
+    categoryName = categoryName,
+    budgetId = budgetId,
+  )
 
 fun PublicSubTransaction.toReplacedSubTransaction(): ReplacedSubTransaction =
   ReplacedSubTransaction(
@@ -119,41 +123,43 @@ fun PublicSubTransaction.toReplacedSubTransaction(): ReplacedSubTransaction =
     transferAccountId = transferAccountId,
     transferTransactionId = transferTransactionId,
     accountId = accountId,
-    budgetId = budgetId
+    budgetId = budgetId,
   )
 
-fun PublicTransactionDetail.toApiTransaction(): TransactionDetail = TransactionDetail(
-  id = id.string,
-  date = date,
-  amount = amount,
-  cleared = cleared,
-  approved = approved,
-  deleted = processedState == ProcessedState.DELETED,
-  accountId = accountId.plainUuid,
-  accountName = accountName,
-  memo = memo,
-  flagColor = flagColor,
-  payeeId = payeeId?.plainUuid,
-  categoryId = categoryId?.plainUuid,
-  transferAccountId = transferAccountId?.plainUuid,
-  transferTransactionId = transferTransactionId?.string,
-  matchedTransactionId = matchedTransactionId?.string,
-  importId = importId,
-  payeeName = payeeName,
-  categoryName = categoryName,
-  subtransactions = subTransactions.map { it.toApiSubTransaction() }
-)
+fun PublicTransactionDetail.toApiTransaction(): TransactionDetail =
+  TransactionDetail(
+    id = id.string,
+    date = date,
+    amount = amount,
+    cleared = cleared,
+    approved = approved,
+    deleted = processedState == ProcessedState.DELETED,
+    accountId = accountId.plainUuid,
+    accountName = accountName,
+    memo = memo,
+    flagColor = flagColor,
+    payeeId = payeeId?.plainUuid,
+    categoryId = categoryId?.plainUuid,
+    transferAccountId = transferAccountId?.plainUuid,
+    transferTransactionId = transferTransactionId?.string,
+    matchedTransactionId = matchedTransactionId?.string,
+    importId = importId,
+    payeeName = payeeName,
+    categoryName = categoryName,
+    subtransactions = subTransactions.map { it.toApiSubTransaction() },
+  )
 
-fun PublicSubTransaction.toApiSubTransaction(): SubTransaction = SubTransaction(
-  id = id.toString(),
-  transactionId = transactionId.string,
-  amount = amount,
-  memo = memo,
-  deleted = processedState == ProcessedState.DELETED,
-  payeeId = payeeId?.plainUuid,
-  payeeName = payeeName,
-  categoryId = categoryId?.plainUuid,
-  categoryName = categoryName,
-  transferAccountId = transferAccountId?.plainUuid,
-  transferTransactionId = transferTransactionId?.string
-)
+fun PublicSubTransaction.toApiSubTransaction(): SubTransaction =
+  SubTransaction(
+    id = id.toString(),
+    transactionId = transactionId.string,
+    amount = amount,
+    memo = memo,
+    deleted = processedState == ProcessedState.DELETED,
+    payeeId = payeeId?.plainUuid,
+    payeeName = payeeName,
+    categoryId = categoryId?.plainUuid,
+    categoryName = categoryName,
+    transferAccountId = transferAccountId?.plainUuid,
+    transferTransactionId = transferTransactionId?.string,
+  )

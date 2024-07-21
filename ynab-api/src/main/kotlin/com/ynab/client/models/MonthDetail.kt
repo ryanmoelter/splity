@@ -23,13 +23,13 @@ import org.threeten.bp.LocalDate
  */
 @JsonClass(generateAdapter = true)
 data class MonthDetail(
-    @Json(name = "month") @field:Json(name = "month") var month: LocalDate,
-    @Json(name = "income") @field:Json(name = "income") var income: Long,
-    @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long,
-    @Json(name = "activity") @field:Json(name = "activity") var activity: Long,
-    @Json(name = "to_be_budgeted") @field:Json(name = "to_be_budgeted") var toBeBudgeted: Long,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "categories") @field:Json(name = "categories") var categories: List<Category>,
-    @Json(name = "note") @field:Json(name = "note") var note: String? = null,
-    @Json(name = "age_of_money") @field:Json(name = "age_of_money") var ageOfMoney: Int? = null
+  @Json(name = "month") @field:Json(name = "month") var month: LocalDate,
+  @Json(name = "income") @field:Json(name = "income") var income: Long,
+  @Json(name = "budgeted") @field:Json(name = "budgeted") var budgeted: Long,
+  @Json(name = "activity") @field:Json(name = "activity") var activity: Long,
+  @Json(name = "to_be_budgeted") @field:Json(name = "to_be_budgeted") var toBeBudgeted: Long,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "categories") @field:Json(name = "categories") var categories: List<Category>,
+  @Json(name = "note") @field:Json(name = "note") var note: String? = null,
+  @Json(name = "age_of_money") @field:Json(name = "age_of_money") var ageOfMoney: Int? = null,
 )

@@ -4,7 +4,7 @@ plugins {
   java
   alias(libs.plugins.kotlin.jvm)
   alias(libs.plugins.yelp.codegen)
-  alias(libs.plugins.spotless)
+  alias(libs.plugins.kotlinter)
   alias(libs.plugins.ksp)
 }
 
@@ -50,16 +50,20 @@ compileTestKotlin.kotlinOptions {
   jvmTarget = "11"
 }
 
-spotless {
-  format("misc") {
-    target("*.gradle.kts", "*.md", ".gitignore")
+kotlinter {
+  failBuildWhenCannotAutoFormat = true
+}
 
-    trimTrailingWhitespace()
-    indentWithSpaces(2)
-    endWithNewline()
-  }
-  kotlin {
-    trimTrailingWhitespace()
-    endWithNewline()
-  }
+tasks.formatKotlinMain {
+  exclude { it.file.path.contains("generated/") }
+}
+tasks.formatKotlinTest {
+  exclude { it.file.path.contains("generated/") }
+}
+
+tasks.lintKotlinMain {
+  exclude { it.file.path.contains("generated/") }
+}
+tasks.lintKotlinTest {
+  exclude { it.file.path.contains("generated/") }
 }

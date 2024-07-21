@@ -78,21 +78,22 @@ fun StoredTransaction.toPublicTransactionDetail(subTransactions: List<StoredSubT
     budgetId = budgetId,
   )
 
-fun StoredSubTransaction.toPublicSubTransaction() = PublicSubTransaction(
-  id = id,
-  transactionId = transactionId,
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId,
-  payeeName = payeeName,
-  categoryId = categoryId,
-  categoryName = categoryName,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  processedState = processedState,
-  accountId = accountId,
-  budgetId = budgetId,
-)
+fun StoredSubTransaction.toPublicSubTransaction() =
+  PublicSubTransaction(
+    id = id,
+    transactionId = transactionId,
+    amount = amount,
+    memo = memo,
+    payeeId = payeeId,
+    payeeName = payeeName,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    transferAccountId = transferAccountId,
+    transferTransactionId = transferTransactionId,
+    processedState = processedState,
+    accountId = accountId,
+    budgetId = budgetId,
+  )
 
 fun ReplacedTransaction.toPublicTransactionDetail(subTransactions: List<ReplacedSubTransaction>) =
   PublicTransactionDetail(
@@ -118,18 +119,19 @@ fun ReplacedTransaction.toPublicTransactionDetail(subTransactions: List<Replaced
     budgetId = budgetId,
   )
 
-fun ReplacedSubTransaction.toPublicSubTransaction() = PublicSubTransaction(
-  id = id,
-  transactionId = transactionId,
-  amount = amount,
-  memo = memo,
-  payeeId = payeeId,
-  payeeName = payeeName,
-  categoryId = categoryId,
-  categoryName = categoryName,
-  transferAccountId = transferAccountId,
-  transferTransactionId = transferTransactionId,
-  processedState = UP_TO_DATE,
-  accountId = accountId,
-  budgetId = budgetId,
-)
+fun ReplacedSubTransaction.toPublicSubTransaction() =
+  PublicSubTransaction(
+    id = id,
+    transactionId = transactionId,
+    amount = amount,
+    memo = memo,
+    payeeId = payeeId,
+    payeeName = payeeName,
+    categoryId = categoryId,
+    categoryName = categoryName,
+    transferAccountId = transferAccountId,
+    transferTransactionId = transferTransactionId,
+    processedState = UP_TO_DATE,
+    accountId = accountId,
+    budgetId = budgetId,
+  )

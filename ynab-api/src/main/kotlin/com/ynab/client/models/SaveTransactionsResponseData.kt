@@ -18,9 +18,14 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class SaveTransactionsResponseData(
-    @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds: List<String>,
-    @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long,
-    @Json(name = "transaction") @field:Json(name = "transaction") var transaction: TransactionDetail? = null,
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<TransactionDetail>? = null,
-    @Json(name = "duplicate_import_ids") @field:Json(name = "duplicate_import_ids") var duplicateImportIds: List<String>? = null
+  @Json(name = "transaction_ids") @field:Json(name = "transaction_ids") var transactionIds:
+    List<String>,
+  @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long,
+  @Json(name = "transaction") @field:Json(name = "transaction") var transaction:
+    TransactionDetail? = null,
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<TransactionDetail>? = null,
+  @Json(
+    name = "duplicate_import_ids",
+  ) @field:Json(name = "duplicate_import_ids") var duplicateImportIds: List<String>? = null,
 )

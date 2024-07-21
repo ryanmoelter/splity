@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class SaveCategoryResponse(
-    @Json(name = "data") @field:Json(name = "data") var `data`: SaveCategoryResponseData
+  @Json(name = "data") @field:Json(name = "data") var `data`: SaveCategoryResponseData,
 )

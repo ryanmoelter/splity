@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class PostAccountWrapper(
-    @Json(name = "account") @field:Json(name = "account") var account: SaveAccount
+  @Json(name = "account") @field:Json(name = "account") var account: SaveAccount,
 )

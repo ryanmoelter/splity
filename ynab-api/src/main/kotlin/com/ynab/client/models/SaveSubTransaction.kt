@@ -19,9 +19,9 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class SaveSubTransaction(
-    @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
-    @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
-    @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
-    @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
-    @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null
+  @Json(name = "amount") @field:Json(name = "amount") var amount: Long,
+  @Json(name = "payee_id") @field:Json(name = "payee_id") var payeeId: UUID? = null,
+  @Json(name = "payee_name") @field:Json(name = "payee_name") var payeeName: String? = null,
+  @Json(name = "category_id") @field:Json(name = "category_id") var categoryId: UUID? = null,
+  @Json(name = "memo") @field:Json(name = "memo") var memo: String? = null,
 )

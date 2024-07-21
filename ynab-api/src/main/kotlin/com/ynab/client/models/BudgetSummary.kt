@@ -8,9 +8,9 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
+import java.util.UUID
 import org.threeten.bp.LocalDate
 import org.threeten.bp.ZonedDateTime
-import java.util.UUID
 
 /**
  * @property id
@@ -24,12 +24,16 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class BudgetSummary(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "last_modified_on") @field:Json(name = "last_modified_on") var lastModifiedOn: ZonedDateTime? = null,
-    @Json(name = "first_month") @field:Json(name = "first_month") var firstMonth: LocalDate? = null,
-    @Json(name = "last_month") @field:Json(name = "last_month") var lastMonth: LocalDate? = null,
-    @Json(name = "date_format") @field:Json(name = "date_format") var dateFormat: DateFormat? = null,
-    @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat: CurrencyFormat? = null,
-    @Json(name = "accounts") @field:Json(name = "accounts") var accounts: List<Account>? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "last_modified_on") @field:Json(name = "last_modified_on") var lastModifiedOn:
+    ZonedDateTime? = null,
+  @Json(name = "first_month") @field:Json(name = "first_month") var firstMonth: LocalDate? = null,
+  @Json(name = "last_month") @field:Json(name = "last_month") var lastMonth: LocalDate? = null,
+  @Json(
+    name = "date_format",
+  ) @field:Json(name = "date_format") var dateFormat: DateFormat? = null,
+  @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat:
+    CurrencyFormat? = null,
+  @Json(name = "accounts") @field:Json(name = "accounts") var accounts: List<Account>? = null,
 )

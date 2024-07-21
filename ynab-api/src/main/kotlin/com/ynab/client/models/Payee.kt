@@ -18,8 +18,10 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class Payee(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "transfer_account_id") @field:Json(name = "transfer_account_id") var transferAccountId: String? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(
+    name = "transfer_account_id",
+  ) @field:Json(name = "transfer_account_id") var transferAccountId: String? = null,
 )

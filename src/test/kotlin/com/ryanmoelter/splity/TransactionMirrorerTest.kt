@@ -50,292 +50,273 @@ import org.threeten.bp.LocalDate
 
 // This file is a bit long, cmd+shift+- (Collapse all) is your friend
 
-internal class TransactionMirrorerTest : FunSpec({
-  assertions = AssertionMode.Error
+internal class TransactionMirrorerTest :
+  FunSpec({
+    assertions = AssertionMode.Error
 
-  val serverDatabase = FakeYnabServerDatabase()
-  val component = createFakeSplityComponent(serverDatabase)
-  val localDatabase = component.database
-  val transactionMirrorer = component.transactionMirrorer
+    val serverDatabase = FakeYnabServerDatabase()
+    val component = createFakeSplityComponent(serverDatabase)
+    val localDatabase = component.database
+    val transactionMirrorer = component.transactionMirrorer
 
-  val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
+    val setUpLocalDatabase: Setup<Database> = { setUp -> localDatabase.also(setUp) }
 
-  val setUpServerDatabase: Setup<FakeYnabServerDatabase> = { setUp -> serverDatabase.also(setUp) }
+    val setUpServerDatabase: Setup<FakeYnabServerDatabase> = { setUp -> serverDatabase.also(setUp) }
 
-  setUpServerDatabase {
-    setUpBudgetsAndAccounts(
-      fromBudget to listOf(FROM_ACCOUNT, FROM_TRANSFER_SOURCE_ACCOUNT),
-      toBudget to listOf(TO_ACCOUNT)
-    )
-  }
-
-  context("on first run (unfilled SyncData + no local database)") {
-    simpleCreatedTransactionsShouldMirrorProperly(
-      transactionMirrorer,
-      serverDatabase,
-      localDatabase,
-      setUpServerDatabase,
-      setUpLocalDatabase
-    )
-  }
-
-  context("on later run (with filled SyncData + filled local database)") {
-    setUpLocalDatabase {
-      syncDataQueries.replaceOnly(
-        SyncData(
-          NO_SERVER_KNOWLEDGE,
-          FROM_BUDGET_ID,
-          FROM_ACCOUNT_ID,
-          FROM_ACCOUNT_PAYEE_ID,
-          NO_SERVER_KNOWLEDGE,
-          TO_BUDGET_ID,
-          TO_ACCOUNT_ID,
-          TO_ACCOUNT_PAYEE_ID
-        )
-      )
-      addTransactions(
-        existingMirroredTransaction(UP_TO_DATE),
-        existingMirroredTransactionComplement(UP_TO_DATE),
-        existingMirroredTransactionSourceParent(UP_TO_DATE),
-        unremarkableTransactionInTransferSource(UP_TO_DATE)
-      )
-    }
     setUpServerDatabase {
-      addTransactions(
-        existingMirroredTransaction(),
-        existingMirroredTransactionComplement(),
-        existingMirroredTransactionSourceParent(),
-        unremarkableTransactionInTransferSource()
+      setUpBudgetsAndAccounts(
+        fromBudget to listOf(FROM_ACCOUNT, FROM_TRANSFER_SOURCE_ACCOUNT),
+        toBudget to listOf(TO_ACCOUNT),
       )
-      syncServerKnowledge(localDatabase)
     }
 
-    simpleCreatedTransactionsShouldMirrorProperly(
-      transactionMirrorer,
-      serverDatabase,
-      localDatabase,
-      setUpServerDatabase,
-      setUpLocalDatabase
-    )
-
-    context("with updated transactions in other accounts") {
-      val updatedUnremarkableTransaction = unremarkableTransactionInTransferSource(UPDATED)
-        .copy(amount = -150_000)
-      setUpServerDatabase {
-        addTransactions(anotherUnremarkableTransactionInTransferSource())
-        addTransactions(updatedUnremarkableTransaction)
-      }
-      val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-
-      test("nothing happens") {
-        transactionMirrorer.mirrorTransactions()
-
-        withClue("Server knowledge should not change") {
-          serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-        }
-        localDatabase.shouldHaveAllTransactionsProcessed()
-        localDatabase.shouldMatchServer(serverDatabase)
-      }
-    }
-
-    context("with a CREATED transaction") {
-      setUpServerDatabase {
-        addTransactions(manuallyAddedTransaction())
-      }
-
-      context("with no complement") {
-        test("complement is created") {
-          transactionMirrorer.mirrorTransactions()
-
-          manuallyAddedTransaction().complementOnServerShould(
-            serverDatabase,
-            TO_ACCOUNT_AND_BUDGET
-          ) {
-            amount shouldBe -manuallyAddedTransaction().amount
-            importId shouldBe "splity:-350000:2020-02-06:1"
-            date shouldBe manuallyAddedTransaction().date
-            payeeName shouldBe manuallyAddedTransaction().payeeName
-            memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
-            cleared shouldBe CLEARED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-            accountId shouldBe TO_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with an UP_TO_DATE complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-
-        test("nothing happens") {
-          transactionMirrorer.mirrorTransactions()
-
-          withClue("Server knowledge should not change") {
-            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with a CREATED complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-
-        test("nothing happens") {
-          transactionMirrorer.mirrorTransactions()
-
-          withClue("Server knowledge should not change") {
-            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-        }
-      }
-
-      context("with an UPDATED complement") {
-        val updatedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
-          amount = -300_000,
-          date = manuallyAddedTransactionComplement().date.plusDays(1)
-        )
-        setUpServerDatabase {
-          addTransactions(updatedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("this transaction is updated") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
-            amount shouldBe -updatedComplement.amount
-            date shouldBe updatedComplement.date
-            flagColor shouldBe BLUE
-            approved.shouldBeFalse()
-
-            payeeName shouldBe manuallyAddedTransaction().payeeName
-            memo shouldBe manuallyAddedTransaction().memo
-            deleted.shouldBeFalse()
-            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with a DELETED complement") {
-        val deletedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
-          processedState = DELETED
-        )
-        setUpServerDatabase {
-          addTransactions(deletedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("this transaction is marked as deleted") {
-          transactionMirrorer.mirrorTransactions()
-
-          deletedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-
-            amount shouldBe -deletedComplement.amount
-            date shouldBe deletedComplement.date
-            payeeName shouldBe manuallyAddedTransaction().payeeName
-            memo shouldBe manuallyAddedTransaction().memo
-            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-    }
-
-    context("with an UPDATED transaction") {
-      val updatedTransaction = manuallyAddedTransaction(UP_TO_DATE).copy(
-        amount = -300_000,
-        date = manuallyAddedTransaction().date.plusDays(1)
+    context("on first run (unfilled SyncData + no local database)") {
+      simpleCreatedTransactionsShouldMirrorProperly(
+        transactionMirrorer,
+        serverDatabase,
+        localDatabase,
+        setUpServerDatabase,
+        setUpLocalDatabase,
       )
-      setUpServerDatabase {
-        addTransactions(updatedTransaction)
-      }
+    }
+
+    context("on later run (with filled SyncData + filled local database)") {
       setUpLocalDatabase {
-        addTransactions(manuallyAddedTransaction(UP_TO_DATE))
+        syncDataQueries.replaceOnly(
+          SyncData(
+            NO_SERVER_KNOWLEDGE,
+            FROM_BUDGET_ID,
+            FROM_ACCOUNT_ID,
+            FROM_ACCOUNT_PAYEE_ID,
+            NO_SERVER_KNOWLEDGE,
+            TO_BUDGET_ID,
+            TO_ACCOUNT_ID,
+            TO_ACCOUNT_PAYEE_ID,
+          ),
+        )
+        addTransactions(
+          existingMirroredTransaction(UP_TO_DATE),
+          existingMirroredTransactionComplement(UP_TO_DATE),
+          existingMirroredTransactionSourceParent(UP_TO_DATE),
+          unremarkableTransactionInTransferSource(UP_TO_DATE),
+        )
+      }
+      setUpServerDatabase {
+        addTransactions(
+          existingMirroredTransaction(),
+          existingMirroredTransactionComplement(),
+          existingMirroredTransactionSourceParent(),
+          unremarkableTransactionInTransferSource(),
+        )
+        syncServerKnowledge(localDatabase)
       }
 
-      context("with no complement") {
-        test("this transaction is flagged as an error") {
+      simpleCreatedTransactionsShouldMirrorProperly(
+        transactionMirrorer,
+        serverDatabase,
+        localDatabase,
+        setUpServerDatabase,
+        setUpLocalDatabase,
+      )
+
+      context("with updated transactions in other accounts") {
+        val updatedUnremarkableTransaction =
+          unremarkableTransactionInTransferSource(UPDATED)
+            .copy(amount = -150_000)
+        setUpServerDatabase {
+          addTransactions(anotherUnremarkableTransactionInTransferSource())
+          addTransactions(updatedUnremarkableTransaction)
+        }
+        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
+        test("nothing happens") {
           transactionMirrorer.mirrorTransactions()
 
-          updatedTransaction.thisOnServerShould(serverDatabase) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            memo shouldBe "ERROR: This updated transaction has no complement; this shouldn't " +
-              "be possible, so delete this transaction and re-create it to get things " +
-              "back in sync. • " + updatedTransaction.memo
-
-            amount shouldBe updatedTransaction.amount
-            date shouldBe updatedTransaction.date
-            payeeName shouldBe updatedTransaction.payeeName
-            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
-            deleted.shouldBeFalse()
+          withClue("Server knowledge should not change") {
+            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
           }
+          localDatabase.shouldHaveAllTransactionsProcessed()
           localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessedExcept(
-            transactions = setOf(manuallyAddedTransaction().id)
-          )
+        }
+      }
+
+      context("with a CREATED transaction") {
+        setUpServerDatabase {
+          addTransactions(manuallyAddedTransaction())
         }
 
-        // This error shouldn't be possible, so we're going to ignore it for now
-        xcontext("once a complement is created") {
-          transactionMirrorer.mirrorTransactions()
-          val updatedComplement = manuallyAddedTransactionComplement().copy(
-            amount = 300_000,
-            date = manuallyAddedTransaction().date.plusDays(1)
-          )
+        context("with no complement") {
+          test("complement is created") {
+            transactionMirrorer.mirrorTransactions()
+
+            manuallyAddedTransaction().complementOnServerShould(
+              serverDatabase,
+              TO_ACCOUNT_AND_BUDGET,
+            ) {
+              amount shouldBe -manuallyAddedTransaction().amount
+              importId shouldBe "splity:-350000:2020-02-06:1"
+              date shouldBe manuallyAddedTransaction().date
+              payeeName shouldBe manuallyAddedTransaction().payeeName
+              memo shouldBe manuallyAddedTransaction().memo + " • Out of $350.00, you paid 100.0%"
+              cleared shouldBe CLEARED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
+              accountId shouldBe TO_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with an UP_TO_DATE complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+          val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
+          test("nothing happens") {
+            transactionMirrorer.mirrorTransactions()
+
+            withClue("Server knowledge should not change") {
+              serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with a CREATED complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+          val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
+          test("nothing happens") {
+            transactionMirrorer.mirrorTransactions()
+
+            withClue("Server knowledge should not change") {
+              serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+          }
+        }
+
+        context("with an UPDATED complement") {
+          val updatedComplement =
+            manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+              amount = -300_000,
+              date = manuallyAddedTransactionComplement().date.plusDays(1),
+            )
           setUpServerDatabase {
             addTransactions(updatedComplement)
           }
-
-          test("nothing happens") {
-            val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-            transactionMirrorer.mirrorTransactions()
-
-            assertSoftly {
-              withClue("Server knowledge should not change") {
-                serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-              }
-
-              localDatabase.shouldMatchServer(serverDatabase)
-              localDatabase.shouldHaveAllTransactionsProcessedExcept(
-                setOf(
-                  updatedTransaction.id,
-                  updatedComplement.id
-                ),
-              )
-            }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
           }
 
-          context("once the transaction is unflagged") {
+          test("this transaction is updated") {
             transactionMirrorer.mirrorTransactions()
+
+            updatedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
+              amount shouldBe -updatedComplement.amount
+              date shouldBe updatedComplement.date
+              flagColor shouldBe BLUE
+              approved.shouldBeFalse()
+
+              payeeName shouldBe manuallyAddedTransaction().payeeName
+              memo shouldBe manuallyAddedTransaction().memo
+              deleted.shouldBeFalse()
+              accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with a DELETED complement") {
+          val deletedComplement =
+            manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+              processedState = DELETED,
+            )
+          setUpServerDatabase {
+            addTransactions(deletedComplement)
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+
+          test("this transaction is marked as deleted") {
+            transactionMirrorer.mirrorTransactions()
+
+            deletedComplement.complementOnServerShould(serverDatabase, FROM_ACCOUNT_AND_BUDGET) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
+
+              amount shouldBe -deletedComplement.amount
+              date shouldBe deletedComplement.date
+              payeeName shouldBe manuallyAddedTransaction().payeeName
+              memo shouldBe manuallyAddedTransaction().memo
+              accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+      }
+
+      context("with an UPDATED transaction") {
+        val updatedTransaction =
+          manuallyAddedTransaction(UP_TO_DATE).copy(
+            amount = -300_000,
+            date = manuallyAddedTransaction().date.plusDays(1),
+          )
+        setUpServerDatabase {
+          addTransactions(updatedTransaction)
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransaction(UP_TO_DATE))
+        }
+
+        context("with no complement") {
+          test("this transaction is flagged as an error") {
+            transactionMirrorer.mirrorTransactions()
+
+            updatedTransaction.thisOnServerShould(serverDatabase) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              memo shouldBe "ERROR: This updated transaction has no complement; this shouldn't " +
+                "be possible, so delete this transaction and re-create it to get things " +
+                "back in sync. • " + updatedTransaction.memo
+
+              amount shouldBe updatedTransaction.amount
+              date shouldBe updatedTransaction.date
+              payeeName shouldBe updatedTransaction.payeeName
+              accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+              deleted.shouldBeFalse()
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessedExcept(
+              transactions = setOf(manuallyAddedTransaction().id),
+            )
+          }
+
+          // This error shouldn't be possible, so we're going to ignore it for now
+          xcontext("once a complement is created") {
+            transactionMirrorer.mirrorTransactions()
+            val updatedComplement =
+              manuallyAddedTransactionComplement().copy(
+                amount = 300_000,
+                date = manuallyAddedTransaction().date.plusDays(1),
+              )
             setUpServerDatabase {
-              addTransactions(updatedTransaction)
+              addTransactions(updatedComplement)
             }
 
-            test("the conflict is resolved") {
+            test("nothing happens") {
               val beginningServerKnowledge = serverDatabase.currentServerKnowledge
               transactionMirrorer.mirrorTransactions()
 
@@ -344,27 +325,226 @@ internal class TransactionMirrorerTest : FunSpec({
                   serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
                 }
 
-                updatedComplement.thisOnServerShould(serverDatabase) {
-                  amount shouldBe updatedComplement.amount
-                  date shouldBe updatedComplement.date
-                  payeeName shouldBe updatedComplement.payeeName
-                  memo shouldBe updatedComplement.memo
+                localDatabase.shouldMatchServer(serverDatabase)
+                localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                  setOf(
+                    updatedTransaction.id,
+                    updatedComplement.id,
+                  ),
+                )
+              }
+            }
+
+            context("once the transaction is unflagged") {
+              transactionMirrorer.mirrorTransactions()
+              setUpServerDatabase {
+                addTransactions(updatedTransaction)
+              }
+
+              test("the conflict is resolved") {
+                val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+                transactionMirrorer.mirrorTransactions()
+
+                assertSoftly {
+                  withClue("Server knowledge should not change") {
+                    serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+                  }
+
+                  updatedComplement.thisOnServerShould(serverDatabase) {
+                    amount shouldBe updatedComplement.amount
+                    date shouldBe updatedComplement.date
+                    payeeName shouldBe updatedComplement.payeeName
+                    memo shouldBe updatedComplement.memo
+                    cleared shouldBe CLEARED
+                    approved.shouldBeTrue()
+                    deleted.shouldBeFalse()
+                    accountId shouldBe TO_ACCOUNT_ID.plainUuid
+                  }
+
+                  updatedTransaction.thisOnServerShould(serverDatabase) {
+                    amount shouldBe updatedTransaction.amount
+                    date shouldBe updatedTransaction.date
+                    payeeName shouldBe updatedTransaction.payeeName
+                    memo shouldBe updatedTransaction.memo
+                    cleared shouldBe CLEARED
+                    flagColor shouldBe null
+                    approved.shouldBeTrue()
+                    deleted.shouldBeFalse()
+                    accountId shouldBe updatedTransaction.accountId.plainUuid
+                  }
+
+                  localDatabase.shouldMatchServer(serverDatabase)
+                  localDatabase.shouldHaveAllTransactionsProcessed()
+                }
+              }
+            }
+          }
+        }
+
+        context("with an UP_TO_DATE complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+
+          test("complement is updated") {
+            transactionMirrorer.mirrorTransactions()
+
+            updatedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              amount shouldBe -updatedTransaction.amount
+              date shouldBe updatedTransaction.date
+              flagColor shouldBe BLUE
+              approved.shouldBeFalse()
+
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              deleted.shouldBeFalse()
+              accountId shouldBe TO_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with a CREATED complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+
+          test("complement is updated") {
+            transactionMirrorer.mirrorTransactions()
+
+            updatedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              amount shouldBe -updatedTransaction.amount
+              date shouldBe updatedTransaction.date
+              flagColor shouldBe BLUE
+              approved.shouldBeFalse()
+
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              deleted.shouldBeFalse()
+              accountId shouldBe TO_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with an UPDATED complement") {
+          val updatedComplement =
+            manuallyAddedTransactionComplement(
+              UPDATED,
+            ).copy(amount = -400_000)
+
+          setUpServerDatabase {
+            addTransactions(updatedComplement)
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+
+          test("both are flagged as errors") {
+            transactionMirrorer.mirrorTransactions()
+
+            updatedTransaction.thisOnServerShould(serverDatabase) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              memo shouldBe
+                "ERROR: Both this and its complement have been updated; update both to " +
+                "the same amount and date to bring them back in sync. • " + updatedTransaction.memo
+
+              amount shouldBe updatedTransaction.amount
+              date shouldBe updatedTransaction.date
+              payeeName shouldBe updatedTransaction.payeeName
+              accountId shouldBe updatedTransaction.accountId.plainUuid
+              deleted.shouldBeFalse()
+            }
+
+            updatedComplement.thisOnServerShould(serverDatabase) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              memo shouldBe
+                "ERROR: Both this and its complement have been updated; update both to " +
+                "the same amount and date to bring them back in sync. • " + updatedComplement.memo
+
+              amount shouldBe updatedComplement.amount
+              date shouldBe updatedComplement.date
+              payeeName shouldBe updatedComplement.payeeName
+              accountId shouldBe updatedComplement.accountId.plainUuid
+              deleted.shouldBeFalse()
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessedExcept(
+              transactions =
+                setOf(
+                  manuallyAddedTransaction().id,
+                  manuallyAddedTransactionComplement().id,
+                ),
+            )
+          }
+
+          context("once one side updates") {
+            transactionMirrorer.mirrorTransactions()
+            setUpServerDatabase {
+              addTransactions(manuallyAddedTransactionComplement().copy(approved = true))
+            }
+
+            test("nothing happens") {
+              val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+              transactionMirrorer.mirrorTransactions()
+
+              assertSoftly {
+                withClue("Server knowledge should not change") {
+                  serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+                }
+
+                localDatabase.shouldMatchServer(serverDatabase)
+                localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                  setOf(
+                    manuallyAddedTransactionComplement().id,
+                    manuallyAddedTransaction().id,
+                  ),
+                )
+              }
+            }
+
+            context("once the other side updates") {
+              transactionMirrorer.mirrorTransactions()
+              setUpServerDatabase {
+                addTransactions(manuallyAddedTransaction().copy(cleared = CLEARED))
+              }
+
+              test("conflict is resolved") {
+                val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+                transactionMirrorer.mirrorTransactions()
+
+                withClue("Server knowledge should not change") {
+                  serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+                }
+
+                manuallyAddedTransactionComplement().thisOnServerShould(serverDatabase) {
+                  amount shouldBe manuallyAddedTransactionComplement().amount
+                  date shouldBe manuallyAddedTransactionComplement().date
+                  payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+                  memo shouldBe manuallyAddedTransactionComplement().memo
                   cleared shouldBe CLEARED
                   approved.shouldBeTrue()
                   deleted.shouldBeFalse()
                   accountId shouldBe TO_ACCOUNT_ID.plainUuid
                 }
 
-                updatedTransaction.thisOnServerShould(serverDatabase) {
-                  amount shouldBe updatedTransaction.amount
-                  date shouldBe updatedTransaction.date
-                  payeeName shouldBe updatedTransaction.payeeName
-                  memo shouldBe updatedTransaction.memo
+                manuallyAddedTransaction().thisOnServerShould(serverDatabase) {
+                  amount shouldBe manuallyAddedTransaction().amount
+                  date shouldBe manuallyAddedTransaction().date
+                  payeeName shouldBe manuallyAddedTransaction().payeeName
+                  memo shouldBe manuallyAddedTransaction().memo
                   cleared shouldBe CLEARED
                   flagColor shouldBe null
                   approved.shouldBeTrue()
                   deleted.shouldBeFalse()
-                  accountId shouldBe updatedTransaction.accountId.plainUuid
+                  accountId shouldBe manuallyAddedTransaction().accountId.plainUuid
                 }
 
                 localDatabase.shouldMatchServer(serverDatabase)
@@ -373,533 +553,381 @@ internal class TransactionMirrorerTest : FunSpec({
             }
           }
         }
-      }
 
-      context("with an UP_TO_DATE complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("complement is updated") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-            amount shouldBe -updatedTransaction.amount
-            date shouldBe updatedTransaction.date
-            flagColor shouldBe BLUE
-            approved.shouldBeFalse()
-
-            payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-            memo shouldBe manuallyAddedTransactionComplement().memo
-            deleted.shouldBeFalse()
-            accountId shouldBe TO_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with a CREATED complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-
-        test("complement is updated") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-            amount shouldBe -updatedTransaction.amount
-            date shouldBe updatedTransaction.date
-            flagColor shouldBe BLUE
-            approved.shouldBeFalse()
-
-            payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-            memo shouldBe manuallyAddedTransactionComplement().memo
-            deleted.shouldBeFalse()
-            accountId shouldBe TO_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with an UPDATED complement") {
-        val updatedComplement = manuallyAddedTransactionComplement(UPDATED).copy(amount = -400_000)
-
-        setUpServerDatabase {
-          addTransactions(updatedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("both are flagged as errors") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedTransaction.thisOnServerShould(serverDatabase) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            memo shouldBe "ERROR: Both this and its complement have been updated; update both to " +
-              "the same amount and date to bring them back in sync. • " + updatedTransaction.memo
-
-            amount shouldBe updatedTransaction.amount
-            date shouldBe updatedTransaction.date
-            payeeName shouldBe updatedTransaction.payeeName
-            accountId shouldBe updatedTransaction.accountId.plainUuid
-            deleted.shouldBeFalse()
-          }
-
-          updatedComplement.thisOnServerShould(serverDatabase) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            memo shouldBe "ERROR: Both this and its complement have been updated; update both to " +
-              "the same amount and date to bring them back in sync. • " + updatedComplement.memo
-
-            amount shouldBe updatedComplement.amount
-            date shouldBe updatedComplement.date
-            payeeName shouldBe updatedComplement.payeeName
-            accountId shouldBe updatedComplement.accountId.plainUuid
-            deleted.shouldBeFalse()
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessedExcept(
-            transactions = setOf(
-              manuallyAddedTransaction().id,
-              manuallyAddedTransactionComplement().id
+        context("with a DELETED complement") {
+          val deletedComplement =
+            manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+              processedState = DELETED,
             )
-          )
-        }
-
-        context("once one side updates") {
-          transactionMirrorer.mirrorTransactions()
           setUpServerDatabase {
-            addTransactions(manuallyAddedTransactionComplement().copy(approved = true))
+            addTransactions(deletedComplement)
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
           }
 
-          test("nothing happens") {
-            val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+          test("this transaction is marked as deleted") {
             transactionMirrorer.mirrorTransactions()
 
-            assertSoftly {
-              withClue("Server knowledge should not change") {
-                serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-              }
+            updatedTransaction.thisOnServerShould(serverDatabase) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
 
-              localDatabase.shouldMatchServer(serverDatabase)
-              localDatabase.shouldHaveAllTransactionsProcessedExcept(
-                setOf(
-                  manuallyAddedTransactionComplement().id,
-                  manuallyAddedTransaction().id
+              amount shouldBe updatedTransaction.amount
+              date shouldBe updatedTransaction.date
+              payeeName shouldBe updatedTransaction.payeeName
+              memo shouldBe updatedTransaction.memo
+              accountId shouldBe FROM_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessedExcept(setOf(updatedTransaction.id))
+          }
+        }
+      }
+
+      context("with a DELETED transaction") {
+        val deletedTransaction = manuallyAddedTransaction(UP_TO_DATE).copy(processedState = DELETED)
+        setUpServerDatabase {
+          addTransactions(deletedTransaction)
+        }
+        setUpLocalDatabase {
+          addTransactions(manuallyAddedTransaction(UP_TO_DATE))
+        }
+
+        context("with no complement") {
+          val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
+          test("nothing happens") {
+            transactionMirrorer.mirrorTransactions()
+
+            withClue("Server knowledge should not change") {
+              serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+          }
+        }
+
+        context("with an UP_TO_DATE complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+
+          test("complement is marked as deleted") {
+            transactionMirrorer.mirrorTransactions()
+
+            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
+
+              amount shouldBe manuallyAddedTransactionComplement().amount
+              date shouldBe manuallyAddedTransactionComplement().date
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+
+          context("once the complement is also deleted") {
+            transactionMirrorer.mirrorTransactions()
+            setUpServerDatabase {
+              addOrUpdateTransactionsForAccount(
+                TO_ACCOUNT_ID,
+                listOf(
+                  serverDatabase
+                    .getTransactionsForAccount(TO_ACCOUNT_ID)
+                    .find { it.id == manuallyAddedTransactionComplement().id.string }!!
+                    .copy(deleted = true),
                 ),
               )
             }
+
+            test("both transactions are fully deleted") {
+              transactionMirrorer.mirrorTransactions()
+
+              deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+                deleted.shouldBeTrue()
+              }
+              localDatabase.shouldMatchServer(serverDatabase)
+              localDatabase.shouldHaveAllTransactionsProcessed()
+            }
           }
 
-          context("once the other side updates") {
+          xcontext("once the complement is un-flagged (un-deleted)") {
+            /* TODO: This causes problems because you can't recreate the transaction with the same
+             * importId. Let's just ignore this for now, and come back to it later.
+             *
+             * Some ideas for then:
+             * - Store the DELETED transaction in the local database even after deletion, update it
+             *   rather than creating a whole new transaction. Definitely the best option, but need
+             *   to double-check that it works with the API.
+             * - Right now, we ignore any changes that aren't amount, date, and approved. Need to add
+             *   a "flag" UpdateField to cover un-deletion (and eventually flag-to-split).
+             */
             transactionMirrorer.mirrorTransactions()
+            val unflaggedTransaction =
+              serverDatabase
+                .getTransactionsForAccount(TO_ACCOUNT_ID)
+                .find { it.id == manuallyAddedTransactionComplement().id.string }!!
+                .copy(flagColor = null, approved = true)
+                .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
             setUpServerDatabase {
-              addTransactions(manuallyAddedTransaction().copy(cleared = CLEARED))
+              addTransactions(unflaggedTransaction)
             }
 
-            test("conflict is resolved") {
+            test("this transaction is recreated") {
+              transactionMirrorer.mirrorTransactions()
+
+              deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+                flagColor shouldBe null
+                approved.shouldBeTrue()
+                deleted.shouldBeFalse()
+
+                amount shouldBe manuallyAddedTransactionComplement().amount
+                date shouldBe manuallyAddedTransactionComplement().date
+                payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+                memo shouldBe manuallyAddedTransactionComplement().memo
+                accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+              }
+
+              unflaggedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+                flagColor shouldBe null
+                approved.shouldBeTrue()
+                deleted.shouldBeFalse()
+
+                amount shouldBe manuallyAddedTransactionComplement().amount
+                date shouldBe manuallyAddedTransactionComplement().date
+                payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+                memo shouldBe manuallyAddedTransactionComplement().memo
+                accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+              }
+              localDatabase.shouldMatchServer(serverDatabase)
+              localDatabase.shouldHaveAllTransactionsProcessed()
+            }
+          }
+        }
+
+        context("with a CREATED complement") {
+          setUpServerDatabase {
+            addTransactions(manuallyAddedTransactionComplement())
+          }
+
+          test("complement is marked as deleted") {
+            transactionMirrorer.mirrorTransactions()
+
+            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
+
+              amount shouldBe manuallyAddedTransactionComplement().amount
+              date shouldBe manuallyAddedTransactionComplement().date
+              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
+              memo shouldBe manuallyAddedTransactionComplement().memo
+              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+        }
+
+        context("with an UPDATED complement") {
+          val updatedComplement =
+            manuallyAddedTransactionComplement(UP_TO_DATE).copy(amount = -300_000)
+          setUpServerDatabase {
+            addTransactions(updatedComplement)
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+
+          test("complement is marked as deleted") {
+            transactionMirrorer.mirrorTransactions()
+
+            updatedComplement.thisOnServerShould(serverDatabase) {
+              flagColor shouldBe RED
+              approved.shouldBeFalse()
+              deleted.shouldBeFalse()
+
+              amount shouldBe updatedComplement.amount
+              date shouldBe updatedComplement.date
+              payeeName shouldBe updatedComplement.payeeName
+              memo shouldBe updatedComplement.memo
+              accountId shouldBe updatedComplement.accountId.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessedExcept(
+              setOf(updatedComplement.id),
+            )
+          }
+        }
+
+        context("with a DELETED complement") {
+          val deletedComplement =
+            manuallyAddedTransactionComplement(UP_TO_DATE).copy(
+              processedState = DELETED,
+            )
+          setUpServerDatabase {
+            addTransactions(deletedComplement)
+          }
+          setUpLocalDatabase {
+            addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
+          }
+          val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+
+          test("nothing happens") {
+            transactionMirrorer.mirrorTransactions()
+
+            withClue("Server knowledge should not change") {
+              serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+          }
+        }
+      }
+
+      context("with a recurring (unapproved) split into an account") {
+        setUpServerDatabase {
+          addTransactions(
+            transactionTransferSplitSource(),
+            transactionAddedFromTransfer(isFromSplitSource = true).copy(approved = false),
+          )
+        }
+
+        test("the unapproved transaction is ignored") {
+          val beginningServerKnowledge = serverDatabase.currentServerKnowledge
+          transactionMirrorer.mirrorTransactions()
+
+          withClue("Server knowledge should not change") {
+            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
+          }
+          localDatabase.shouldMatchServer(serverDatabase)
+          localDatabase.shouldHaveAllTransactionsProcessedExcept(
+            setOf(transactionAddedFromTransfer(isFromSplitSource = true).id),
+          )
+        }
+
+        context("when approved") {
+          transactionMirrorer.mirrorTransactions()
+          setUpServerDatabase {
+            addTransactions(transactionAddedFromTransfer(isFromSplitSource = true))
+          }
+
+          test("the approved transaction is mirrored") {
+            transactionMirrorer.mirrorTransactions()
+
+            transactionAddedFromTransfer(isFromSplitSource = true).complementOnServerShould(
+              serverDatabase,
+              TO_ACCOUNT_AND_BUDGET,
+            ) {
+              approved.shouldBeFalse()
+
+              amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
+              importId shouldBe "splity:-10000:2020-02-07:1"
+              date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
+              payeeName shouldBe transactionTransferSplitSource().payeeName
+              memo shouldBe
+                subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+              cleared shouldBe CLEARED
+              deleted.shouldBeFalse()
+              accountId shouldBe TO_ACCOUNT_ID.plainUuid
+            }
+            localDatabase.shouldMatchServer(serverDatabase)
+            localDatabase.shouldHaveAllTransactionsProcessed()
+          }
+
+          context("when the complement is updated") {
+            transactionMirrorer.mirrorTransactions()
+            val existingComplement =
+              serverDatabase
+                .getTransactionsForAccount(TO_ACCOUNT_ID)
+                .find {
+                  it isComplementOf
+                    transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction()
+                }!!
+                .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
+            val updatedComplement =
+              existingComplement
+                .copy(approved = true)
+                .copy(amount = -15_000)
+            setUpServerDatabase {
+              addTransactions(updatedComplement)
+            }
+
+            test("the updated complement is marked as an error") {
+              transactionMirrorer.mirrorTransactions()
+
+              assertSoftly {
+                updatedComplement.thisOnServerShould(serverDatabase) {
+                  flagColor shouldBe RED
+                  approved.shouldBeFalse()
+                  memo shouldBe
+                    (
+                      "ERROR: Mirrors of transfers from split transactions can't be " +
+                        "updated, so the change has been undone. Change the mirror of this " +
+                        "transaction in the other budget instead. • " + existingComplement.memo
+                    ).take(200)
+
+                  amount shouldBe existingComplement.amount
+                  date shouldBe existingComplement.date
+                  payeeName shouldBe existingComplement.payeeName
+                  accountId shouldBe existingComplement.accountId.plainUuid
+                  deleted.shouldBeFalse()
+                }
+                localDatabase.shouldMatchServer(serverDatabase)
+                localDatabase.shouldHaveAllTransactionsProcessedExcept(
+                  setOf(updatedComplement.id),
+                )
+              }
+            }
+          }
+
+          context("when the complement is approved") {
+            transactionMirrorer.mirrorTransactions()
+            setUpServerDatabase {
+              addOrUpdateTransactionsForAccount(
+                TO_ACCOUNT_ID,
+                listOf(
+                  serverDatabase
+                    .getTransactionsForAccount(TO_ACCOUNT_ID)
+                    .find {
+                      it.isComplementOf(
+                        transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction(),
+                      )
+                    }!!
+                    .copy(approved = true),
+                ),
+              )
+            }
+
+            test("nothing happens") {
               val beginningServerKnowledge = serverDatabase.currentServerKnowledge
               transactionMirrorer.mirrorTransactions()
 
               withClue("Server knowledge should not change") {
                 serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
               }
-
-              manuallyAddedTransactionComplement().thisOnServerShould(serverDatabase) {
-                amount shouldBe manuallyAddedTransactionComplement().amount
-                date shouldBe manuallyAddedTransactionComplement().date
-                payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-                memo shouldBe manuallyAddedTransactionComplement().memo
-                cleared shouldBe CLEARED
-                approved.shouldBeTrue()
-                deleted.shouldBeFalse()
-                accountId shouldBe TO_ACCOUNT_ID.plainUuid
-              }
-
-              manuallyAddedTransaction().thisOnServerShould(serverDatabase) {
-                amount shouldBe manuallyAddedTransaction().amount
-                date shouldBe manuallyAddedTransaction().date
-                payeeName shouldBe manuallyAddedTransaction().payeeName
-                memo shouldBe manuallyAddedTransaction().memo
-                cleared shouldBe CLEARED
-                flagColor shouldBe null
-                approved.shouldBeTrue()
-                deleted.shouldBeFalse()
-                accountId shouldBe manuallyAddedTransaction().accountId.plainUuid
-              }
-
-              localDatabase.shouldMatchServer(serverDatabase)
               localDatabase.shouldHaveAllTransactionsProcessed()
-            }
-          }
-        }
-      }
-
-      context("with a DELETED complement") {
-        val deletedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
-          processedState = DELETED
-        )
-        setUpServerDatabase {
-          addTransactions(deletedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("this transaction is marked as deleted") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedTransaction.thisOnServerShould(serverDatabase) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-
-            amount shouldBe updatedTransaction.amount
-            date shouldBe updatedTransaction.date
-            payeeName shouldBe updatedTransaction.payeeName
-            memo shouldBe updatedTransaction.memo
-            accountId shouldBe FROM_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessedExcept(setOf(updatedTransaction.id))
-        }
-      }
-    }
-
-    context("with a DELETED transaction") {
-      val deletedTransaction = manuallyAddedTransaction(UP_TO_DATE).copy(processedState = DELETED)
-      setUpServerDatabase {
-        addTransactions(deletedTransaction)
-      }
-      setUpLocalDatabase {
-        addTransactions(manuallyAddedTransaction(UP_TO_DATE))
-      }
-
-      context("with no complement") {
-        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-
-        test("nothing happens") {
-          transactionMirrorer.mirrorTransactions()
-
-          withClue("Server knowledge should not change") {
-            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-        }
-      }
-
-      context("with an UP_TO_DATE complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("complement is marked as deleted") {
-          transactionMirrorer.mirrorTransactions()
-
-          deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-
-            amount shouldBe manuallyAddedTransactionComplement().amount
-            date shouldBe manuallyAddedTransactionComplement().date
-            payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-            memo shouldBe manuallyAddedTransactionComplement().memo
-            accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-
-        context("once the complement is also deleted") {
-          transactionMirrorer.mirrorTransactions()
-          setUpServerDatabase {
-            addOrUpdateTransactionsForAccount(
-              TO_ACCOUNT_ID,
-              listOf(
-                serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-                  .find { it.id == manuallyAddedTransactionComplement().id.string }!!
-                  .copy(deleted = true)
-              )
-            )
-          }
-
-          test("both transactions are fully deleted") {
-            transactionMirrorer.mirrorTransactions()
-
-            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-              deleted.shouldBeTrue()
-            }
-            localDatabase.shouldMatchServer(serverDatabase)
-            localDatabase.shouldHaveAllTransactionsProcessed()
-          }
-        }
-
-        xcontext("once the complement is un-flagged (un-deleted)") {
-          /* TODO: This causes problems because you can't recreate the transaction with the same
-           * importId. Let's just ignore this for now, and come back to it later.
-           *
-           * Some ideas for then:
-           * - Store the DELETED transaction in the local database even after deletion, update it
-           *   rather than creating a whole new transaction. Definitely the best option, but need
-           *   to double-check that it works with the API.
-           * - Right now, we ignore any changes that aren't amount, date, and approved. Need to add
-           *   a "flag" UpdateField to cover un-deletion (and eventually flag-to-split).
-           */
-          transactionMirrorer.mirrorTransactions()
-          val unflaggedTransaction = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-            .find { it.id == manuallyAddedTransactionComplement().id.string }!!
-            .copy(flagColor = null, approved = true)
-            .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
-          setUpServerDatabase {
-            addTransactions(unflaggedTransaction)
-          }
-
-          test("this transaction is recreated") {
-            transactionMirrorer.mirrorTransactions()
-
-            deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-              flagColor shouldBe null
-              approved.shouldBeTrue()
-              deleted.shouldBeFalse()
-
-              amount shouldBe manuallyAddedTransactionComplement().amount
-              date shouldBe manuallyAddedTransactionComplement().date
-              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-              memo shouldBe manuallyAddedTransactionComplement().memo
-              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
-            }
-
-            unflaggedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-              flagColor shouldBe null
-              approved.shouldBeTrue()
-              deleted.shouldBeFalse()
-
-              amount shouldBe manuallyAddedTransactionComplement().amount
-              date shouldBe manuallyAddedTransactionComplement().date
-              payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-              memo shouldBe manuallyAddedTransactionComplement().memo
-              accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
-            }
-            localDatabase.shouldMatchServer(serverDatabase)
-            localDatabase.shouldHaveAllTransactionsProcessed()
-          }
-        }
-      }
-
-      context("with a CREATED complement") {
-        setUpServerDatabase {
-          addTransactions(manuallyAddedTransactionComplement())
-        }
-
-        test("complement is marked as deleted") {
-          transactionMirrorer.mirrorTransactions()
-
-          deletedTransaction.complementOnServerShould(serverDatabase, TO_ACCOUNT_AND_BUDGET) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-
-            amount shouldBe manuallyAddedTransactionComplement().amount
-            date shouldBe manuallyAddedTransactionComplement().date
-            payeeName shouldBe manuallyAddedTransactionComplement().payeeName
-            memo shouldBe manuallyAddedTransactionComplement().memo
-            accountId shouldBe manuallyAddedTransactionComplement().accountId.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-      }
-
-      context("with an UPDATED complement") {
-        val updatedComplement =
-          manuallyAddedTransactionComplement(UP_TO_DATE).copy(amount = -300_000)
-        setUpServerDatabase {
-          addTransactions(updatedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-
-        test("complement is marked as deleted") {
-          transactionMirrorer.mirrorTransactions()
-
-          updatedComplement.thisOnServerShould(serverDatabase) {
-            flagColor shouldBe RED
-            approved.shouldBeFalse()
-            deleted.shouldBeFalse()
-
-            amount shouldBe updatedComplement.amount
-            date shouldBe updatedComplement.date
-            payeeName shouldBe updatedComplement.payeeName
-            memo shouldBe updatedComplement.memo
-            accountId shouldBe updatedComplement.accountId.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessedExcept(
-            setOf(updatedComplement.id)
-          )
-        }
-      }
-
-      context("with a DELETED complement") {
-        val deletedComplement = manuallyAddedTransactionComplement(UP_TO_DATE).copy(
-          processedState = DELETED
-        )
-        setUpServerDatabase {
-          addTransactions(deletedComplement)
-        }
-        setUpLocalDatabase {
-          addTransactions(manuallyAddedTransactionComplement(UP_TO_DATE))
-        }
-        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-
-        test("nothing happens") {
-          transactionMirrorer.mirrorTransactions()
-
-          withClue("Server knowledge should not change") {
-            serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-        }
-      }
-    }
-
-    context("with a recurring (unapproved) split into an account") {
-      setUpServerDatabase {
-        addTransactions(
-          transactionTransferSplitSource(),
-          transactionAddedFromTransfer(isFromSplitSource = true).copy(approved = false)
-        )
-      }
-
-      test("the unapproved transaction is ignored") {
-        val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-        transactionMirrorer.mirrorTransactions()
-
-        withClue("Server knowledge should not change") {
-          serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-        }
-        localDatabase.shouldMatchServer(serverDatabase)
-        localDatabase.shouldHaveAllTransactionsProcessedExcept(
-          setOf(transactionAddedFromTransfer(isFromSplitSource = true).id)
-        )
-      }
-
-      context("when approved") {
-        transactionMirrorer.mirrorTransactions()
-        setUpServerDatabase {
-          addTransactions(transactionAddedFromTransfer(isFromSplitSource = true))
-        }
-
-        test("the approved transaction is mirrored") {
-          transactionMirrorer.mirrorTransactions()
-
-          transactionAddedFromTransfer(isFromSplitSource = true).complementOnServerShould(
-            serverDatabase,
-            TO_ACCOUNT_AND_BUDGET
-          ) {
-            approved.shouldBeFalse()
-
-            amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
-            importId shouldBe "splity:-10000:2020-02-07:1"
-            date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
-            payeeName shouldBe transactionTransferSplitSource().payeeName
-            memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
-            cleared shouldBe CLEARED
-            deleted.shouldBeFalse()
-            accountId shouldBe TO_ACCOUNT_ID.plainUuid
-          }
-          localDatabase.shouldMatchServer(serverDatabase)
-          localDatabase.shouldHaveAllTransactionsProcessed()
-        }
-
-        context("when the complement is updated") {
-          transactionMirrorer.mirrorTransactions()
-          val existingComplement = serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-            .find { it isComplementOf transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction() }!!
-            .toPublicTransactionDetail(TO_BUDGET_ID, UPDATED)
-          val updatedComplement = existingComplement
-            .copy(approved = true)
-            .copy(amount = -15_000)
-          setUpServerDatabase {
-            addTransactions(updatedComplement)
-          }
-
-          test("the updated complement is marked as an error") {
-            transactionMirrorer.mirrorTransactions()
-
-            assertSoftly {
-              updatedComplement.thisOnServerShould(serverDatabase) {
-                flagColor shouldBe RED
-                approved.shouldBeFalse()
-                memo shouldBe ("ERROR: Mirrors of transfers from split transactions can't be " +
-                  "updated, so the change has been undone. Change the mirror of this transaction " +
-                  "in the other budget instead. • " + existingComplement.memo).take(200)
-
-                amount shouldBe existingComplement.amount
-                date shouldBe existingComplement.date
-                payeeName shouldBe existingComplement.payeeName
-                accountId shouldBe existingComplement.accountId.plainUuid
-                deleted.shouldBeFalse()
-              }
               localDatabase.shouldMatchServer(serverDatabase)
-              localDatabase.shouldHaveAllTransactionsProcessedExcept(
-                setOf(updatedComplement.id)
-              )
             }
-          }
-        }
-
-        context("when the complement is approved") {
-          transactionMirrorer.mirrorTransactions()
-          setUpServerDatabase {
-            addOrUpdateTransactionsForAccount(
-              TO_ACCOUNT_ID,
-              listOf(
-                serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
-                  .find {
-                    it.isComplementOf(
-                      transactionAddedFromTransfer(isFromSplitSource = true).toApiTransaction()
-                    )
-                  }!!
-                  .copy(approved = true)
-              )
-            )
-          }
-
-          test("nothing happens") {
-            val beginningServerKnowledge = serverDatabase.currentServerKnowledge
-            transactionMirrorer.mirrorTransactions()
-
-            withClue("Server knowledge should not change") {
-              serverDatabase.currentServerKnowledge shouldBe beginningServerKnowledge
-            }
-            localDatabase.shouldHaveAllTransactionsProcessed()
-            localDatabase.shouldMatchServer(serverDatabase)
           }
         }
       }
     }
-  }
-})
+  })
 
 private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorProperly(
   transactionMirrorer: TransactionMirrorer,
   serverDatabase: FakeYnabServerDatabase,
   localDatabase: Database,
   setUpServerDatabase: (FakeYnabServerDatabase.() -> Unit) -> Unit,
-  setUpLocalDatabase: (Database.() -> Unit) -> Unit
+  setUpLocalDatabase: (Database.() -> Unit) -> Unit,
 ) {
   context("with simple CREATED transactions") {
     context("with no new transactions") {
@@ -921,7 +949,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
-          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
         ) {
           amount shouldBe -manuallyAddedTransaction().amount
           importId shouldBe "splity:-350000:2020-02-06:1"
@@ -939,11 +967,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(transactionAddedFromTransfer(isFromSplitSource = false).toApiTransaction())
+            listOf(transactionAddedFromTransfer(isFromSplitSource = false).toApiTransaction()),
           )
           addOrUpdateTransactionsForAccount(
             FROM_TRANSFER_SOURCE_ACCOUNT_ID,
-            listOf(transactionTransferNonSplitSource().toApiTransaction())
+            listOf(transactionTransferNonSplitSource().toApiTransaction()),
           )
         }
 
@@ -952,13 +980,14 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
-          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
         ) {
           amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = false).amount
           importId shouldBe "splity:-10000:2020-02-07:1"
           date shouldBe transactionAddedFromTransfer(isFromSplitSource = false).date
           payeeName shouldBe "Chicken Butt"
-          memo shouldBe transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
+          memo shouldBe
+            transactionTransferNonSplitSource().memo + " • Out of $10.00, you paid 100.0%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
@@ -970,7 +999,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addTransactions(
             transactionAddedFromTransfer(isFromSplitSource = true),
-            transactionTransferSplitSource()
+            transactionTransferSplitSource(),
           )
         }
 
@@ -979,7 +1008,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
-          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
         ) {
           amount shouldBe -transactionAddedFromTransfer(isFromSplitSource = true).amount
           importId shouldBe "splity:${
@@ -989,7 +1018,8 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           }:1"
           date shouldBe transactionAddedFromTransfer(isFromSplitSource = true).date
           payeeName shouldBe transactionTransferSplitSource().payeeName
-          memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          memo shouldBe
+            subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
@@ -1000,27 +1030,30 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
       context("with a recurring split transaction") {
         val transactionAddedFromTransferWithLongId =
           transactionAddedFromTransfer(isFromSplitSource = true).copy(
-            id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20"
+            id = transactionAddedFromTransfer(isFromSplitSource = true).id + "_st_1_2020-06-20",
           )
 
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(transactionAddedFromTransferWithLongId.toApiTransaction())
+            listOf(transactionAddedFromTransferWithLongId.toApiTransaction()),
           )
           addOrUpdateTransactionsForAccount(
             FROM_TRANSFER_SOURCE_ACCOUNT_ID,
             listOf(
-              transactionTransferSplitSource().copy(
-                subTransactions = listOf(
-                  subTransactionNonTransferSplitSource(),
-                  subTransactionTransferSplitSource().copy(
-                    transferTransactionId = subTransactionTransferSplitSource()
-                      .transferTransactionId!! + "_st_1_2020-06-20"
-                  )
-                )
-              ).toApiTransaction()
-            )
+              transactionTransferSplitSource()
+                .copy(
+                  subTransactions =
+                    listOf(
+                      subTransactionNonTransferSplitSource(),
+                      subTransactionTransferSplitSource().copy(
+                        transferTransactionId =
+                          subTransactionTransferSplitSource()
+                            .transferTransactionId!! + "_st_1_2020-06-20",
+                      ),
+                    ),
+                ).toApiTransaction(),
+            ),
           )
         }
 
@@ -1029,7 +1062,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           transactionMirrorer = transactionMirrorer,
           localDatabase = localDatabase,
           serverDatabase = serverDatabase,
-          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET
+          toAccountAndBudget = TO_ACCOUNT_AND_BUDGET,
         ) {
           amount shouldBe -transactionAddedFromTransferWithLongId.amount
           importId shouldBe "splity:${
@@ -1039,7 +1072,8 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           }:1"
           date shouldBe transactionAddedFromTransferWithLongId.date
           payeeName shouldBe transactionTransferSplitSource().payeeName
-          memo shouldBe subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
+          memo shouldBe
+            subTransactionTransferSplitSource().memo + " • Out of $30.00, you paid 33.3%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
@@ -1054,14 +1088,14 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(unapprovedTransaction.toApiTransaction())
+            listOf(unapprovedTransaction.toApiTransaction()),
           )
         }
 
         mirrorTransactionsIgnoresTransaction(
           unapprovedTransaction,
           transactionMirrorer,
-          serverDatabase
+          serverDatabase,
         )
       }
 
@@ -1069,21 +1103,23 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(manuallyAddedTransaction().toApiTransaction())
+            listOf(manuallyAddedTransaction().toApiTransaction()),
           )
           addOrUpdateTransactionsForAccount(
             TO_ACCOUNT_ID,
-            listOf(manuallyAddedTransactionComplement().toApiTransaction())
+            listOf(manuallyAddedTransactionComplement().toApiTransaction()),
           )
         }
 
         test("mirrorTransactions doesn't duplicate the transaction") {
           transactionMirrorer.mirrorTransactions()
 
-          serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+          serverDatabase
+            .getTransactionsForAccount(TO_ACCOUNT_ID)
             .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
             .shouldContainSingleComplementOf(manuallyAddedTransaction())
-          serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+          serverDatabase
+            .getTransactionsForAccount(FROM_ACCOUNT_ID)
             .toPublicTransactionDetailList(FROM_BUDGET_ID, UP_TO_DATE)
             .shouldContainSingleComplementOf(manuallyAddedTransactionComplement())
         }
@@ -1094,28 +1130,33 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         setUpServerDatabase {
           addOrUpdateTransactionsForAccount(
             FROM_ACCOUNT_ID,
-            listOf(redFlaggedTransaction.toApiTransaction())
+            listOf(redFlaggedTransaction.toApiTransaction()),
           )
         }
 
         test("mirrorTransactions doesn't duplicate the transaction") {
           transactionMirrorer.mirrorTransactions()
 
-          serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+          serverDatabase
+            .getTransactionsForAccount(FROM_ACCOUNT_ID)
             .shouldContain(redFlaggedTransaction.toApiTransaction())
-          serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+          serverDatabase
+            .getTransactionsForAccount(TO_ACCOUNT_ID)
             .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
             .shouldNotContainComplementOf(redFlaggedTransaction)
           localDatabase.shouldHaveNoReplacedTransactions()
-          localDatabase.getAllTransactions()
+          localDatabase
+            .getAllTransactions()
             .shouldContain(redFlaggedTransaction.copy(processedState = CREATED))
-          localDatabase.getAllTransactions()
+          localDatabase
+            .getAllTransactions()
             .shouldNotContainComplementOf(redFlaggedTransaction)
         }
 
         context("with a red-flagged update") {
-          val oldManualTransaction = manuallyAddedTransaction(UP_TO_DATE)
-            .copy(amount = 200_000)
+          val oldManualTransaction =
+            manuallyAddedTransaction(UP_TO_DATE)
+              .copy(amount = 200_000)
 
           setUpLocalDatabase {
             addTransactions(oldManualTransaction)
@@ -1125,9 +1166,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
             transactionMirrorer.mirrorTransactions()
 
             withClue("Server transactions") {
-              serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+              serverDatabase
+                .getTransactionsForAccount(FROM_ACCOUNT_ID)
                 .shouldContain(redFlaggedTransaction.toApiTransaction())
-              serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+              serverDatabase
+                .getTransactionsForAccount(TO_ACCOUNT_ID)
                 .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
                 .shouldNotContainComplementOf(redFlaggedTransaction)
             }
@@ -1135,9 +1178,11 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
               localDatabase.getAllReplacedTransactions().shouldContainExactly(oldManualTransaction)
             }
             withClue("All transactions transactions") {
-              localDatabase.getAllTransactions()
+              localDatabase
+                .getAllTransactions()
                 .shouldContain(redFlaggedTransaction.copy(processedState = UPDATED))
-              localDatabase.getAllTransactions()
+              localDatabase
+                .getAllTransactions()
                 .shouldNotContainComplementOf(redFlaggedTransaction)
             }
           }
@@ -1202,7 +1247,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           -halfAmount,
           unremarkableTransactionInTransferSource().date,
           serverDatabase,
-          FROM_ACCOUNT_AND_BUDGET
+          FROM_ACCOUNT_AND_BUDGET,
         ) {
           importId shouldBe null
           date shouldBe unremarkableTransactionInTransferSource().date
@@ -1220,12 +1265,14 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
           halfAmount,
           unremarkableTransactionInTransferSource().date,
           serverDatabase,
-          TO_ACCOUNT_AND_BUDGET
+          TO_ACCOUNT_AND_BUDGET,
         ) {
-          importId shouldBe "splity:${halfAmount}:${unremarkableTransactionInTransferSource().date}:1"
+          importId shouldBe
+            "splity:$halfAmount:${unremarkableTransactionInTransferSource().date}:1"
           date shouldBe unremarkableTransactionInTransferSource().date
           payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
-          memo shouldBe unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
+          memo shouldBe
+            unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
           cleared shouldBe CLEARED
           approved.shouldBeFalse()
           deleted.shouldBeFalse()
@@ -1244,12 +1291,13 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         addTransactions(
           unremarkableTransactionInTransferSource().copy(
             flagColor = PURPLE,
-            subTransactions = listOf(
-              unremarkableNonTransferSubTransactionInTransferSource(DELETED),
-              unremarkableTransferSubTransactionInTransferSource(DELETED)
-            )
+            subTransactions =
+              listOf(
+                unremarkableNonTransferSubTransactionInTransferSource(DELETED),
+                unremarkableTransferSubTransactionInTransferSource(DELETED),
+              ),
           ),
-          newlyRemarkableTransactionInFromAccount(DELETED)
+          newlyRemarkableTransactionInFromAccount(DELETED),
         )
       }
 
@@ -1304,7 +1352,7 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
             -halfAmount,
             unremarkableTransactionInTransferSource().date,
             serverDatabase,
-            FROM_ACCOUNT_AND_BUDGET
+            FROM_ACCOUNT_AND_BUDGET,
           ) {
             importId shouldBe null
             date shouldBe unremarkableTransactionInTransferSource().date
@@ -1322,12 +1370,14 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
             halfAmount,
             unremarkableTransactionInTransferSource().date,
             serverDatabase,
-            TO_ACCOUNT_AND_BUDGET
+            TO_ACCOUNT_AND_BUDGET,
           ) {
-            importId shouldBe "splity:${halfAmount}:${unremarkableTransactionInTransferSource().date}:1"
+            importId shouldBe
+              "splity:$halfAmount:${unremarkableTransactionInTransferSource().date}:1"
             date shouldBe unremarkableTransactionInTransferSource().date
             payeeName shouldBe unremarkableTransactionInTransferSource().payeeName
-            memo shouldBe unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
+            memo shouldBe
+              unremarkableTransactionInTransferSource().memo + " • Out of $101.00, you paid 50.0%"
             cleared shouldBe CLEARED
             approved.shouldBeFalse()
             deleted.shouldBeFalse()
@@ -1338,7 +1388,6 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
         localDatabase.shouldMatchServer(serverDatabase)
         localDatabase.shouldHaveAllTransactionsProcessed()
       }
-
     }
   }
 }
@@ -1346,15 +1395,17 @@ private suspend fun FunSpecContainerScope.simpleCreatedTransactionsShouldMirrorP
 private suspend fun FunSpecContainerScope.mirrorTransactionsIgnoresTransaction(
   transactionToIgnore: PublicTransactionDetail,
   transactionMirrorer: TransactionMirrorer,
-  serverDatabase: FakeYnabServerDatabase
+  serverDatabase: FakeYnabServerDatabase,
 ) {
   test("mirrorTransactions ignores the transaction") {
     transactionMirrorer.mirrorTransactions()
 
-    serverDatabase.getTransactionsForAccount(TO_ACCOUNT_ID)
+    serverDatabase
+      .getTransactionsForAccount(TO_ACCOUNT_ID)
       .toPublicTransactionDetailList(TO_BUDGET_ID, UP_TO_DATE)
       .shouldNotContainComplementOf(transactionToIgnore)
-    serverDatabase.getTransactionsForAccount(FROM_ACCOUNT_ID)
+    serverDatabase
+      .getTransactionsForAccount(FROM_ACCOUNT_ID)
       .shouldContain(transactionToIgnore.toApiTransaction())
   }
 }
@@ -1365,7 +1416,7 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
   localDatabase: Database,
   serverDatabase: FakeYnabServerDatabase,
   toAccountAndBudget: AccountAndBudget,
-  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit,
 ) {
   test("mirrorTransactions mirrors the transaction") {
     transactionMirrorer.mirrorTransactions()
@@ -1373,7 +1424,7 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
     transactionToMirror.complementOnServerShould(
       serverDatabase,
       toAccountAndBudget,
-      assertSoftly
+      assertSoftly,
     )
     localDatabase.shouldMatchServer(serverDatabase)
     localDatabase.shouldHaveAllTransactionsProcessed()
@@ -1382,15 +1433,16 @@ private suspend fun FunSpecContainerScope.mirrorTransactionMirrorsTransaction(
 
 private fun PublicTransactionDetail.thisOnServerShould(
   serverDatabase: FakeYnabServerDatabase,
-  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit,
 ) {
   val transactionsInToAccount =
     serverDatabase.getTransactionsForAccount(accountId)
 
   transactionsInToAccount.shouldForOne { it.id shouldBe this.id.string }
 
-  val transaction = transactionsInToAccount
-    .find { transaction -> transaction.id == this.id.string }!!
+  val transaction =
+    transactionsInToAccount
+      .find { transaction -> transaction.id == this.id.string }!!
 
   withClue("For transaction $transaction") {
     assertSoftly(transaction, assertSoftly)
@@ -1400,7 +1452,7 @@ private fun PublicTransactionDetail.thisOnServerShould(
 private fun PublicTransactionDetail.complementOnServerShould(
   serverDatabase: FakeYnabServerDatabase,
   complementAccountAndBudget: AccountAndBudget,
-  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit,
 ) {
   val transactionsInToAccount =
     serverDatabase.getTransactionsForAccount(complementAccountAndBudget.accountId)
@@ -1409,9 +1461,10 @@ private fun PublicTransactionDetail.complementOnServerShould(
     .toPublicTransactionDetailList(complementAccountAndBudget.budgetId, UP_TO_DATE)
     .shouldContainSingleComplementOf(this)
 
-  val complement = transactionsInToAccount.find { transaction ->
-    transaction.toPublicTransactionDetail(complementAccountAndBudget.budgetId) isComplementOf this
-  }!!
+  val complement =
+    transactionsInToAccount.find { transaction ->
+      transaction.toPublicTransactionDetail(complementAccountAndBudget.budgetId) isComplementOf this
+    }!!
 
   withClue("For complement $complement") {
     assertSoftly(complement, assertSoftly)
@@ -1423,7 +1476,7 @@ private fun complementOnServerShould(
   complementDate: LocalDate,
   serverDatabase: FakeYnabServerDatabase,
   complementAccountAndBudget: AccountAndBudget,
-  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit
+  assertSoftly: TransactionDetail.(TransactionDetail) -> Unit,
 ) {
   val transactionsInToAccount =
     serverDatabase.getTransactionsForAccount(complementAccountAndBudget.accountId)
@@ -1432,9 +1485,10 @@ private fun complementOnServerShould(
     transaction.date == complementDate && transaction.amount == complementAmount
   }
 
-  val complement = transactionsInToAccount.find { transaction ->
-    transaction.date == complementDate && transaction.amount == complementAmount
-  }!!
+  val complement =
+    transactionsInToAccount.find { transaction ->
+      transaction.date == complementDate && transaction.amount == complementAmount
+    }!!
 
   withClue("For complement $complement") {
     assertSoftly(complement, assertSoftly)

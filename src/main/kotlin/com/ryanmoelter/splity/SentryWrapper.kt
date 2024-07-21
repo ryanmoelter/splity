@@ -8,25 +8,24 @@ interface SentryWrapper {
   fun doInTransaction(
     operation: String,
     name: String,
-    action: () -> Unit
+    action: () -> Unit,
   )
 
   fun <T> doInImmediateSpan(
     operation: String,
-    action: () -> T
+    action: () -> T,
   ): T
 
   suspend fun <T> doInSpan(
     operation: String,
-    action: suspend () -> T
+    action: suspend () -> T,
   ): T
 }
 
 class SentryWrapperImpl(
   sentryConfig: SentryConfig,
-  version: String
+  version: String,
 ) : SentryWrapper {
-
   init {
     Sentry.init { options ->
       options.dsn = sentryConfig.dsn
@@ -38,15 +37,16 @@ class SentryWrapperImpl(
   override fun doInTransaction(
     operation: String,
     name: String,
-    action: () -> Unit
+    action: () -> Unit,
   ) {
-    val transaction = Sentry.startTransaction(
-      name,
-      operation,
-      TransactionOptions().apply {
-        isBindToScope = true
-      }
-    )
+    val transaction =
+      Sentry.startTransaction(
+        name,
+        operation,
+        TransactionOptions().apply {
+          isBindToScope = true
+        },
+      )
     try {
       action().also { transaction.status = SpanStatus.OK }
     } catch (e: Throwable) {
@@ -60,7 +60,7 @@ class SentryWrapperImpl(
 
   override fun <T> doInImmediateSpan(
     operation: String,
-    action: () -> T
+    action: () -> T,
   ): T {
     val span = Sentry.getSpan()!!.startChild(operation, operation)
     return try {
@@ -76,7 +76,7 @@ class SentryWrapperImpl(
 
   override suspend fun <T> doInSpan(
     operation: String,
-    action: suspend () -> T
+    action: suspend () -> T,
   ): T {
     val span = Sentry.getSpan()!!.startChild(operation, operation)
     return try {
@@ -92,15 +92,31 @@ class SentryWrapperImpl(
 }
 
 class NoSentryWrapper : SentryWrapper {
-  override fun doInTransaction(operation: String, name: String, action: () -> Unit) = action()
+  override fun doInTransaction(
+    operation: String,
+    name: String,
+    action: () -> Unit,
+  ) = action()
 
-  override fun <T> doInImmediateSpan(operation: String, action: () -> T): T = action()
+  override fun <T> doInImmediateSpan(
+    operation: String,
+    action: () -> T,
+  ): T = action()
 
-  override suspend fun <T> doInSpan(operation: String, action: suspend () -> T) = action()
+  override suspend fun <T> doInSpan(
+    operation: String,
+    action: suspend () -> T,
+  ) = action()
 }
 
-fun setUpSentry(sentryConfig: SentryConfig?, version: String): SentryWrapper = if (sentryConfig != null) {
-  SentryWrapperImpl(sentryConfig, version)
-} else {
-  NoSentryWrapper()
-}
+fun setUpSentry(
+  sentryConfig: SentryConfig?,
+  version: String,
+): SentryWrapper =
+  if (sentryConfig !=
+    null
+  ) {
+    SentryWrapperImpl(sentryConfig, version)
+  } else {
+    NoSentryWrapper()
+  }

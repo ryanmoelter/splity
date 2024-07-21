@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BulkResponse(
-    @Json(name = "data") @field:Json(name = "data") var `data`: BulkResponseData
+  @Json(name = "data") @field:Json(name = "data") var `data`: BulkResponseData,
 )

@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class PatchMonthCategoryWrapper(
-    @Json(name = "category") @field:Json(name = "category") var category: SaveMonthCategory
+  @Json(name = "category") @field:Json(name = "category") var category: SaveMonthCategory,
 )

@@ -15,6 +15,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class TransactionsResponseData(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<TransactionDetail>,
-    @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<TransactionDetail>,
+  @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long,
 )

@@ -19,9 +19,9 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class CategoryGroupWithCategories(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "hidden") @field:Json(name = "hidden") var hidden: Boolean,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "categories") @field:Json(name = "categories") var categories: List<Category>
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "hidden") @field:Json(name = "hidden") var hidden: Boolean,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "categories") @field:Json(name = "categories") var categories: List<Category>,
 )

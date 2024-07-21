@@ -14,34 +14,35 @@ import retrofit2.http.Headers
 
 @JvmSuppressWildcards
 interface MonthsApi {
-    /**
-     * Single budget month
-     * Returns a single budget month
-     * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
-     * @param month The budget month in ISO format (e.g. 2016-12-01) (\&quot;current\&quot; can also be used to specify the current calendar month (UTC)) (required)
-     */
-    @Headers(
-        "X-Operation-ID: getBudgetMonth"
-    )
-    @GET("budgets/{budget_id}/months/{month}")
-    suspend fun getBudgetMonth(
-        @retrofit2.http.Path("budget_id") budgetId: String,
-        @retrofit2.http.Path("month") month: LocalDate
-    ): MonthDetailResponse
-    /**
-     * List budget months
-     * Returns all budget months
-     * The endpoint is owned by defaultname service owner
-     * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
-     * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
-     */
-    @Headers(
-        "X-Operation-ID: getBudgetMonths"
-    )
-    @GET("budgets/{budget_id}/months")
-    suspend fun getBudgetMonths(
-        @retrofit2.http.Path("budget_id") budgetId: String,
-        @retrofit2.http.Query("last_knowledge_of_server") lastKnowledgeOfServer: Long?
-    ): MonthSummariesResponse
+  /**
+   * Single budget month
+   * Returns a single budget month
+   * The endpoint is owned by defaultname service owner
+   * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
+   * @param month The budget month in ISO format (e.g. 2016-12-01) (\&quot;current\&quot; can also be used to specify the current calendar month (UTC)) (required)
+   */
+  @Headers(
+    "X-Operation-ID: getBudgetMonth",
+  )
+  @GET("budgets/{budget_id}/months/{month}")
+  suspend fun getBudgetMonth(
+    @retrofit2.http.Path("budget_id") budgetId: String,
+    @retrofit2.http.Path("month") month: LocalDate,
+  ): MonthDetailResponse
+
+  /**
+   * List budget months
+   * Returns all budget months
+   * The endpoint is owned by defaultname service owner
+   * @param budgetId The id of the budget. \&quot;last-used\&quot; can be used to specify the last used budget and \&quot;default\&quot; can be used if default budget selection is enabled (see: https://api.ynab.com/#oauth-default-budget). (required)
+   * @param lastKnowledgeOfServer The starting server knowledge.  If provided, only entities that have changed since `last_knowledge_of_server` will be included. (optional)
+   */
+  @Headers(
+    "X-Operation-ID: getBudgetMonths",
+  )
+  @GET("budgets/{budget_id}/months")
+  suspend fun getBudgetMonths(
+    @retrofit2.http.Path("budget_id") budgetId: String,
+    @retrofit2.http.Query("last_knowledge_of_server") lastKnowledgeOfServer: Long?,
+  ): MonthSummariesResponse
 }

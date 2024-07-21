@@ -12,14 +12,14 @@ import retrofit2.http.Headers
 
 @JvmSuppressWildcards
 interface UserApi {
-    /**
-     * User info
-     * Returns authenticated user information
-     * The endpoint is owned by defaultname service owner
-     */
-    @Headers(
-        "X-Operation-ID: getUser"
-    )
-    @GET("user")
-    suspend fun getUser(): UserResponse
+  /**
+   * User info
+   * Returns authenticated user information
+   * The endpoint is owned by defaultname service owner
+   */
+  @Headers(
+    "X-Operation-ID: getUser",
+  )
+  @GET("user")
+  suspend fun getUser(): UserResponse
 }

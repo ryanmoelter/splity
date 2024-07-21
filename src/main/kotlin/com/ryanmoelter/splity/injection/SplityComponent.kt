@@ -21,7 +21,7 @@ abstract class SplityComponent(
   @Component val databaseModule: DatabaseModule,
   @Component val configModule: ConfigModule,
   @Component val apiModule: ApiModule,
-  @Component val sentryModule: SentryModule
+  @Component val sentryModule: SentryModule,
 ) {
   abstract val config: Config
   abstract val database: Database

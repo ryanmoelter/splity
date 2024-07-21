@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class TransactionResponse(
-    @Json(name = "data") @field:Json(name = "data") var `data`: TransactionResponseData
+  @Json(name = "data") @field:Json(name = "data") var `data`: TransactionResponseData,
 )

@@ -14,18 +14,45 @@ import com.squareup.moshi.JsonClass
 * Values: CHECKING,SAVINGS,CASH,CREDITCARD,LINEOFCREDIT,OTHERASSET,OTHERLIABILITY,MORTGAGE,AUTOLOAN,STUDENTLOAN,PERSONALLOAN,MEDICALDEBT,OTHERDEBT
 */
 @JsonClass(generateAdapter = false)
-enum class AccountType(val value: String) {
-    @Json(name = "checking") CHECKING("checking"),
-    @Json(name = "savings") SAVINGS("savings"),
-    @Json(name = "cash") CASH("cash"),
-    @Json(name = "creditCard") CREDITCARD("creditCard"),
-    @Json(name = "lineOfCredit") LINEOFCREDIT("lineOfCredit"),
-    @Json(name = "otherAsset") OTHERASSET("otherAsset"),
-    @Json(name = "otherLiability") OTHERLIABILITY("otherLiability"),
-    @Json(name = "mortgage") MORTGAGE("mortgage"),
-    @Json(name = "autoLoan") AUTOLOAN("autoLoan"),
-    @Json(name = "studentLoan") STUDENTLOAN("studentLoan"),
-    @Json(name = "personalLoan") PERSONALLOAN("personalLoan"),
-    @Json(name = "medicalDebt") MEDICALDEBT("medicalDebt"),
-    @Json(name = "otherDebt") OTHERDEBT("otherDebt")
+enum class AccountType(
+  val value: String,
+) {
+  @Json(name = "checking")
+  CHECKING("checking"),
+
+  @Json(name = "savings")
+  SAVINGS("savings"),
+
+  @Json(name = "cash")
+  CASH("cash"),
+
+  @Json(name = "creditCard")
+  CREDITCARD("creditCard"),
+
+  @Json(name = "lineOfCredit")
+  LINEOFCREDIT("lineOfCredit"),
+
+  @Json(name = "otherAsset")
+  OTHERASSET("otherAsset"),
+
+  @Json(name = "otherLiability")
+  OTHERLIABILITY("otherLiability"),
+
+  @Json(name = "mortgage")
+  MORTGAGE("mortgage"),
+
+  @Json(name = "autoLoan")
+  AUTOLOAN("autoLoan"),
+
+  @Json(name = "studentLoan")
+  STUDENTLOAN("studentLoan"),
+
+  @Json(name = "personalLoan")
+  PERSONALLOAN("personalLoan"),
+
+  @Json(name = "medicalDebt")
+  MEDICALDEBT("medicalDebt"),
+
+  @Json(name = "otherDebt")
+  OTHERDEBT("otherDebt"),
 }

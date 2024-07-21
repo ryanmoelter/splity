@@ -16,7 +16,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class ErrorDetail(
-    @Json(name = "id") @field:Json(name = "id") var id: String,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "detail") @field:Json(name = "detail") var detail: String
+  @Json(name = "id") @field:Json(name = "id") var id: String,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "detail") @field:Json(name = "detail") var detail: String,
 )

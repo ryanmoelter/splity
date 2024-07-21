@@ -14,5 +14,5 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class ErrorResponse(
-    @Json(name = "error") @field:Json(name = "error") var error: ErrorDetail
+  @Json(name = "error") @field:Json(name = "error") var error: ErrorDetail,
 )

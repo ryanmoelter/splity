@@ -15,6 +15,8 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class HybridTransactionsResponseData(
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<HybridTransaction>,
-    @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge: Long? = null
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<HybridTransaction>,
+  @Json(name = "server_knowledge") @field:Json(name = "server_knowledge") var serverKnowledge:
+    Long? = null,
 )

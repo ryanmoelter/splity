@@ -15,6 +15,10 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class PostTransactionsWrapper(
-    @Json(name = "transaction") @field:Json(name = "transaction") var transaction: SaveTransaction? = null,
-    @Json(name = "transactions") @field:Json(name = "transactions") var transactions: List<SaveTransaction>? = null
+  @Json(
+    name = "transaction",
+  ) @field:Json(name = "transaction") var transaction: SaveTransaction? =
+    null,
+  @Json(name = "transactions") @field:Json(name = "transactions") var transactions:
+    List<SaveTransaction>? = null,
 )

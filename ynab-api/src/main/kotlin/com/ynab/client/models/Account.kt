@@ -8,8 +8,8 @@ package com.ynab.client.models
 
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
-import org.threeten.bp.ZonedDateTime
 import java.util.UUID
+import org.threeten.bp.ZonedDateTime
 
 /**
  * @property id
@@ -33,22 +33,41 @@ import java.util.UUID
  */
 @JsonClass(generateAdapter = true)
 data class Account(
-    @Json(name = "id") @field:Json(name = "id") var id: UUID,
-    @Json(name = "name") @field:Json(name = "name") var name: String,
-    @Json(name = "type") @field:Json(name = "type") var type: AccountType,
-    @Json(name = "on_budget") @field:Json(name = "on_budget") var onBudget: Boolean,
-    @Json(name = "closed") @field:Json(name = "closed") var closed: Boolean,
-    @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
-    @Json(name = "cleared_balance") @field:Json(name = "cleared_balance") var clearedBalance: Long,
-    @Json(name = "uncleared_balance") @field:Json(name = "uncleared_balance") var unclearedBalance: Long,
-    @Json(name = "transfer_payee_id") @field:Json(name = "transfer_payee_id") var transferPayeeId: UUID,
-    @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
-    @Json(name = "note") @field:Json(name = "note") var note: String? = null,
-    @Json(name = "direct_import_linked") @field:Json(name = "direct_import_linked") var directImportLinked: Boolean? = null,
-    @Json(name = "direct_import_in_error") @field:Json(name = "direct_import_in_error") var directImportInError: Boolean? = null,
-    @Json(name = "last_reconciled_at") @field:Json(name = "last_reconciled_at") var lastReconciledAt: ZonedDateTime? = null,
-    @Json(name = "debt_original_balance") @field:Json(name = "debt_original_balance") var debtOriginalBalance: Long? = null,
-    @Json(name = "debt_interest_rates") @field:Json(name = "debt_interest_rates") var debtInterestRates: LoanAccountPeriodicValue? = null,
-    @Json(name = "debt_minimum_payments") @field:Json(name = "debt_minimum_payments") var debtMinimumPayments: LoanAccountPeriodicValue? = null,
-    @Json(name = "debt_escrow_amounts") @field:Json(name = "debt_escrow_amounts") var debtEscrowAmounts: LoanAccountPeriodicValue? = null
+  @Json(name = "id") @field:Json(name = "id") var id: UUID,
+  @Json(name = "name") @field:Json(name = "name") var name: String,
+  @Json(name = "type") @field:Json(name = "type") var type: AccountType,
+  @Json(name = "on_budget") @field:Json(name = "on_budget") var onBudget: Boolean,
+  @Json(name = "closed") @field:Json(name = "closed") var closed: Boolean,
+  @Json(name = "balance") @field:Json(name = "balance") var balance: Long,
+  @Json(name = "cleared_balance") @field:Json(name = "cleared_balance") var clearedBalance: Long,
+  @Json(name = "uncleared_balance") @field:Json(name = "uncleared_balance") var unclearedBalance:
+    Long,
+  @Json(name = "transfer_payee_id") @field:Json(name = "transfer_payee_id") var transferPayeeId:
+    UUID,
+  @Json(name = "deleted") @field:Json(name = "deleted") var deleted: Boolean,
+  @Json(name = "note") @field:Json(name = "note") var note: String? = null,
+  @Json(
+    name = "direct_import_linked",
+  ) @field:Json(name = "direct_import_linked") var directImportLinked: Boolean? = null,
+  @Json(
+    name = "direct_import_in_error",
+  ) @field:Json(name = "direct_import_in_error") var directImportInError: Boolean? = null,
+  @Json(
+    name = "last_reconciled_at",
+  ) @field:Json(name = "last_reconciled_at") var lastReconciledAt: ZonedDateTime? = null,
+  @Json(
+    name = "debt_original_balance",
+  ) @field:Json(name = "debt_original_balance") var debtOriginalBalance: Long? = null,
+  @Json(
+    name = "debt_interest_rates",
+  ) @field:Json(name = "debt_interest_rates") var debtInterestRates:
+    LoanAccountPeriodicValue? = null,
+  @Json(
+    name = "debt_minimum_payments",
+  ) @field:Json(name = "debt_minimum_payments") var debtMinimumPayments:
+    LoanAccountPeriodicValue? = null,
+  @Json(
+    name = "debt_escrow_amounts",
+  ) @field:Json(name = "debt_escrow_amounts") var debtEscrowAmounts:
+    LoanAccountPeriodicValue? = null,
 )

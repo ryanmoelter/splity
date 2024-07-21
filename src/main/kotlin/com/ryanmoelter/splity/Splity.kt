@@ -28,6 +28,6 @@ private fun createSplityComponent(): SplityComponent {
     RealDatabaseModule::class.create(),
     RealConfigModule::class.create(),
     RealApiModule::class.create(sentryModule),
-    sentryModule
+    sentryModule,
   )
 }

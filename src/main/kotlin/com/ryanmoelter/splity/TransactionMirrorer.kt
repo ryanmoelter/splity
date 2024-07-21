@@ -9,7 +9,7 @@ class TransactionMirrorer(
   private val actionApplier: ActionApplier,
   private val actionCreator: ActionCreator,
   private val transactionSplitter: TransactionSplitter,
-  private val sentry: SentryWrapper
+  private val sentry: SentryWrapper,
 ) {
   suspend fun mirrorTransactions() {
     sentry.doInSpan("Fetch new transactions") {
@@ -20,9 +20,10 @@ class TransactionMirrorer(
       transactionSplitter.splitFlaggedTransactions()
     }
 
-    val actions = sentry.doInSpan("Create actions") {
-      actionCreator.createDifferentialActionsForBothAccounts()
-    }
+    val actions =
+      sentry.doInSpan("Create actions") {
+        actionCreator.createDifferentialActionsForBothAccounts()
+      }
     sentry.doInSpan("Apply actions") {
       actionApplier.applyActions(actions)
     }

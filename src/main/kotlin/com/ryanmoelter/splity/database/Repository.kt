@@ -28,13 +28,14 @@ import me.tatarka.inject.annotations.Inject
 class Repository(
   private val database: Database,
   private val api: YnabClient,
-  private val config: Config
+  private val config: Config,
 ) {
   fun getUnprocessedTransactionsByAccount(
-    accountAndBudget: AccountAndBudget
+    accountAndBudget: AccountAndBudget,
   ): List<PublicTransactionDetail> {
     val storedTransactions =
-      database.storedTransactionQueries.getUnprocessedByAccount(accountAndBudget.accountId)
+      database.storedTransactionQueries
+        .getUnprocessedByAccount(accountAndBudget.accountId)
         .executeAsList()
     // We don't need to specifically get unprocessed SubTransactions, because the API will always
     // return an updated TransactionDetail with the updated SubTransactions
@@ -45,10 +46,11 @@ class Repository(
   }
 
   fun getUnprocessedAndFlaggedTransactionsInAccountsExcept(
-    accountIds: List<AccountId>
+    accountIds: List<AccountId>,
   ): List<PublicTransactionDetail> {
     val storedTransactions =
-      database.storedTransactionQueries.getUnprocessedAndFlaggedExcept(accountIds)
+      database.storedTransactionQueries
+        .getUnprocessedAndFlaggedExcept(accountIds)
         .executeAsList()
         .map { it.toStoredTransaction() }
     val storedSubTransactions =
@@ -64,11 +66,12 @@ class Repository(
    */
   fun findReplacedComplementOf(
     originalTransaction: PublicTransactionDetail,
-    inAccountId: AccountId
-  ): PublicTransactionDetail? = database.replacedTransactionQueries
-    .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
-    .executeAsOneOrNull()
-    ?.toPublicTransactionDetail()
+    inAccountId: AccountId,
+  ): PublicTransactionDetail? =
+    database.replacedTransactionQueries
+      .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
+      .executeAsOneOrNull()
+      ?.toPublicTransactionDetail()
 
   /**
    * Search for the complement of [originalTransaction] in [inAccountId]. Searches replaced
@@ -76,57 +79,56 @@ class Repository(
    */
   fun findComplementOf(
     originalTransaction: PublicTransactionDetail,
-    inAccountId: AccountId
-  ): PublicTransactionDetail? = database.storedTransactionQueries
-    .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
-    .executeAsOneOrNull()
-    ?.toPublicTransactionDetail()
+    inAccountId: AccountId,
+  ): PublicTransactionDetail? =
+    database.storedTransactionQueries
+      .getByComplement(inAccountId, originalTransaction.date, -originalTransaction.amount)
+      .executeAsOneOrNull()
+      ?.toPublicTransactionDetail()
 
-  fun getReplacedTransactionById(id: TransactionId): PublicTransactionDetail {
-    return database.replacedTransactionQueries.getById(id)
+  fun getReplacedTransactionById(id: TransactionId): PublicTransactionDetail =
+    database.replacedTransactionQueries
+      .getById(id)
       .executeAsOne()
       .toPublicTransactionDetail()
-  }
 
-  fun getTransactionById(
-    id: TransactionId
-  ): PublicTransactionDetail? {
-    val storedTransaction = database.storedTransactionQueries
-      .getById(id)
-      .executeAsOneOrNull()
+  fun getTransactionById(id: TransactionId): PublicTransactionDetail? {
+    val storedTransaction =
+      database.storedTransactionQueries
+        .getById(id)
+        .executeAsOneOrNull()
     return storedTransaction?.toPublicTransactionDetail(
-      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList(),
     )
   }
 
-  fun getTransactionByTransferTransactionId(
-    transferId: TransactionId
-  ): PublicTransactionDetail? {
-    val storedTransaction = database.storedTransactionQueries
-      .getByTransferId(transferId)
-      .executeAsOneOrNull()
+  fun getTransactionByTransferTransactionId(transferId: TransactionId): PublicTransactionDetail? {
+    val storedTransaction =
+      database.storedTransactionQueries
+        .getByTransferId(transferId)
+        .executeAsOneOrNull()
     return storedTransaction?.toPublicTransactionDetail(
-      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList(),
     )
   }
 
-  fun getSubTransactionByTransferId(
-    transferId: TransactionId
-  ): PublicSubTransaction? {
-    val storedSubTransaction = database.storedSubTransactionQueries
-      .getByTransferId(transferId)
-      .executeAsOneOrNull()
+  fun getSubTransactionByTransferId(transferId: TransactionId): PublicSubTransaction? {
+    val storedSubTransaction =
+      database.storedSubTransactionQueries
+        .getByTransferId(transferId)
+        .executeAsOneOrNull()
     return storedSubTransaction?.toPublicSubTransaction()
   }
 
   fun getTransactionBySubTransactionTransferId(
-    transferId: TransactionId
+    transferId: TransactionId,
   ): PublicTransactionDetail? {
-    val storedTransaction = database.storedTransactionQueries
-      .getBySubTransactionTransferId(transferId)
-      .executeAsOneOrNull()
+    val storedTransaction =
+      database.storedTransactionQueries
+        .getBySubTransactionTransferId(transferId)
+        .executeAsOneOrNull()
     return storedTransaction?.toPublicTransactionDetail(
-      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList()
+      database.storedSubTransactionQueries.getByTransactionId(storedTransaction.id).executeAsList(),
     )
   }
 
@@ -144,57 +146,60 @@ class Repository(
    * Also, find the [BudgetId]s and split [AccountId]s if necessary.
    */
   suspend fun fetchNewTransactions() {
-    val syncData = getSyncData() ?: coroutineScope {
-      val budgetResponse = api.budgets.getBudgets(includeAccounts = true).data
-      val firstAccountAndBudget = findAccountAndBudget(budgetResponse, config.firstAccount)
-      val secondAccountAndBudget = findAccountAndBudget(budgetResponse, config.secondAccount)
+    val syncData =
+      getSyncData() ?: coroutineScope {
+        val budgetResponse = api.budgets.getBudgets(includeAccounts = true).data
+        val firstAccountAndBudget = findAccountAndBudget(budgetResponse, config.firstAccount)
+        val secondAccountAndBudget = findAccountAndBudget(budgetResponse, config.secondAccount)
 
-      SyncData(
-        firstServerKnowledge = null,
-        firstBudgetId = firstAccountAndBudget.budgetId,
-        firstAccountId = firstAccountAndBudget.accountId,
-        firstAccountPayeeId = firstAccountAndBudget.accountPayeeId,
-        secondServerKnowledge = null,
-        secondBudgetId = secondAccountAndBudget.budgetId,
-        secondAccountId = secondAccountAndBudget.accountId,
-        secondAccountPayeeId = secondAccountAndBudget.accountPayeeId
+        SyncData(
+          firstServerKnowledge = null,
+          firstBudgetId = firstAccountAndBudget.budgetId,
+          firstAccountId = firstAccountAndBudget.accountId,
+          firstAccountPayeeId = firstAccountAndBudget.accountPayeeId,
+          secondServerKnowledge = null,
+          secondBudgetId = secondAccountAndBudget.budgetId,
+          secondAccountId = secondAccountAndBudget.accountId,
+          secondAccountPayeeId = secondAccountAndBudget.accountPayeeId,
+        )
+      }
+
+    val firstResponse =
+      api.transactions.getTransactions(
+        syncData.firstBudgetId.toString(),
+        sinceDate = config.startDate,
+        type = null,
+        lastKnowledgeOfServer = syncData.firstServerKnowledge,
       )
-    }
-
-    val firstResponse = api.transactions.getTransactions(
-      syncData.firstBudgetId.toString(),
-      sinceDate = config.startDate,
-      type = null,
-      lastKnowledgeOfServer = syncData.firstServerKnowledge
-    )
-    val secondResponse = api.transactions.getTransactions(
-      syncData.secondBudgetId.toString(),
-      sinceDate = config.startDate,
-      type = null,
-      lastKnowledgeOfServer = syncData.secondServerKnowledge
-    )
+    val secondResponse =
+      api.transactions.getTransactions(
+        syncData.secondBudgetId.toString(),
+        sinceDate = config.startDate,
+        type = null,
+        lastKnowledgeOfServer = syncData.secondServerKnowledge,
+      )
 
     processAndSaveTransactions(
       transactions = firstResponse.data.transactions,
-      budgetId = syncData.firstBudgetId
+      budgetId = syncData.firstBudgetId,
     )
     processAndSaveTransactions(
       transactions = secondResponse.data.transactions,
-      budgetId = syncData.secondBudgetId
+      budgetId = syncData.secondBudgetId,
     )
 
     replaceSyncData(
       syncData.copy(
         firstServerKnowledge = firstResponse.data.serverKnowledge,
-        secondServerKnowledge = secondResponse.data.serverKnowledge
-      )
+        secondServerKnowledge = secondResponse.data.serverKnowledge,
+      ),
     )
   }
 
   fun addOrUpdateTransaction(
     transactionDetail: TransactionDetail,
     budgetId: BudgetId,
-    processedState: ProcessedState
+    processedState: ProcessedState,
   ) {
     val storedTransaction = transactionDetail.toStoredTransaction(budgetId, processedState)
     database.storedTransactionQueries.replaceSingle(storedTransaction)
@@ -203,10 +208,9 @@ class Repository(
         subTransaction.toStoredSubTransaction(
           accountId = transactionDetail.accountId.toAccountId(),
           budgetId = budgetId,
-          processedState = processedState
+          processedState = processedState,
         )
-      }
-      .forEach { storedSubTransaction ->
+      }.forEach { storedSubTransaction ->
         database.storedSubTransactionQueries.replaceSingle(storedSubTransaction)
       }
   }
@@ -224,10 +228,11 @@ class Repository(
    */
   private fun processAndSaveTransactions(
     transactions: List<TransactionDetail>,
-    budgetId: BudgetId
+    budgetId: BudgetId,
   ) {
-    val publicTransactions = transactions
-      .toPublicTransactionDetailList(budgetId)
+    val publicTransactions =
+      transactions
+        .toPublicTransactionDetailList(budgetId)
 
     // Compare against transactions in database, specifically by id
     database.storedTransactionQueries.transaction {
@@ -247,7 +252,7 @@ class Repository(
                     .insert(existingTransaction.toStoredTransaction().toReplacedTransaction())
                   existingTransaction.subTransactions.forEach { publicSubTransaction ->
                     database.replacedSubTransactionQueries.insert(
-                      publicSubTransaction.toStoredSubTransaction().toReplacedSubTransaction()
+                      publicSubTransaction.toStoredSubTransaction().toReplacedSubTransaction(),
                     )
                   }
 
@@ -263,30 +268,33 @@ class Repository(
               // Treat as CREATED (or DELETED) if the old transaction hasn't been processed yet
               CREATED -> publicTransaction
               // Don't overwrite a pending UPDATE, unless DELETED
-              UPDATED -> publicTransaction.copy(
-                processedState = if (publicTransaction.processedState == DELETED) {
-                  DELETED
-                } else {
-                  UPDATED
-                }
-              )
+              UPDATED ->
+                publicTransaction.copy(
+                  processedState =
+                    if (publicTransaction.processedState == DELETED) {
+                      DELETED
+                    } else {
+                      UPDATED
+                    },
+                )
               DELETED -> error("Trying to update an unprocessed DELETED transaction")
             }
           } else {
             publicTransaction
           }
-        }
-        .forEach { publicTransaction ->
+        }.forEach { publicTransaction ->
           database.storedTransactionQueries.replaceSingle(publicTransaction.toStoredTransaction())
           publicTransaction.subTransactions.forEach { subTransaction ->
             database.storedSubTransactionQueries.replaceSingle(
-              subTransaction.toStoredSubTransaction()
+              subTransaction
+                .toStoredSubTransaction()
                 .copy(
-                  processedState = when (subTransaction.processedState) {
-                    UP_TO_DATE, CREATED, UPDATED -> publicTransaction.processedState
-                    DELETED -> DELETED
-                  }
-                )
+                  processedState =
+                    when (subTransaction.processedState) {
+                      UP_TO_DATE, CREATED, UPDATED -> publicTransaction.processedState
+                      DELETED -> DELETED
+                    },
+                ),
             )
           }
         }
@@ -299,14 +307,14 @@ class Repository(
    */
   private fun findAccountAndBudget(
     budgetResponse: BudgetSummaryResponseData,
-    accountConfig: AccountConfig
+    accountConfig: AccountConfig,
   ): AccountAndBudget {
     val budget = budgetResponse.budgets.findByName(accountConfig.budgetName)
     val splitAccount = budget.accounts!!.findByName(accountConfig.accountName)
     return AccountAndBudget(
       splitAccount.id.toAccountId(),
       splitAccount.transferPayeeId.toPayeeId(),
-      budget.id.toBudgetId()
+      budget.id.toBudgetId(),
     )
   }
 
@@ -321,7 +329,7 @@ class Repository(
         transaction.subTransactions.forEach { subTransaction ->
           database.storedSubTransactionQueries
             .replaceSingle(
-              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE)
+              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE),
             )
         }
       }
@@ -331,7 +339,7 @@ class Repository(
         transaction.subTransactions.forEach { subTransaction ->
           database.storedSubTransactionQueries
             .replaceSingle(
-              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE)
+              subTransaction.toStoredSubTransaction().copy(processedState = UP_TO_DATE),
             )
         }
         database.replacedTransactionQueries.deleteById(transaction.id)
@@ -358,16 +366,16 @@ class Repository(
     }
   }
 
-  fun markAllTransactionsProcessedExceptInAccounts(
-    accountIds: List<AccountId>
-  ) {
-    val storedTransactions = database.storedTransactionQueries
-      .getUnprocessedExcept(accountsToExclude = accountIds)
-      .executeAsList()
+  fun markAllTransactionsProcessedExceptInAccounts(accountIds: List<AccountId>) {
+    val storedTransactions =
+      database.storedTransactionQueries
+        .getUnprocessedExcept(accountsToExclude = accountIds)
+        .executeAsList()
     // Unprocessed transactions should always have unprocessed subTransactions with them
-    val storedSubTransactions = database.storedSubTransactionQueries
-      .getUnprocessedExcept(accountsToExclude = accountIds)
-      .executeAsList()
+    val storedSubTransactions =
+      database.storedSubTransactionQueries
+        .getUnprocessedExcept(accountsToExclude = accountIds)
+        .executeAsList()
 
     val publicTransactions = storedTransactions.toPublicTransactionList(storedSubTransactions)
 
@@ -386,30 +394,31 @@ class Repository(
 
   private fun StoredTransaction.toPublicTransactionDetail(): PublicTransactionDetail =
     toPublicTransactionDetail(
-      database.storedSubTransactionQueries.getByTransactionId(this.id).executeAsList()
+      database.storedSubTransactionQueries.getByTransactionId(this.id).executeAsList(),
     )
 
   private fun ReplacedTransaction.toPublicTransactionDetail(): PublicTransactionDetail =
     toPublicTransactionDetail(
-      database.replacedSubTransactionQueries.getByTransactionId(this.id).executeAsList()
+      database.replacedSubTransactionQueries.getByTransactionId(this.id).executeAsList(),
     )
 }
 
 fun List<StoredTransaction>.toPublicTransactionList(
-  storedSubTransactions: List<StoredSubTransaction>
+  storedSubTransactions: List<StoredSubTransaction>,
 ): List<PublicTransactionDetail> {
-  val subTransactionMap = buildMap<TransactionId, List<StoredSubTransaction>> {
-    storedSubTransactions.forEach { storedSubTransaction ->
-      put(
-        storedSubTransaction.transactionId,
-        (get(storedSubTransaction.transactionId) ?: emptyList()) + storedSubTransaction
-      )
+  val subTransactionMap =
+    buildMap<TransactionId, List<StoredSubTransaction>> {
+      storedSubTransactions.forEach { storedSubTransaction ->
+        put(
+          storedSubTransaction.transactionId,
+          (get(storedSubTransaction.transactionId) ?: emptyList()) + storedSubTransaction,
+        )
+      }
     }
-  }
 
   return map { storedTransaction ->
     storedTransaction.toPublicTransactionDetail(
-      subTransactionMap[storedTransaction.id] ?: emptyList()
+      subTransactionMap[storedTransaction.id] ?: emptyList(),
     )
   }
 }

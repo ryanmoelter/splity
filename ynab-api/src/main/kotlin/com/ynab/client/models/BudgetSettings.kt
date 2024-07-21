@@ -15,6 +15,7 @@ import com.squareup.moshi.JsonClass
  */
 @JsonClass(generateAdapter = true)
 data class BudgetSettings(
-    @Json(name = "date_format") @field:Json(name = "date_format") var dateFormat: DateFormat,
-    @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat: CurrencyFormat
+  @Json(name = "date_format") @field:Json(name = "date_format") var dateFormat: DateFormat,
+  @Json(name = "currency_format") @field:Json(name = "currency_format") var currencyFormat:
+    CurrencyFormat,
 )
