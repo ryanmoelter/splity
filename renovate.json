@@ -1,27 +1,54 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "schedule": "every weekend",
+  "timezone": "America/Los_Angeles",
   "labels": [
     "dependencies"
   ],
   "reviewers": [
     "ryanmoelter"
   ],
+  "prHourlyLimit": 0,
   "packageRules": [
+    {
+      "matchPackageNames": [
+        "org.jetbrains.kotlin.jvm",
+        "com.google.devtools.ksp",
+        "org.jetbrains.kotlin:kotlin-stdlib",
+        "org.jetbrains.kotlin.plugin.serialization",
+        "org.jetbrains.kotlin:kotlin-reflect"
+      ],
+      "groupName": "Kotlin and dependencies",
+      "automerge": false
+    },
     {
       "matchUpdateTypes": [
         "minor",
         "pin",
         "digest"
       ],
+      "excludePackageNames": [
+        "org.jetbrains.kotlin.jvm",
+        "com.google.devtools.ksp",
+        "org.jetbrains.kotlin:kotlin-stdlib",
+        "org.jetbrains.kotlin.plugin.serialization",
+        "org.jetbrains.kotlin:kotlin-reflect"
+      ],
       "automerge": true
     },
     {
       "matchUpdateTypes": [
         "patch"
+      ],
+      "excludePackageNames": [
+        "org.jetbrains.kotlin.jvm",
+        "com.google.devtools.ksp",
+        "org.jetbrains.kotlin:kotlin-stdlib",
+        "org.jetbrains.kotlin.plugin.serialization",
+        "org.jetbrains.kotlin:kotlin-reflect"
       ],
       "groupName": "Patch dependency updates",
       "automerge": true
