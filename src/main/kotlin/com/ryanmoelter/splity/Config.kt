@@ -13,6 +13,7 @@ import org.threeten.bp.LocalDate
 
 data class Config(
   val version: String,
+  val dist: String,
   val ynabToken: String,
   val firstAccount: AccountConfig,
   val secondAccount: AccountConfig,

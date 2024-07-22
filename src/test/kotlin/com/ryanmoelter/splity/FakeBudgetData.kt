@@ -76,6 +76,7 @@ val secondAccountConfig = AccountConfig(TO_BUDGET_NAME, TO_ACCOUNT_NAME)
 val fakeConfig =
   Config(
     version = "0.0.0-TEST",
+    dist = "debug",
     ynabToken = "fakeToken",
     firstAccount = firstAccountConfig,
     secondAccount = secondAccountConfig,

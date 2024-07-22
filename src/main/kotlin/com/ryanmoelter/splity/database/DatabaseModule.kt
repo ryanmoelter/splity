@@ -116,5 +116,6 @@ interface DatabaseModule {
 
 @Component
 abstract class RealDatabaseModule : DatabaseModule {
-  override fun sqlDriver(): SqlDriver = JdbcSqliteDriver("jdbc:sqlite:incrementalSyncCache.db")
+  override fun sqlDriver(): SqlDriver =
+    JdbcSqliteDriver("jdbc:sqlite:cache/incrementalSyncCache.db")
 }

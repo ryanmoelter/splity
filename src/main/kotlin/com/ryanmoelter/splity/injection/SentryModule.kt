@@ -17,5 +17,5 @@ abstract class SentryModule {
   @Provides
   @SentrySingleton
   fun sentryWrapper(config: Config): SentryWrapper =
-    setUpSentry(config.sentryConfig, config.version)
+    setUpSentry(config.sentryConfig, config.version, config.dist)
 }

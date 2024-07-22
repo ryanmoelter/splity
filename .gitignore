@@ -14,3 +14,4 @@ config.yaml
 incrementalSyncCache.db
 remoteCopy.db
 YNAB api.paw
+/cache/

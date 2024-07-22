@@ -25,12 +25,14 @@ interface SentryWrapper {
 class SentryWrapperImpl(
   sentryConfig: SentryConfig,
   version: String,
+  dist: String,
 ) : SentryWrapper {
   init {
     Sentry.init { options ->
       options.dsn = sentryConfig.dsn
       options.tracesSampleRate = 0.1
       options.release = version
+      options.dist = dist
     }
   }
 
@@ -112,11 +114,12 @@ class NoSentryWrapper : SentryWrapper {
 fun setUpSentry(
   sentryConfig: SentryConfig?,
   version: String,
+  dist: String,
 ): SentryWrapper =
   if (sentryConfig !=
     null
   ) {
-    SentryWrapperImpl(sentryConfig, version)
+    SentryWrapperImpl(sentryConfig, version, dist)
   } else {
     NoSentryWrapper()
   }

@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 
 plugins {
@@ -11,7 +12,7 @@ plugins {
 }
 
 group = "com.ryanmoelter"
-version = "0.9.2-SNAPSHOT"
+version = "0.9.2"
 
 repositories {
   mavenCentral()
@@ -49,12 +50,12 @@ application {
 val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
 val compileTestKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
 compileKotlin.kotlinOptions {
-  jvmTarget = "11"
+  jvmTarget = "21"
   // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
   freeCompilerArgs = freeCompilerArgs + "-progressive"
 }
 compileTestKotlin.kotlinOptions {
-  jvmTarget = "11"
+  jvmTarget = "21"
   // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
   freeCompilerArgs = freeCompilerArgs + "-progressive"
 }
@@ -85,13 +86,28 @@ tasks.lintKotlinTest {
   exclude { it.file.path.contains("generated/") }
 }
 
+val gitDescribe: String by lazy {
+  val stdout = ByteArrayOutputStream()
+  rootProject.exec {
+    commandLine("git", "rev-parse", "--verify", "--short", "HEAD")
+    standardOutput = stdout
+  }
+  stdout.toString().trim()
+}
+
 task("createProperties") {
   dependsOn("processResources")
   doLast {
     mkdir("$buildDir/resources/main")
     val file = File("$buildDir/resources/main/version.properties")
     file.createNewFile()
-    val map = mapOf("version" to project.version.toString())
+    val gitSha = gitDescribe
+
+    val map =
+      mapOf(
+        "version" to project.version.toString(),
+        "dist" to gitSha,
+      )
     val p = map.toProperties()
     val writer = file.writer()
     p.store(writer, null)
@@ -101,15 +117,3 @@ task("createProperties") {
 
 val classes: Task by tasks
 classes.dependsOn("createProperties")
-
-idea {
-  module {
-    // Not using += due to https://github.com/gradle/gradle/issues/8749
-    sourceDirs =
-      sourceDirs + file("build/generated/ksp/main/kotlin") // or tasks["kspKotlin"].destination
-    testSourceDirs = testSourceDirs + file("build/generated/ksp/test/kotlin")
-    generatedSourceDirs =
-      generatedSourceDirs + file("build/generated/ksp/main/kotlin") +
-      file("build/generated/ksp/test/kotlin")
-  }
-}

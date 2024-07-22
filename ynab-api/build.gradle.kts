@@ -44,10 +44,10 @@ generateSwagger {
 val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
 val compileTestKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
 compileKotlin.kotlinOptions {
-  jvmTarget = "11"
+  jvmTarget = "21"
 }
 compileTestKotlin.kotlinOptions {
-  jvmTarget = "11"
+  jvmTarget = "21"
 }
 
 kotlinter {
