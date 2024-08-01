@@ -98,8 +98,8 @@ val gitDescribe: String by lazy {
 task("createProperties") {
   dependsOn("processResources")
   doLast {
-    mkdir("$buildDir/resources/main")
-    val file = File("$buildDir/resources/main/version.properties")
+    mkdir("${layout.buildDirectory.get()}/resources/main")
+    val file = File("${layout.buildDirectory.get()}/resources/main/version.properties")
     file.createNewFile()
     val gitSha = gitDescribe
 
