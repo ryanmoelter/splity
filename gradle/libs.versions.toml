@@ -10,7 +10,7 @@ moshi = "1.15.1"
 okhttp = "4.12.0"
 retrofit = "2.11.0"
 kotest = "5.9.1"
-kotlinter = "4.4.1"
+kotlinter = "4.5.0"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
