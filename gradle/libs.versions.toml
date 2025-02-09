@@ -1,6 +1,6 @@
 [versions]
 kotlin = "1.9.25"
-coroutines = "1.8.1"
+coroutines = "1.10.1"
 ksp = "1.9.25-1.0.20"
 inject = "0.7.2"
 hoplite = "2.9.0"
