@@ -8,7 +8,7 @@ sqldelight = "1.5.5"
 datetime = "0.6.2"
 moshi = "1.15.2"
 okhttp = "4.12.0"
-retrofit = "2.11.0"
+retrofit = "2.12.0"
 kotest = "5.9.1"
 kotlinter = "4.5.0"
 
