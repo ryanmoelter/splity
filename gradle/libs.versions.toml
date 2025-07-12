@@ -5,7 +5,7 @@ ksp = "1.9.25-1.0.20"
 inject = "0.8.0"
 hoplite = "2.9.0"
 sqldelight = "1.5.5"
-datetime = "0.7.0-0.6.x-compat"
+datetime = "0.7.1-0.6.x-compat"
 moshi = "1.15.2"
 okhttp = "4.12.0"
 retrofit = "2.12.0"
@@ -63,4 +63,4 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 
 # Sentry
-sentry = { module = "io.sentry:sentry", version = "7.22.5" }
+sentry = { module = "io.sentry:sentry", version = "7.22.6" }
