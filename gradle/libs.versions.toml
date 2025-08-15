@@ -1,7 +1,7 @@
 [versions]
 kotlin = "1.9.25"
 coroutines = "1.10.2"
-ksp = "1.9.25-1.0.20"
+ksp = "2.2.10-2.0.2"
 inject = "0.8.0"
 hoplite = "2.9.0"
 sqldelight = "1.5.5"
