@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
+import org.jmailen.gradle.kotlinter.tasks.FormatTask
+import org.jmailen.gradle.kotlinter.tasks.LintTask
 
 plugins {
   java
@@ -41,29 +42,19 @@ generateSwagger {
   outputDir = file("./src/main/kotlin/")
 }
 
-val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
-val compileTestKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
-compileKotlin.kotlinOptions {
-  jvmTarget = "11"
-}
-compileTestKotlin.kotlinOptions {
-  jvmTarget = "11"
+kotlin {
+  jvmToolchain(25)
 }
 
 kotlinter {
-  failBuildWhenCannotAutoFormat = true
+  ignoreFormatFailures = false
+  // Pin ktlint to the ruleset kotlinter 4.5.0 used; newer ktlint flags the generated YNAB client.
+  ktlintVersion = "1.4.1"
 }
 
-tasks.formatKotlinMain {
+tasks.withType<FormatTask> {
   exclude { it.file.path.contains("generated/") }
 }
-tasks.formatKotlinTest {
-  exclude { it.file.path.contains("generated/") }
-}
-
-tasks.lintKotlinMain {
-  exclude { it.file.path.contains("generated/") }
-}
-tasks.lintKotlinTest {
+tasks.withType<LintTask> {
   exclude { it.file.path.contains("generated/") }
 }
