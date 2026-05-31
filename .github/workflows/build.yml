@@ -14,13 +14,13 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    steps:      
+    steps:
     - uses: actions/checkout@v4.3.1
     - name: Set up our JDK environment
       uses: actions/setup-java@v5.2.0
       with:
         distribution: 'zulu'
-        java-version: '25'
+        java-version-file: '.sdkmanrc'
     - name: Build with Gradle
       uses: gradle/gradle-build-action@v3.5.0
       with:
