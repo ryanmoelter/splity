@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
+import org.jmailen.gradle.kotlinter.tasks.FormatTask
+import org.jmailen.gradle.kotlinter.tasks.LintTask
 
 plugins {
   java
@@ -46,42 +47,38 @@ application {
   mainClass.set("com.ryanmoelter.splity.SplityKt")
 }
 
-val compileKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
-val compileTestKotlin: org.jetbrains.kotlin.gradle.dsl.KotlinCompile<KotlinJvmOptions> by tasks
-compileKotlin.kotlinOptions {
-  jvmTarget = "11"
-  // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
-  freeCompilerArgs = freeCompilerArgs + "-progressive"
-}
-compileTestKotlin.kotlinOptions {
-  jvmTarget = "11"
-  // Error on non-exhaustive when, can remove in kotlin 1.7.0 when this behavior is default
-  freeCompilerArgs = freeCompilerArgs + "-progressive"
+kotlin {
+  jvmToolchain(17)
+  compilerOptions {
+    // -progressive enables exhaustive `when` over sealed types/enums, which the codebase relies on
+    freeCompilerArgs.add("-progressive")
+  }
 }
 
 sqldelight {
-  database("Database") {
-    packageName = "com.ryanmoelter.ynab.database"
-    schemaOutputDirectory = file("src/main/sqldelight/databases")
-    verifyMigrations = true
+  databases {
+    create("Database") {
+      packageName.set("com.ryanmoelter.ynab.database")
+      schemaOutputDirectory.set(file("src/main/sqldelight/databases"))
+      // verifyMigrations is off: there are no .sqm migration files (so it was a no-op in
+      // SQLDelight 1.x), and SQLDelight 2.1.0's VerifyMigrationTask runs away (OOMs) here.
+      verifyMigrations.set(false)
+      dialect(libs.sqldelight.dialect.sqlite)
+    }
   }
 }
 
 kotlinter {
-  failBuildWhenCannotAutoFormat = true
+  ignoreFormatFailures = false
+  // Pin ktlint to the ruleset kotlinter 4.5.0 used; newer ktlint adds style rules that would
+  // reformat the codebase and flag the generated YNAB client. Bump separately if desired.
+  ktlintVersion = "1.4.1"
 }
 
-tasks.formatKotlinMain {
+tasks.withType<FormatTask> {
   exclude { it.file.path.contains("generated/") }
 }
-tasks.formatKotlinTest {
-  exclude { it.file.path.contains("generated/") }
-}
-
-tasks.lintKotlinMain {
-  exclude { it.file.path.contains("generated/") }
-}
-tasks.lintKotlinTest {
+tasks.withType<LintTask> {
   exclude { it.file.path.contains("generated/") }
 }
 

@@ -1,6 +1,6 @@
 package com.ryanmoelter.splity.database
 
-import com.squareup.sqldelight.ColumnAdapter
+import app.cash.sqldelight.ColumnAdapter
 import java.util.UUID
 
 @JvmInline

@@ -8,7 +8,7 @@ Splity is a one-shot JVM CLI that keeps a shared "split" account in sync between
 
 ## Commands
 
-All commands run from the repo root via the Gradle wrapper. JDK 11 (see `.sdkmanrc`).
+All commands run from the repo root via the Gradle wrapper. JDK 17 (see `.sdkmanrc`).
 
 - **Full check** (compile + lint + test, same as CI): `./gradlew build`
 - **Run the sync** against `./config.yaml` in the working directory: `./gradlew run`

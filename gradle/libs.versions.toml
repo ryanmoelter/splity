@@ -1,21 +1,21 @@
 [versions]
-kotlin = "1.9.25"
+kotlin = "2.1.20"
 coroutines = "1.10.2"
-ksp = "1.9.25-1.0.20"
+ksp = "2.1.20-2.0.1"
 inject = "0.8.0"
 hoplite = "2.9.0"
-sqldelight = "1.5.5"
+sqldelight = "2.1.0"
 datetime = "0.7.1-0.6.x-compat"
 moshi = "1.15.2"
 okhttp = "4.12.0"
-retrofit = "2.12.0"
+retrofit = "3.0.0"
 kotest = "5.9.1"
-kotlinter = "4.5.0"
+kotlinter = "5.4.2"
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
-sqldelight = { id = "com.squareup.sqldelight", version.ref = "sqldelight" }
+sqldelight = { id = "app.cash.sqldelight", version.ref = "sqldelight" }
 kotlinter = { id = "org.jmailen.kotlinter", version.ref = "kotlinter" }
 yelp-codegen = { id = "com.yelp.codegen.plugin", version = "1.4.1" }
 
@@ -34,8 +34,9 @@ hoplite-core = { module = "com.sksamuel.hoplite:hoplite-core", version.ref = "ho
 hoplite-yaml = { module = "com.sksamuel.hoplite:hoplite-yaml", version.ref = "hoplite" }
 
 # Database
-sqldelight-driver-jvm = { module = "com.squareup.sqldelight:sqlite-driver", version.ref = "sqldelight" }
-sqldelight-coroutines-extensions = { module = "com.squareup.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-driver-jvm = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
+sqldelight-coroutines-extensions = { module = "app.cash.sqldelight:coroutines-extensions", version.ref = "sqldelight" }
+sqldelight-dialect-sqlite = { module = "app.cash.sqldelight:sqlite-3-38-dialect", version.ref = "sqldelight" }
 uuid = { module = "com.benasher44:uuid", version = "0.8.4" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
@@ -63,4 +64,4 @@ kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.
 kotest-framework-datatest = { module = "io.kotest:kotest-framework-datatest", version.ref = "kotest" }
 
 # Sentry
-sentry = { module = "io.sentry:sentry", version = "7.22.6" }
+sentry = { module = "io.sentry:sentry", version = "8.16.0" }

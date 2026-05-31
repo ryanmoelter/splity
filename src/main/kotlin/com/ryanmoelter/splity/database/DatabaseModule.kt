@@ -1,16 +1,14 @@
 package com.ryanmoelter.splity.database
 
+import app.cash.sqldelight.EnumColumnAdapter
+import app.cash.sqldelight.db.SqlDriver
+import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
 import com.ryanmoelter.ynab.ReplacedSubTransaction
 import com.ryanmoelter.ynab.ReplacedTransaction
-import com.ryanmoelter.ynab.StoredAccount
-import com.ryanmoelter.ynab.StoredBudget
 import com.ryanmoelter.ynab.StoredSubTransaction
 import com.ryanmoelter.ynab.StoredTransaction
 import com.ryanmoelter.ynab.SyncData
 import com.ryanmoelter.ynab.database.Database
-import com.squareup.sqldelight.EnumColumnAdapter
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.sqlite.driver.JdbcSqliteDriver
 import me.tatarka.inject.annotations.Component
 import me.tatarka.inject.annotations.Provides
 import me.tatarka.inject.annotations.Scope
@@ -37,18 +35,6 @@ interface DatabaseModule {
 
     return Database(
       sqlDriver,
-      storedAccountAdapter =
-        StoredAccount.Adapter(
-          idAdapter = accountIdAdapter,
-          typeAdapter = EnumColumnAdapter(),
-          transferPayeeIdAdapter = payeeIdAdapter,
-          budgetIdAdapter = budgetIdAdapter,
-        ),
-      storedBudgetAdapter =
-        StoredBudget.Adapter(
-          idAdapter = budgetIdAdapter,
-          lastModifiedOnAdapter = localDateAdapter,
-        ),
       storedTransactionAdapter =
         StoredTransaction.Adapter(
           idAdapter = transactionIdAdapter,
