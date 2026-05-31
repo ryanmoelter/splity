@@ -8,7 +8,7 @@ Splity is a one-shot JVM CLI that keeps a shared "split" account in sync between
 
 ## Commands
 
-All commands run from the repo root via the Gradle wrapper. JDK 17 (see `.sdkmanrc`).
+All commands run from the repo root via the Gradle wrapper. JDK 25 (see `.sdkmanrc`).
 
 - **Full check** (compile + lint + test, same as CI): `./gradlew build`
 - **Run the sync** against `./config.yaml` in the working directory: `./gradlew run`
@@ -60,7 +60,7 @@ DI is compile-time via kotlin-inject + KSP — components are built through gene
 
 ## Testing
 
-Tests are **integration tests of the whole pipeline**, not unit tests. They drive `TransactionMirrorer` against a `FakeYnabServerDatabase` (an in-memory model of YNAB's server) plus an in-memory SQLDelight DB, then assert end state with custom matchers in `src/test/kotlin/.../test/AssertionExtensions.kt`. Stack: Kotest `FunSpec` (JUnit5 platform) + Strikt + MockK. `KotestProjectConfig` sets `IsolationMode.InstancePerLeaf` and random test order, so each leaf test gets a fresh fixture — don't rely on cross-test state.
+Tests are **integration tests of the whole pipeline**, not unit tests. They drive `TransactionMirrorer` against a `FakeYnabServerDatabase` (an in-memory model of YNAB's server) plus an in-memory SQLDelight DB, then assert end state with custom matchers in `src/test/kotlin/.../test/AssertionExtensions.kt`. Stack: Kotest `FunSpec` (JUnit5 platform) + Strikt + MockK. The project config (`io.kotest.provided.ProjectConfig`, the name Kotest 6 discovers by convention) sets `IsolationMode.InstancePerLeaf` and random test order, so each leaf test gets a fresh fixture — don't rely on cross-test state.
 
 ## Conventions
 

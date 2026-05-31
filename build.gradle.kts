@@ -33,7 +33,6 @@ dependencies {
 
   testImplementation(libs.kotest.runner)
   testImplementation(libs.kotest.assertions.core)
-  testImplementation(libs.kotest.framework.datatest)
   testImplementation(libs.coroutines.test)
   testImplementation(libs.strikt)
   testImplementation(libs.mockk)
@@ -48,7 +47,7 @@ application {
 }
 
 kotlin {
-  jvmToolchain(17)
+  jvmToolchain(25)
   compilerOptions {
     // -progressive enables exhaustive `when` over sealed types/enums, which the codebase relies on
     freeCompilerArgs.add("-progressive")
@@ -82,29 +81,28 @@ tasks.withType<LintTask> {
   exclude { it.file.path.contains("generated/") }
 }
 
-task("createProperties") {
+tasks.register("createProperties") {
   dependsOn("processResources")
   doLast {
-    mkdir("$buildDir/resources/main")
-    val file = File("$buildDir/resources/main/version.properties")
+    val resourcesDir = layout.buildDirectory.dir("resources/main").get().asFile
+    resourcesDir.mkdirs()
+    val file = resourcesDir.resolve("version.properties")
     file.createNewFile()
-    val map = mapOf("version" to project.version.toString())
-    val p = map.toProperties()
-    val writer = file.writer()
-    p.store(writer, null)
-    writer.close()
+    val p = mapOf("version" to project.version.toString()).toProperties()
+    file.writer().use { p.store(it, null) }
   }
 }
 
-val classes: Task by tasks
-classes.dependsOn("createProperties")
+tasks.named("classes") {
+  dependsOn("createProperties")
+}
 
 idea {
   module {
     // Not using += due to https://github.com/gradle/gradle/issues/8749
     sourceDirs =
       sourceDirs + file("build/generated/ksp/main/kotlin") // or tasks["kspKotlin"].destination
-    testSourceDirs = testSourceDirs + file("build/generated/ksp/test/kotlin")
+    testSources.from(file("build/generated/ksp/test/kotlin"))
     generatedSourceDirs =
       generatedSourceDirs + file("build/generated/ksp/main/kotlin") +
       file("build/generated/ksp/test/kotlin")
