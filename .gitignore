@@ -10,6 +10,7 @@
 .externalNativeBuild
 app/gradle.properties
 
+data/
 config.yaml
 incrementalSyncCache.db
 remoteCopy.db
