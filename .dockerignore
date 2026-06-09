@@ -1,0 +1,19 @@
+# Keep the build context small and never bake secrets or local state into the image.
+
+# Secrets / local runtime state (also gitignored)
+data/config.yaml
+*.db
+*.paw
+
+# VCS / tooling
+.git
+.gradle
+.idea
+.claude
+*.iml
+
+# Build output — ignore everything except the installed distribution we copy in.
+# `build/*` (not `build/`) leaves `build/` itself un-excluded so the re-include works.
+build/*
+!build/install
+*/build

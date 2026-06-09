@@ -1,0 +1,13 @@
+# Convenience for local one-shot runs. The real schedule is external (host cron, etc.).
+#
+# Build the distribution first, then run:
+#   ./gradlew installDist && docker compose run --rm splity
+#
+# Put config.yaml and incrementalSyncCache.db in ./data (the db is created on first run).
+services:
+  splity:
+    build: .
+    image: ryanmoelter/splity:latest
+    volumes:
+      - ./data:/data
+    restart: "no"
