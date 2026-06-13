@@ -9,7 +9,7 @@
 #
 # Zulu JRE 17 (headless) matches the JDK the project builds with (jvmToolchain(17),
 # .sdkmanrc, CI).
-FROM azul/zulu-openjdk:25-jre-headless@sha256:7cc16d368c36e2b28a3e4959188ad3781a8d1bdc18d6eccd43cfb5a7d6f78b61
+FROM azul/zulu-openjdk:25-jre-headless@sha256:551391e49cb9fb116e5dfe441a7b51ceac1fed0b291e8365c5db8d8e544b2974
 
 COPY build/install/splity /opt/splity
 
