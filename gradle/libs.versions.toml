@@ -63,4 +63,4 @@ kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kote
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
 
 # Sentry
-sentry = { module = "io.sentry:sentry", version = "8.43.1" }
+sentry = { module = "io.sentry:sentry", version = "8.43.2" }
