@@ -9,7 +9,7 @@ datetime = "0.8.0-0.6.x-compat"
 moshi = "1.15.2"
 okhttp = "5.4.0"
 retrofit = "3.0.0"
-kotest = "6.1.11"
+kotest = "6.2.1"
 kotlinter = "5.5.0"
 
 [plugins]
