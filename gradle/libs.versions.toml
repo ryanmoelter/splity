@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.4.10"
 coroutines = "1.11.0"
-ksp = "2.3.10"
+ksp = "2.3.11"
 inject = "0.9.0"
 hoplite = "2.9.0"
 sqldelight = "2.3.2"
@@ -56,7 +56,7 @@ threetenbp = { module = "org.threeten:threetenbp", version = "1.7.4" }
 
 # Testing
 junit4 = { module = "junit:junit", version = "4.13.2"}
-junit5 = { module = "org.junit.jupiter:junit-jupiter", version = "6.1.2" }
+junit5 = { module = "org.junit.jupiter:junit-jupiter", version = "6.1.3" }
 strikt = { module = "io.strikt:strikt-core", version = "0.35.1"}
 mockk = { module = "io.mockk:mockk", version = "1.14.11" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest"}
