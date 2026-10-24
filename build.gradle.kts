@@ -28,6 +28,7 @@ dependencies {
   implementation(libs.sentry)
 
   ksp(libs.kotlin.inject.compiler.ksp)
+  kspTest(libs.kotlin.inject.compiler.ksp)
 
   implementation(libs.sqldelight.driver.jvm)
 
