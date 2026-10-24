@@ -124,7 +124,10 @@ private val configYaml =
     accountName: Second split
   """.trimIndent()
 
-private fun withConfigFile(yaml: String, block: (Path) -> Unit) {
+private fun withConfigFile(
+  yaml: String,
+  block: (Path) -> Unit,
+) {
   val path = Files.createTempFile("splity-config-test-", ".yaml")
   try {
     Files.writeString(path, yaml)
@@ -142,7 +145,11 @@ private fun packagedVersion(): String {
   return properties.getProperty("version")
 }
 
-private fun withSystemProperty(name: String, value: String, block: () -> Unit) {
+private fun withSystemProperty(
+  name: String,
+  value: String,
+  block: () -> Unit,
+) {
   val previous = System.setProperty(name, value)
   try {
     block()
