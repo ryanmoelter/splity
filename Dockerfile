@@ -7,9 +7,8 @@
 # architecture-independent: the same artifact is copied onto each arch's base image,
 # which lets buildx produce the amd64 + arm64 manifest with no QEMU emulation.
 #
-# Zulu JRE 17 (headless) matches the JDK the project builds with (jvmToolchain(17),
-# .sdkmanrc, CI).
-FROM azul/zulu-openjdk:25.0.5-jre-headless@sha256:76d3ecfc1722b1924871c26373a113c25fc4445e4e6456b624dc91f1caac1994
+# Zulu JRE 25 (headless) matches the build's Java major version.
+FROM azul/zulu-openjdk:25.0.5.1-jre-headless@sha256:d2993195611a4a0eec0a75495cfda357ed92c25d5555f38ad64df6646037b5b1
 
 COPY build/install/splity /opt/splity
 
