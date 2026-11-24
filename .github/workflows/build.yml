@@ -20,7 +20,8 @@ jobs:
       uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
       with:
         distribution: 'zulu'
-        java-version-file: '.sdkmanrc'
+        # setup-java encodes Java's fourth version component + build as SemVer metadata.
+        java-version: '25.0.5+1.2' # Zulu OpenJDK 25.0.5.1+2
     - name: Build with Gradle
       uses: gradle/gradle-build-action@ac2d340dc04d9e1113182899e983b5400c17cda1 # v3.5.0
       with:
